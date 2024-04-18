@@ -1,0 +1,24 @@
+{
+  "name": "yunaforseyfert",
+  "version": "0.8.5",
+  "description": "Yunathings for seyfert",
+  "main": "build/index.js",
+  "type": "module",
+  "types": "./types/index.d.ts",
+  "scripts": {
+    "build":"tsc && esbuild --bundle src/index.ts --minify --outdir=build --platform=node --packages=external",
+    "tsc": "tsc"
+  },
+  "keywords": ["parser", "penguin"],
+  "author": "SagiriIkeda",
+  "license": "ISC",
+  "dependencies": {
+    "discord-api-types": "^0.37.77",
+    "seyfert": "^1.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "esbuild": "^0.20.2",
+    "typescript": "^5.0.0"
+  }
+}

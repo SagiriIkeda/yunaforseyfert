@@ -1,0 +1,17 @@
+node_modules
+
+.env
+.vscode
+.gitignore
+.npmignore
+
+package-lock.json
+seyfert.config.js
+tsconfig.json
+
+*test
+*.tgz
+
+dist
+src
+saves
