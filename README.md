@@ -164,8 +164,7 @@ also this works with
 
 
 #### "Demostration" thanks to @justo
-<video src="https://i.imgur.com/WABBTYE.mp4" autoplay loop></video>
-
+<img src="https://i.imgur.com/cRrLoG2.gif" />
 
 > ```
 > Thanks for read and using yunaforseyfert!
