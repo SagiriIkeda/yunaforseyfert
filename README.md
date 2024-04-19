@@ -32,7 +32,19 @@ Then, you need to add it as seyfert's default argsParser, as follows
 // your bot's client
 new Client({ 
     commands: {
-        argsParser: YunaParser()
+        argsParser: YunaParser({
+          // all config is optional, this is the default
+           config: {
+              namedOptions: {
+                  /** enable syntax option: content */
+                  ":": true,
+                  /** enable syntax -option: content */
+                  "-": true,
+                  /** enable syntax --option: content */
+                  "--": true,
+              }
+          }
+        })
     }
 });
 ```
@@ -140,8 +152,12 @@ Like this.
 
 <img src="https://i.imgur.com/6olfDEu.png" width="100%" />
 
-> Note
-> For consistency and to **avoid confussions**, you only can use **one syntax at same time**.
+
+> ### **Note**
+> 
+> You can **configure** which named syntaxes **you want** and which **you don't**, when setting up YunaParser, see `#installation`.
+> 
+> Also, for consistency and to **avoid confusion**, only **one syntax can be used at a time**.
 
 #### Escaping characters
 

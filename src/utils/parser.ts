@@ -68,8 +68,11 @@ interface YunaParserCreateOptions {
 
     config?: {
         namedOptions?: {
+            /** enable syntax option: content */
             ":"?: boolean,
+            /** enable syntax -option: content */
             "-"?: boolean,
+            /** enable syntax --option: content */
             "--"?: boolean,
         }
     }
