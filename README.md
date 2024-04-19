@@ -163,9 +163,13 @@ also this works with
 `/` *(in urls, like https://)*
 
 
+#### "Demostration" thanks to @justo
+<video src="https://i.imgur.com/WABBTYE.mp4" autoplay loop></video>
+
 
 > ```
-> Thanks for read and using yunaforseyfert 🐧
+> Thanks for read and using yunaforseyfert!
+> By SagiriIkeda with 🐧
 > ```
 
 

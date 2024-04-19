@@ -71,7 +71,7 @@ interface YunaParserCreateOptions {
 }
 
 /**
- * @version 0.8.5
+ * @version 0.8.6
  * @example
  * ```js
  * import { YunaParser } from "yunaforseyfert"
