@@ -1,6 +1,6 @@
 {
   "name": "yunaforseyfert",
-  "version": "0.8.6",
+  "version": "0.9",
   "description": "Yunathings for seyfert",
   "main": "build/index.js",
   "type": "module",

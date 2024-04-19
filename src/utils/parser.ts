@@ -60,7 +60,8 @@ const getYunaMetaDataFromCommand = (command: (Command | SubCommand) & { [key]?: 
 
 }
 
-const ElementsRegex = /(?<named>(\\*)(?:-{1,2}([a-zA-Z_\d]+)|([a-zA-Z_\d]+):(?!\/\/[^\s\x7F])))|(?<tag>["'`:-])|(?<value>[^\s\x7F"'`\\]+)|(?<backescape>\\+)/g;
+// const ElementsRegex = /(?<named>(\\*)(?:-{1,2}([a-zA-Z_\d]+)|([a-zA-Z_\d]+):(?!\/\/[^\s\x7F])))|(?<tag>["'`:-])|(?<value>[^\s\x7F"'`\\]+)|(?<backescape>\\+)/g;
+const ElementsRegex = /(?<named>(\\*)(?:(-{1,2})([a-zA-Z_\d]+)|([a-zA-Z_\d]+)(:)(?!\/\/[^\s\x7F])))|(?<tag>["'`:-])|(?<value>[^\s\x7F"'`\\]+)|(?<backescape>\\+)/g;
 
 
 interface YunaParserCreateOptions {
@@ -71,7 +72,7 @@ interface YunaParserCreateOptions {
 }
 
 /**
- * @version 0.8.6
+ * @version 0.9
  * @example
  * ```js
  * import { YunaParser } from "yunaforseyfert"
@@ -99,6 +100,8 @@ export const YunaParser = ({ debug = false }: YunaParserCreateOptions) => {
         let actualOptionIdx: number = 0
         let isEscapingNext = false
         let unindexedRightText = "";
+
+        let namedOptionTagUsed: string | undefined;
 
         let namedOptionInitialized: {
             name: string,
@@ -217,20 +220,29 @@ export const YunaParser = ({ debug = false }: YunaParserCreateOptions) => {
             const { tag, value, backescape, named } = groups ?? {}
 
             if (named && !tagOpenWith) {
-                const [, , backescapes, prefix_, sufixDotted] = match;
+                const [, , backescapes, __ ,namefor_, nameforDotted, dots] = match;
 
-                const tagName = prefix_ || sufixDotted;
+                const tagName = namefor_ ?? nameforDotted;
+
+                const tagUsed = __ ?? dots;
+
+                namedOptionTagUsed ??= tagUsed;
+                
+                if(namedOptionTagUsed !== tagUsed) {
+                    aggregateUnindexedText(index, named, undefined, named, undefined, _isRecentlyCosedAnyTag);
+                    continue;
+                }
 
                 let backescapesStrRepresentation = "";
-
+                
                 if (backescapes) {
                     const nextChar = named[backescapes.length];
 
                     const { isPossiblyEscapingNext, strRepresentation } = evaluateBackescapes(backescapes, nextChar)
                     backescapesStrRepresentation = strRepresentation;
 
-                    if (prefix_ && isPossiblyEscapingNext) {
-                        aggregateUnindexedText(index, strRepresentation + (named.slice(backescapes.length)), undefined, named, undefined, _isRecentlyCosedAnyTag)
+                    if (namefor_ && isPossiblyEscapingNext) {
+                        aggregateUnindexedText(index, strRepresentation + (named.slice(backescapes.length)), undefined, named, undefined, _isRecentlyCosedAnyTag);
                         continue
                     } else if (!lastestLongWord && strRepresentation) aggregateUnindexedText(index, strRepresentation, undefined, backescapes, false, _isRecentlyCosedAnyTag)
 
@@ -243,7 +255,7 @@ export const YunaParser = ({ debug = false }: YunaParserCreateOptions) => {
                 namedOptionInitialized = {
                     name: tagName,
                     start: index + named.length,
-                    dotted: sufixDotted !== undefined,
+                    dotted: nameforDotted !== undefined,
                 }
 
                 continue;

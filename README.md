@@ -93,7 +93,7 @@ The command has two options `first` and `second`, in that order.
 
 For the parser, each word counts as an option, and will be added in the order of the command. That is, if we use the command in the following way:
 
-<img src="https://i.imgur.com/xdpSRIg.png" />
+<img src="https://i.imgur.com/xdpSRIg.png" width="100%" />
 
 
 `ctx.options` will be return 
@@ -110,7 +110,7 @@ You can use the following syntax
 
 `"your words"` `'yout beutiful sentence'` **\`penguin world\`**
 
-<img src="https://i.imgur.com/mB9Jgfp.png" />
+<img src="https://i.imgur.com/mB9Jgfp.png" width="100%" />
 
 it will return 
 
@@ -122,7 +122,7 @@ it will return
 ```
 Another case is that the option is the last or only one, in this case it will not be necessary to use "" and all the remaining content will be taken as the option, Example:
 
-<img src="https://i.imgur.com/9zjO00U.png" />
+<img src="https://i.imgur.com/9zjO00U.png" width="100%" />
 
 #### Named Syntax
 
@@ -138,13 +138,16 @@ you can use the following syntaxes
 
 Like this.
 
-<img src="https://i.imgur.com/6olfDEu.png" />
+<img src="https://i.imgur.com/6olfDEu.png" width="100%" />
+
+> Note
+> For consistency and to **avoid confussions**, you only can use **one syntax at same time**.
 
 #### Escaping characters
 
 You can escape any special character or syntax, if you need to, using `\`
 
-<img src="https://i.imgur.com/xNMc1eu.png" />
+<img src="https://i.imgur.com/xNMc1eu.png" width="100%"/>
 
 this will return:
 
@@ -164,7 +167,7 @@ also this works with
 
 
 #### "Demostration" thanks to @justo
-<img src="https://i.imgur.com/cRrLoG2.gif" />
+<img src="https://i.imgur.com/cRrLoG2.gif" width="100%" />
 
 > ```
 > Thanks for read and using yunaforseyfert!
