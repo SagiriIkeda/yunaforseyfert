@@ -53,7 +53,7 @@ const options = {
     description: "Do you know i love penguins?",
     required: true
   })
-} as const
+}
 
 @Declare({
   name: 'test',
