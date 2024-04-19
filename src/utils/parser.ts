@@ -60,15 +60,35 @@ const getYunaMetaDataFromCommand = (command: (Command | SubCommand) & { [key]?: 
 
 }
 
-// const ElementsRegex = /(?<named>(\\*)(?:-{1,2}([a-zA-Z_\d]+)|([a-zA-Z_\d]+):(?!\/\/[^\s\x7F])))|(?<tag>["'`:-])|(?<value>[^\s\x7F"'`\\]+)|(?<backescape>\\+)/g;
-const ElementsRegex = /(?<named>(\\*)(?:(-{1,2})([a-zA-Z_\d]+)|([a-zA-Z_\d]+)(:)(?!\/\/[^\s\x7F])))|(?<tag>["'`:-])|(?<value>[^\s\x7F"'`\\]+)|(?<backescape>\\+)/g;
-
-
 interface YunaParserCreateOptions {
     /**
      * this only show console.log with the options parsed. 
-     * @default false */
-    debug: boolean
+     * @defaulst false */
+    debug?: boolean,
+
+    config?: {
+        namedOptions?: {
+            ":"?: boolean,
+            "-"?: boolean,
+            "--"?: boolean,
+        }
+    }
+}
+
+
+const createElementsRegex = ({ config = {} }: YunaParserCreateOptions) => {
+
+    const { namedOptions = {} } = config;
+
+    let regexString = "(?<tag>[\"'`:-])|(?<value>[^\\s\\x7F\"'`\\\\]+)|(?<backescape>\\\\+)"
+
+    const isOneOfNamedOptionsSyntaxEnabled = namedOptions["--"] || namedOptions["-"] || namedOptions[":"];
+
+    if(isOneOfNamedOptionsSyntaxEnabled) {
+        regexString = "(?<named>(\\\\*)(?:(-{1,2})([a-zA-Z_\\d]+)|([a-zA-Z_\\d]+)(:)(?!\\/\\/[^\\s\\x7F])))|" + regexString;
+    }
+
+    return RegExp(regexString, "g")
 }
 
 /**
@@ -85,7 +105,21 @@ interface YunaParserCreateOptions {
  * ```
  */
 
-export const YunaParser = ({ debug = false }: YunaParserCreateOptions) => {
+export const YunaParser = ({
+    debug = false,
+    config
+}: YunaParserCreateOptions = {}) => {
+
+    config = {
+        namedOptions: {
+            ":": config?.namedOptions?.[":"] ?? true,
+            "-": config?.namedOptions?.["-"] ?? true,
+            "--": config?.namedOptions?.["--"] ?? true,
+        }
+    }
+
+    const ElementsRegex = createElementsRegex({ config })
+
 
     return (content: string, command: Command | SubCommand): Record<string, string> => {
 
@@ -139,7 +173,7 @@ export const YunaParser = ({ debug = false }: YunaParserCreateOptions) => {
                     unindexedRightText,
                 }
             }
-            
+
             result[optionAtIndexName] = unindexedRightText + value;
             unindexedRightText = "";
 
@@ -149,14 +183,14 @@ export const YunaParser = ({ debug = false }: YunaParserCreateOptions) => {
         }
 
         const aggregateLastestLongWord = (end: number = content.length, postText = "") => {
-            if(!lastestLongWord) return
+            if (!lastestLongWord) return
 
-            const {name, start, unindexedRightText} = lastestLongWord;
+            const { name, start, unindexedRightText } = lastestLongWord;
 
             lastestLongWord = undefined;
 
             result[name] = unindexedRightText + sanitizeBackescapes(content.slice(start, end), EscapeMode["All"]) + postText;
-            return 
+            return
         }
 
         const aggregateUnindexedText = (textPosition: number, text: string, precedentText = "", realText = text, enableRight = true, isRecentlyClosedAnyTag = false) => {
@@ -220,21 +254,23 @@ export const YunaParser = ({ debug = false }: YunaParserCreateOptions) => {
             const { tag, value, backescape, named } = groups ?? {}
 
             if (named && !tagOpenWith) {
-                const [, , backescapes, __ ,namefor_, nameforDotted, dots] = match;
+                const [, , backescapes, __, namefor_, nameforDotted, dots] = match;
 
                 const tagName = namefor_ ?? nameforDotted;
 
-                const tagUsed = __ ?? dots;
+                const tagUsed = (__ ?? dots) as  "-" | "--" | ":";
 
-                namedOptionTagUsed ??= tagUsed;
-                
-                if(namedOptionTagUsed !== tagUsed) {
+                const isValidUsedTag = config?.namedOptions?.[tagUsed];
+
+                if (isValidUsedTag)  namedOptionTagUsed ??= tagUsed;
+
+                if (namedOptionTagUsed !== tagUsed || !isValidUsedTag) {
                     aggregateUnindexedText(index, named, undefined, named, undefined, _isRecentlyCosedAnyTag);
                     continue;
                 }
 
                 let backescapesStrRepresentation = "";
-                
+
                 if (backescapes) {
                     const nextChar = named[backescapes.length];
 
@@ -250,7 +286,7 @@ export const YunaParser = ({ debug = false }: YunaParserCreateOptions) => {
 
                 aggregateNextNamedOption(index - 1)
 
-                if(lastestLongWord) aggregateLastestLongWord(index, backescapesStrRepresentation);
+                if (lastestLongWord) aggregateLastestLongWord(index, backescapesStrRepresentation);
 
                 namedOptionInitialized = {
                     name: tagName,
@@ -316,7 +352,7 @@ export const YunaParser = ({ debug = false }: YunaParserCreateOptions) => {
 
 
         aggregateLastestLongWord();
-        
+
         if (namedOptionInitialized) { aggregateNextNamedOption(content.length) }
         else if (tagOpenPosition && tagOpenWith) aggregateTagLongText(tagOpenWith, tagOpenPosition);
 

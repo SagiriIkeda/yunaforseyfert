@@ -6,7 +6,14 @@ const client = new Client({
         prefix(message) {
             return ["yuna", "y", `<@${message.client.botId}>`]
         },
-        argsParser: YunaParser({ debug: true })
+        argsParser: YunaParser({
+            debug: true,
+            config: {
+                namedOptions: {
+                    ":": false,
+                }
+            }
+        })
     }
 });
 
