@@ -67,11 +67,11 @@ interface YunaParserCreateOptions {
     /**
      * this only show console.log with the options parsed. 
      * @default false */
-    debug: boolean
+    debug?: boolean
 }
 
 /**
- * @version 0.8.6
+ * @version 0.8.7
  * @example
  * ```js
  * import { YunaParser } from "yunaforseyfert"
@@ -84,7 +84,7 @@ interface YunaParserCreateOptions {
  * ```
  */
 
-export const YunaParser = ({ debug = false }: YunaParserCreateOptions) => {
+export const YunaParser = ({ debug = false }: YunaParserCreateOptions = {}) => {
 
     return (content: string, command: Command | SubCommand): Record<string, string> => {
 

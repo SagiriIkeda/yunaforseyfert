@@ -1,9 +1,9 @@
 {
   "name": "yunaforseyfert",
-  "version": "0.8.6",
+  "version": "0.8.7",
   "description": "Yunathings for seyfert",
   "main": "build/index.js",
-  "type": "module",
+  "type": "commonjs",
   "types": "./types/index.d.ts",
   "scripts": {
     "build":"tsc && esbuild --bundle src/index.ts --minify --outdir=build --platform=node --packages=external",
