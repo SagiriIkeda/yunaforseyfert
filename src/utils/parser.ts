@@ -102,7 +102,19 @@ const createElementsRegex = ({ config = {} }: YunaParserCreateOptions) => {
  * 
  * new Client({ 
        commands: {
-           argsParser: YunaParser()
+           argsParser: YunaParser({
+                // all config is optional, this is the default
+                config: {
+                    namedOptions: {
+                        // enable syntax option: content
+                        ":": true,
+                        // enable syntax -option: content
+                        "-": true,
+                        // enable syntax --option: content
+                        "--": true,
+                    }
+                }
+           })
        }
    });
  * ```

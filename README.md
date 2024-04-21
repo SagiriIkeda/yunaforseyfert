@@ -34,7 +34,7 @@ new Client({
     commands: {
         argsParser: YunaParser({
           // all config is optional, this is the default
-           config: {
+          config: {
               namedOptions: {
                   /** enable syntax option: content */
                   ":": true,
