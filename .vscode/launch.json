@@ -12,9 +12,9 @@
                 "<node_internals>/**"
             ],
             "preLaunchTask": "tsc",
-            "program": "${workspaceFolder}\\dist\\test\\index.js",
-            "envFile": "${workspaceFolder}/.env",
-            "cwd": "${workspaceFolder}",
+            "program": "${workspaceFolder}/dist/bot-test/index.js",
+            "envFile": "${workspaceFolder}/src/bot-test/.env",
+            "cwd": "${workspaceFolder}/src/bot-test",
             "outFiles": [
                 "${workspaceFolder}/**/*.js"
             ]

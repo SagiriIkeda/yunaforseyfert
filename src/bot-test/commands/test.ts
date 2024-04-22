@@ -19,14 +19,12 @@ const options = {
 export default class TestCommand extends Command {
 
   async run(ctx: CommandContext<typeof options>) {
-    // average latency between shards    
 
     const embed = new Embed({
       title: "Parsed!",
       fields: [
         {
           name: "input",
-          //@ts-ignore
           value: `\`\`\`js\n${ctx.message?.content}\`\`\``
         },
         {
