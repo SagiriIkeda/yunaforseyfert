@@ -1,1 +1,1 @@
-export { YunaParser } from "./utils/parser.js"
+export { YunaParser } from "./utils/parser.js";

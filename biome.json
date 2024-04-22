@@ -1,64 +1,76 @@
 {
-	"$schema": "https://biomejs.dev/schemas/1.5.3/schema.json",
-	"organizeImports": {
-		"enabled": true
-	},
-	"linter": {
-		"enabled": true,
-		"rules": {
-			"all": true,
-			"suspicious": {
-				"noExplicitAny": "off",
-				"noConfusingVoidType": "off",
-				"noGlobalIsFinite": "off",
-				"noGlobalIsNan": "off"
-			},
-			"style": {
-				"noNonNullAssertion": "off",
-				"noParameterAssign": "off"
-			},
-			"complexity": {
-				"noBannedTypes": "off",
-				"noForEach": "off",
-				"noUselessConstructor": "off"
-			},
-			"nursery": {
-				"useImportType": "error",
-				"noUselessTernary": "error",
-				"noEmptyBlockStatements": "off"
-			}
-		}
-	},
-	"files": {
-		"ignoreUnknown": true,
-		"ignore": [
-			".vscode",
-			"node_modules",
-			"dist",
-			"env.d.ts"
-		]
-	},
-	"json": {
-		"formatter": {
-			"enabled": true,
-			"indentWidth": 4,
-			"lineWidth": 80
-		}
-	},
-	"formatter": {
-		"enabled": true,
-		"indentWidth": 4,
-		"indentStyle": "tab",
-		"lineWidth": 140,
-		"lineEnding": "crlf",
-		"formatWithErrors": true
-	},
-	"javascript": {
-		"formatter": {
-			"quoteStyle": "double",
-			"arrowParentheses": "always",
-			"bracketSameLine": true,
-			"semicolons": "always"
-		}
-	}
+    "$schema": "https://biomejs.dev/schemas/1.7.0/schema.json",
+    "organizeImports": {
+        "enabled": true
+    },
+    "linter": {
+        "enabled": true,
+        "rules": {
+            "all": true,
+            "suspicious": {
+                "noExplicitAny": "off",
+                "noConfusingVoidType": "off",
+                "noGlobalIsFinite": "off",
+                "noGlobalIsNan": "off",
+                "noEmptyBlockStatements": "off"
+            },
+            "style": {
+                "noNonNullAssertion": "off",
+                "noParameterAssign": "off",
+                "noInferrableTypes": "off",
+                "useNumberNamespace": "off",
+                "noDefaultExport": "off",
+                "useBlockStatements": "off",
+                "useFilenamingConvention": "off",
+                "useNamingConvention": "off",
+                "useSingleCaseStatement": "off"
+            },
+            "complexity": {
+                "noBannedTypes": "off",
+                "noForEach": "warn",
+                "noExcessiveCognitiveComplexity": {
+                    "level": "warn",
+                    "options": {
+                        "maxAllowedComplexity": 30
+                    }
+                }
+            },
+            "correctness": {
+                "noVoidTypeReturn": "off"
+            },
+            "security": {
+                "noGlobalEval": "off"
+            },
+            "performance": {
+                "noBarrelFile": "off"
+            }
+        }
+    },
+    "files": {
+        "ignoreUnknown": true,
+        "ignore": [".vscode", "node_modules", "dist"]
+    },
+    "json": {
+        "formatter": {
+            "enabled": true,
+            "indentWidth": 4,
+            "lineWidth": 80
+        }
+    },
+    "formatter": {
+        "enabled": true,
+        "indentWidth": 4,
+        "indentStyle": "space",
+        "lineWidth": 140,
+        "lineEnding": "crlf",
+        "formatWithErrors": true
+    },
+    "javascript": {
+        "formatter": {
+            "quoteStyle": "double",
+            "arrowParentheses": "always",
+            "bracketSameLine": true,
+            "semicolons": "always"
+        }
+    }
 }

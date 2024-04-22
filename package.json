@@ -6,10 +6,15 @@
   "type": "commonjs",
   "types": "./types/index.d.ts",
   "scripts": {
-    "build":"tsc && esbuild --bundle src/index.ts --minify --outdir=build --platform=node --packages=external",
-    "tsc": "tsc"
+    "build": "tsc && esbuild --bundle src/index.ts --minify --outdir=build --platform=node --packages=external",
+    "tsc": "tsc",
+    "lint": "biome lint --apply ./src",
+    "format": "biome check --apply ./src"
   },
-  "keywords": ["parser", "penguin"],
+  "keywords": [
+    "parser",
+    "penguin"
+  ],
   "author": "SagiriIkeda",
   "license": "ISC",
   "dependencies": {
@@ -22,6 +27,7 @@
     "url": "https://github.com/SagiriIkeda/yunaforseyfert.git"
   },
   "devDependencies": {
+    "@biomejs/biome": "1.7.0",
     "@types/node": "^20.11.30",
     "esbuild": "^0.20.2",
     "typescript": "^5.0.0"
