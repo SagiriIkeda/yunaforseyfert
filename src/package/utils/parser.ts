@@ -58,30 +58,61 @@ const getYunaMetaDataFromCommand = (command: (Command | SubCommand) & { [key]?: 
     return metadata;
 };
 
+type ValidLongTextTags = "'" | '"' | "`";
+type ValidNamedOptionSyntax = "-" | '--' | ":";
+
 interface YunaParserCreateOptions {
     /**
      * this only show console.log with the options parsed.
      * @defaulst false */
-    debug?: boolean;
+    logResult?: boolean;
 
-    config?: {
-        namedOptions?: {
-            /** enable syntax option: content */
-            ":"?: boolean;
-            /** enable syntax -option: content */
-            "-"?: boolean;
-            /** enable syntax --option: content */
-            "--"?: boolean;
-        };
-    };
+    enabled?: {
+        /** especify what longText tags you want
+         * 
+         * ` " ` => `"penguin life"`
+         * 
+         * ` ' ` => `'beautiful sentence'`
+         * 
+         * **&#96;** => **\`LiSA『Shouted Serenade』 is a good song\`**
+         * 
+         * @default 🐧 all enabled
+         */
+        longTextTags?: [ValidLongTextTags?, ValidLongTextTags?, ValidLongTextTags?];
+        /** especify what named syntax you want
+         * 
+         * ` - ` -option content value
+         * 
+         * ` -- ` --option content value
+         * 
+         * ` : ` option: content value
+         * 
+         * @default 🐧 all enabled
+         */
+        namedOptions?: [ValidNamedOptionSyntax?, ValidNamedOptionSyntax?, ValidNamedOptionSyntax?]
+    }
+
+    /**
+     * this can be useful is you want to no-overwrite options when using named-syntax after all args are especified.
+     * Or take all content ignoring the named-syntax after all args are especified,
+     * i will find a better way to explain this.
+     * @default {false}
+     */
+    breakSearchOnConsumeAllOptions?: boolean;
+
+     /**
+     * this limit the usage of multiple syntax at same time in a sentence
+     * (this no distinguish between -- and -. you can use it at same time.) 
+     * @default {false}
+     */
+    useUniqueNamedSyntaxAtSameTime?: boolean;
 }
 
-const createElementsRegex = ({ config = {} }: YunaParserCreateOptions) => {
-    const { namedOptions = {} } = config;
+const createElementsRegex = ({ enabled }: YunaParserCreateOptions) => {
 
     let regexString = "(?<tag>[\"'`:-])|(?<value>[^\\s\\x7F\"'`\\\\]+)|(?<backescape>\\\\+)";
 
-    const isOneOfNamedOptionsSyntaxEnabled = namedOptions["--"] || namedOptions["-"] || namedOptions[":"];
+    const isOneOfNamedOptionsSyntaxEnabled = (enabled?.namedOptions?.length ?? 0) >= 1;
 
     if (isOneOfNamedOptionsSyntaxEnabled) {
         regexString = `(?<named>(\\\\*)(?:(-{1,2})([a-zA-Z_\\d]+)|([a-zA-Z_\\d]+)(:)(?!\\/\\/[^\\s\\x7F])))|${regexString}`;
@@ -98,34 +129,28 @@ const createElementsRegex = ({ config = {} }: YunaParserCreateOptions) => {
  * 
  * new Client({ 
        commands: {
-           argsParser: YunaParser({
-                // all config is optional, this is the default
-                config: {
-                    namedOptions: {
-                        // enable syntax option: content
-                        ":": true,
-                        // enable syntax -option: content
-                        "-": true,
-                        // enable syntax --option: content
-                        "--": true,
-                    }
-                }
-           })
+           argsParser: YunaParser()
        }
    });
  * ```
  */
 
-export const YunaParser = ({ debug = false, config }: YunaParserCreateOptions = {}) => {
+export const YunaParser = (config: YunaParserCreateOptions = {}) => {
+
     config = {
-        namedOptions: {
-            ":": config?.namedOptions?.[":"] ?? true,
-            "-": config?.namedOptions?.["-"] ?? true,
-            "--": config?.namedOptions?.["--"] ?? true,
+        enabled: {
+            longTextTags: config?.enabled?.longTextTags ?? ['"', "'", "`"],
+            namedOptions: config?.enabled?.namedOptions ?? ["-", "--", ":"]
         },
+        breakSearchOnConsumeAllOptions: config.breakSearchOnConsumeAllOptions === true,
+        useUniqueNamedSyntaxAtSameTime: config.useUniqueNamedSyntaxAtSameTime === true,
     };
 
-    const ElementsRegex = createElementsRegex({ config });
+    const {breakSearchOnConsumeAllOptions, useUniqueNamedSyntaxAtSameTime} = config;
+
+    const ValidNamedOptions = Object.fromEntries(config.enabled?.namedOptions?.map(syntax => [syntax, true]) ?? []);
+
+    const ElementsRegex = createElementsRegex(config);
 
     // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: omitting this rule the life is better
     return (content: string, command: Command | SubCommand): Record<string, string> => {
@@ -195,7 +220,7 @@ export const YunaParser = ({ debug = false, config }: YunaParserCreateOptions = 
 
             lastestLongWord = undefined;
 
-            result[name] = unindexedRightText + sanitizeBackescapes(content.slice(start, end), EscapeMode.All) + postText;
+            result[name] = (unindexedRightText + sanitizeBackescapes(content.slice(start, end), EscapeMode.All) + postText).trim();
             return;
         };
 
@@ -261,6 +286,7 @@ export const YunaParser = ({ debug = false, config }: YunaParserCreateOptions = 
         };
 
         for (const match of matches) {
+            if(breakSearchOnConsumeAllOptions && actualOptionIdx >= options.length) break;
             if (matchIdx++ < skipElementsCount) continue;
 
             const _isRecentlyCosedAnyTag = isRecentlyClosedAnyTag;
@@ -275,13 +301,13 @@ export const YunaParser = ({ debug = false, config }: YunaParserCreateOptions = 
 
                 const tagName = namefor_ ?? nameforDotted;
 
-                const tagUsed = (__ ?? dots) as "-" | "--" | ":";
+                const tagUsed = (__ ?? dots)[0] as "-" | "--" | ":";
 
-                const isValidUsedTag = config?.namedOptions?.[tagUsed];
+                const isValidUsedTag = ValidNamedOptions[tagUsed];
 
                 if (isValidUsedTag) namedOptionTagUsed ??= tagUsed;
 
-                if (namedOptionTagUsed !== tagUsed || !isValidUsedTag) {
+                if (!isValidUsedTag || (useUniqueNamedSyntaxAtSameTime && namedOptionTagUsed !== tagUsed)) {
                     aggregateUnindexedText(index, named, undefined, named, undefined, _isRecentlyCosedAnyTag);
                     continue;
                 }
@@ -377,7 +403,7 @@ export const YunaParser = ({ debug = false, config }: YunaParserCreateOptions = 
             aggregateNextNamedOption(content.length);
         } else if (tagOpenPosition && tagOpenWith) aggregateTagLongText(tagOpenWith, tagOpenPosition);
 
-        debug && console.log(result);
+        config.logResult && console.log(result);
 
         return result;
     };

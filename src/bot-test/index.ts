@@ -7,12 +7,12 @@ const client = new Client({
             return ["yuna", "y", `<@${message.client.botId}>`];
         },
         argsParser: YunaParser({
-            debug: true,
-            config: {
-                namedOptions: {
-                    ":": false,
-                },
+            logResult: true,
+            enabled: {
+                namedOptions: ["-", "--"]
             },
+            useUniqueNamedSyntaxAtSameTime: true,
+            breakSearchOnConsumeAllOptions: true
         }),
     },
 });
