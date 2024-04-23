@@ -21,21 +21,14 @@ const evaluateBackescapes = (backspaces: string, nextChar: string) => {
     return { isPossiblyEscapingNext, strRepresentation };
 };
 
-const sanitizeBackescapes = (text: string, regx: RegExp) =>
-    text.replace(regx, (_, backescapes, next) => {
-        const { strRepresentation } = evaluateBackescapes(backescapes, next[0]);
+const sanitizeBackescapes = (text: string, regx?: RegExp) =>
+    regx
+        ? text.replace(regx, (_, backescapes, next) => {
+              const { strRepresentation } = evaluateBackescapes(backescapes, next[0]);
 
-        return strRepresentation + next;
-    });
-
-const EscapeMode = {
-    '"': /(\\+)(["\s])/g,
-    "'": /(\\+)(['\s])/g,
-    "`": /(\\+)([`\s])/g,
-    forNamed: /(\\+)([\:\s\-])/g,
-    forNamedDotted: /(\\+)([\:\s\-\/])/g,
-    All: /(\\+)([`"':\s\-])/g,
-} satisfies Record<string, RegExp | undefined>;
+              return strRepresentation + next;
+          })
+        : text;
 
 const spacesRegex = /[\s\x7F\n]/;
 
@@ -59,7 +52,7 @@ const getYunaMetaDataFromCommand = (command: (Command | SubCommand) & { [key]?: 
 };
 
 type ValidLongTextTags = "'" | '"' | "`";
-type ValidNamedOptionSyntax = "-" | '--' | ":";
+type ValidNamedOptionSyntax = "-" | "--" | ":";
 
 interface YunaParserCreateOptions {
     /**
@@ -69,28 +62,28 @@ interface YunaParserCreateOptions {
 
     enabled?: {
         /** especify what longText tags you want
-         * 
+         *
          * ` " ` => `"penguin life"`
-         * 
+         *
          * ` ' ` => `'beautiful sentence'`
-         * 
+         *
          * **&#96;** => **\`LiSA『Shouted Serenade』 is a good song\`**
-         * 
+         *
          * @default 🐧 all enabled
          */
         longTextTags?: [ValidLongTextTags?, ValidLongTextTags?, ValidLongTextTags?];
         /** especify what named syntax you want
-         * 
+         *
          * ` - ` -option content value
-         * 
+         *
          * ` -- ` --option content value
-         * 
+         *
          * ` : ` option: content value
-         * 
+         *
          * @default 🐧 all enabled
          */
-        namedOptions?: [ValidNamedOptionSyntax?, ValidNamedOptionSyntax?, ValidNamedOptionSyntax?]
-    }
+        namedOptions?: [ValidNamedOptionSyntax?, ValidNamedOptionSyntax?, ValidNamedOptionSyntax?];
+    };
 
     /**
      * this can be useful is you want to no-overwrite options when using named-syntax after all args are especified.
@@ -100,25 +93,98 @@ interface YunaParserCreateOptions {
      */
     breakSearchOnConsumeAllOptions?: boolean;
 
-     /**
+    /**
      * this limit the usage of multiple syntax at same time in a sentence
-     * (this no distinguish between -- and -. you can use it at same time.) 
+     * (this no distinguish between -- and -. you can use it at same time.)
      * @default {false}
      */
     useUniqueNamedSyntaxAtSameTime?: boolean;
 }
 
-const createElementsRegex = ({ enabled }: YunaParserCreateOptions) => {
+const createRegexs = ({ enabled }: YunaParserCreateOptions) => {
+    const hasAnyLongTextTag = (enabled?.longTextTags?.length ?? 0) >= 1;
+    const hasAnyNamedSyntax = (enabled?.namedOptions?.length ?? 0) >= 1;
 
-    let regexString = "(?<tag>[\"'`:-])|(?<value>[^\\s\\x7F\"'`\\\\]+)|(?<backescape>\\\\+)";
+    const hasAnyEspecialSyntax = hasAnyNamedSyntax || hasAnyLongTextTag;
 
-    const isOneOfNamedOptionsSyntaxEnabled = (enabled?.namedOptions?.length ?? 0) >= 1;
+    const backescape = hasAnyEspecialSyntax ? "\\\\" : "";
 
-    if (isOneOfNamedOptionsSyntaxEnabled) {
-        regexString = `(?<named>(\\\\*)(?:(-{1,2})([a-zA-Z_\\d]+)|([a-zA-Z_\\d]+)(:)(?!\\/\\/[^\\s\\x7F])))|${regexString}`;
+    const EscapeMode: Record<string, RegExp | undefined> = {};
+
+    const syntaxes: string[] = [];
+
+    const has1HaphenSyntax = enabled?.namedOptions?.includes("-");
+    const has2HaphenSyntax = enabled?.namedOptions?.includes("--");
+    const hasDottedSyntax = enabled?.namedOptions?.includes(":");
+
+    const escapedLongTextTags =
+        enabled?.longTextTags
+            ?.map((tag) => {
+                EscapeMode[tag!] = new RegExp(`(\\\\+)([${tag}\\s])`, "g");
+
+                return `\\${tag}`;
+            })
+            .join("") ?? "";
+
+    EscapeMode.All = new RegExp(`(\\+)([${escapedLongTextTags}\s:\\-])`);
+
+    const RemoveNamedEscapeModeKeys = ["All", "forNamed", "forNamedDotted"];
+    const RemoveNamedEscapeMode = (text: string) => {
+        for (const mode of RemoveNamedEscapeModeKeys) {
+            const regx = EscapeMode[mode];
+            if (!regx) continue;
+
+            const regexStr = EscapeMode[mode]!.source.replace(text, "");
+
+            EscapeMode[mode] = new RegExp(regexStr, EscapeMode[mode]?.flags);
+        }
+    };
+
+    if (hasAnyEspecialSyntax) {
+        const extras: string[] = [];
+
+        (has1HaphenSyntax || has2HaphenSyntax) && extras.push("-");
+        hasDottedSyntax && extras.push(":");
+
+        syntaxes.push(`(?<tag>[${escapedLongTextTags}${extras.join("")}])`);
     }
 
-    return RegExp(regexString, "g");
+    syntaxes.push(`(?<value>[^\\s\\x7F${escapedLongTextTags}${backescape}]+)`);
+
+    if (hasAnyNamedSyntax) {
+        const namedSyntaxes: string[] = [];
+
+        if (has1HaphenSyntax || has2HaphenSyntax) {
+            const HaphenLength = [];
+
+            has1HaphenSyntax && HaphenLength.push(1);
+            has2HaphenSyntax && HaphenLength.push(2);
+
+            namedSyntaxes.push(`(?<hyphens>-{${HaphenLength.join(",")}})(?<hyphensname>[a-zA-Z_\\d]+)`);
+            EscapeMode.forNamed = /(\\+)([\:\s\-])/g;
+        } else {
+            RemoveNamedEscapeMode("\\-");
+        }
+
+        if (hasDottedSyntax) {
+            namedSyntaxes.push("(?<dotsname>[a-zA-Z_\\d]+)(?<dots>:)(?!\\/\\/[^\\s\\x7F]))");
+            EscapeMode.forNamedDotted = /(\\+)([\:\s\-\/])/g;
+        } else {
+            RemoveNamedEscapeMode(":");
+        }
+
+        namedSyntaxes.length && syntaxes.unshift(`(?<named>(\\\\*)(?:${namedSyntaxes.join("|")}))`);
+    }
+
+    if (backescape) {
+        syntaxes.push("(?<backescape>\\\\+)");
+    }
+
+    return {
+        ElementsRegex: RegExp(syntaxes.join("|"), "g"),
+        EscapeMode,
+        RemoveNamedEscapeMode,
+    };
 };
 
 /**
@@ -136,21 +202,25 @@ const createElementsRegex = ({ enabled }: YunaParserCreateOptions) => {
  */
 
 export const YunaParser = (config: YunaParserCreateOptions = {}) => {
-
     config = {
         enabled: {
-            longTextTags: config?.enabled?.longTextTags ?? ['"', "'", "`"],
-            namedOptions: config?.enabled?.namedOptions ?? ["-", "--", ":"]
+            longTextTags: [...new Set(config?.enabled?.longTextTags ?? ['"', "'", "`"])] as NonNullable<
+                YunaParserCreateOptions["enabled"]
+            >["longTextTags"],
+            namedOptions: [...new Set(config?.enabled?.namedOptions ?? ["-", "--", ":"])] as NonNullable<
+                YunaParserCreateOptions["enabled"]
+            >["namedOptions"],
         },
         breakSearchOnConsumeAllOptions: config.breakSearchOnConsumeAllOptions === true,
         useUniqueNamedSyntaxAtSameTime: config.useUniqueNamedSyntaxAtSameTime === true,
+        logResult: config.logResult === true,
     };
 
-    const {breakSearchOnConsumeAllOptions, useUniqueNamedSyntaxAtSameTime} = config;
+    const { breakSearchOnConsumeAllOptions, useUniqueNamedSyntaxAtSameTime } = config;
 
-    const ValidNamedOptions = Object.fromEntries(config.enabled?.namedOptions?.map(syntax => [syntax, true]) ?? []);
+    const ValidNamedOptions = Object.fromEntries(config.enabled?.namedOptions?.map((syntax) => [syntax, true]) ?? []);
 
-    const ElementsRegex = createElementsRegex(config);
+    const { ElementsRegex, EscapeMode, RemoveNamedEscapeMode } = createRegexs(config);
 
     // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: omitting this rule the life is better
     return (content: string, command: Command | SubCommand): Record<string, string> => {
@@ -286,7 +356,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
         };
 
         for (const match of matches) {
-            if(breakSearchOnConsumeAllOptions && actualOptionIdx >= options.length) break;
+            if (breakSearchOnConsumeAllOptions && actualOptionIdx >= options.length) break;
             if (matchIdx++ < skipElementsCount) continue;
 
             const _isRecentlyCosedAnyTag = isRecentlyClosedAnyTag;
@@ -297,15 +367,20 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             const { tag, value, backescape, named } = groups ?? {};
 
             if (named && !tagOpenWith) {
-                const [, , backescapes, __, namefor_, nameforDotted, dots] = match;
+                const { hyphens, hyphensname, dots, dotsname } = groups ?? {};
 
-                const tagName = namefor_ ?? nameforDotted;
+                const [, , backescapes] = match;
 
-                const tagUsed = (__ ?? dots)[0] as "-" | "--" | ":";
+                const tagName = hyphensname ?? dotsname;
+
+                const tagUsed = (hyphens ?? dots)[0] as "-" | ":";
 
                 const isValidUsedTag = ValidNamedOptions[tagUsed];
 
-                if (isValidUsedTag) namedOptionTagUsed ??= tagUsed;
+                if (isValidUsedTag && !namedOptionTagUsed) {
+                    namedOptionTagUsed = tagUsed;
+                    RemoveNamedEscapeMode(tagUsed === "-" ? ":" : "-");
+                }
 
                 if (!isValidUsedTag || (useUniqueNamedSyntaxAtSameTime && namedOptionTagUsed !== tagUsed)) {
                     aggregateUnindexedText(index, named, undefined, named, undefined, _isRecentlyCosedAnyTag);
@@ -320,7 +395,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                     const { isPossiblyEscapingNext, strRepresentation } = evaluateBackescapes(backescapes, nextChar);
                     backescapesStrRepresentation = strRepresentation;
 
-                    if (namefor_ && isPossiblyEscapingNext) {
+                    if (hyphensname && isPossiblyEscapingNext) {
                         aggregateUnindexedText(
                             index,
                             strRepresentation + named.slice(backescapes.length),
@@ -342,7 +417,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                 namedOptionInitialized = {
                     name: tagName,
                     start: index + named.length,
-                    dotted: nameforDotted !== undefined,
+                    dotted: dotsname !== undefined,
                 };
 
                 continue;

@@ -9,10 +9,11 @@ const client = new Client({
         argsParser: YunaParser({
             logResult: true,
             enabled: {
-                namedOptions: ["-", "--"]
+                longTextTags: ["'", "`"],
+                namedOptions: ["-", "--"],
             },
             useUniqueNamedSyntaxAtSameTime: true,
-            breakSearchOnConsumeAllOptions: true
+            // breakSearchOnConsumeAllOptions: true
         }),
     },
 });
