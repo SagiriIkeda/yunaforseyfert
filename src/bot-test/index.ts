@@ -1,5 +1,5 @@
 import { Client } from "seyfert";
-import { YunaParser } from "../package/utils/parser";
+import { YunaParser } from "../package/utils/parser/parser";
 
 const client = new Client({
     commands: {

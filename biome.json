@@ -15,6 +15,7 @@
                 "noEmptyBlockStatements": "off"
             },
             "style": {
+                
                 "noNonNullAssertion": "off",
                 "noParameterAssign": "off",
                 "noInferrableTypes": "off",
