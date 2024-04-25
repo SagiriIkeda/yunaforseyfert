@@ -27,6 +27,9 @@ const evalOptions = {
 export default class EvalCommand extends Command {
 
     async run(ctx: CommandContext<typeof evalOptions>) {
+
+        if(ctx.author.id !== "388415190225518602") return ctx.write({ content: "you can't use this."})
+
         const { options, client, guildId, channelId, member, author } = ctx;
         const { code } = options;
 

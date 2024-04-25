@@ -8,11 +8,12 @@ const client = new Client({
         },
         argsParser: YunaParser({
             logResult: true,
-            enabled: {
-                longTextTags: ["'", "`"],
-                namedOptions: ["-", "--"],
-            },
-            useUniqueNamedSyntaxAtSameTime: true,
+            // enabled: {
+            //     longTextTags: ["'", "`"],
+            //     namedOptions: ["-", "--"],
+            // },
+            // useUniqueNamedSyntaxAtSameTime: true,
+            disableLongTextTagsInLastOption: true,
             // breakSearchOnConsumeAllOptions: true
         }),
     },

@@ -48,6 +48,12 @@ export interface YunaParserCreateOptions {
      * @default {false}
      */
     useUniqueNamedSyntaxAtSameTime?: boolean;
+
+    /**
+    * This disables the use of longTextTags in the last option
+    * @default {false}
+    */
+    disableLongTextTagsInLastOption?: boolean;
 }
 
 type EscapeModeType = Record<string, RegExp | undefined>;
@@ -96,7 +102,7 @@ export const createRegexs = ({ enabled }: YunaParserCreateOptions) => {
     if (hasAnyEspecialSyntax) {
         const extras: string[] = [];
 
-        (has1HaphenSyntax || has2HaphenSyntax) && extras.push("-");
+        (has1HaphenSyntax || has2HaphenSyntax) && extras.push("\\-");
         hasDottedSyntax && extras.push(":");
 
         syntaxes.push(`(?<tag>[${escapedLongTextTags}${extras.join("")}])`);
@@ -120,7 +126,7 @@ export const createRegexs = ({ enabled }: YunaParserCreateOptions) => {
         }
 
         if (hasDottedSyntax) {
-            namedSyntaxes.push("(?<dotsname>[a-zA-Z_\\d]+)(?<dots>:)(?!\\/\\/[^\\s\\x7F]))");
+            namedSyntaxes.push("(?<dotsname>[a-zA-Z_\\d]+)(?<dots>:)(?!\\/\\/[^\\s\\x7F])");
             escapeModes.forNamedDotted = /(\\+)([\:\s\-\/])/g;
         } else {
             RemoveNamedEscapeMode(escapeModes, ":");
@@ -144,19 +150,20 @@ const removeDuplicates = <A>(arr: A extends Array<infer R> ? R[] : never[]): A =
 }
 
 
-export const createConfig = (config: YunaParserCreateOptions, isfull = true) => {
-
-    if (isfull || config.enabled) {
+export const createConfig = (config: YunaParserCreateOptions, isFull = true) => {
+    
+    if (isFull || config.enabled && (config.enabled.longTextTags || config.enabled.namedOptions)) {
 
         config.enabled ??= {};
 
-        if (isfull || config.enabled.longTextTags) config.enabled.longTextTags = removeDuplicates(config?.enabled?.longTextTags ?? ['"', "'", "`"]);
-        if (isfull || config.enabled.namedOptions) config.enabled.namedOptions = removeDuplicates(config?.enabled?.namedOptions ?? ["-", "--", ":"]);
+        if (isFull || config.enabled.longTextTags) config.enabled.longTextTags = removeDuplicates(config?.enabled?.longTextTags ?? ['"', "'", "`"]);
+        if (isFull || config.enabled.namedOptions) config.enabled.namedOptions = removeDuplicates(config?.enabled?.namedOptions ?? ["-", "--", ":"]);
     }
 
-    if (isfull || "breakSearchOnConsumeAllOptions" in config) config.breakSearchOnConsumeAllOptions = config.breakSearchOnConsumeAllOptions === true;
-    if (isfull || "useUniqueNamedSyntaxAtSameTime" in config) config.useUniqueNamedSyntaxAtSameTime = config.useUniqueNamedSyntaxAtSameTime === true;
-    if (isfull || "logResult" in config) config.logResult = config.logResult === true;
+    if (isFull || "breakSearchOnConsumeAllOptions" in config) config.breakSearchOnConsumeAllOptions = config.breakSearchOnConsumeAllOptions === true;
+    if (isFull || "useUniqueNamedSyntaxAtSameTime" in config) config.useUniqueNamedSyntaxAtSameTime = config.useUniqueNamedSyntaxAtSameTime === true;
+    if (isFull || "logResult" in config) config.logResult = config.logResult === true;
+    if (isFull || "disableLongTextTagsInLastOption" in config) config.disableLongTextTagsInLastOption = config.disableLongTextTagsInLastOption === true;
 
     return config;
 
@@ -204,7 +211,7 @@ const mergeObjects = <A, B>(obj: A, obj2: B): (A & B) | B => {
     if (!(isObject(obj) && isObject(obj2))) return obj2;
 
     const merged = { ...obj };
-    
+
     if (!isObject(obj)) return obj2;
 
     for (const key of Object.keys(obj2)) {

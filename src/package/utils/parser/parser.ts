@@ -57,7 +57,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
         const elementsRegex = commandRegexes?.elementsRegex ?? globalRegexes.elementsRegex;
         const realEscapeModes = commandRegexes?.escapeModes ?? globalRegexes.escapeModes;
 
-        const { breakSearchOnConsumeAllOptions, useUniqueNamedSyntaxAtSameTime } = commandConfig ?? config;
+        const { breakSearchOnConsumeAllOptions, useUniqueNamedSyntaxAtSameTime, disableLongTextTagsInLastOption } = commandConfig ?? config;
 
         if (!options) return {};
 
@@ -275,7 +275,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                     if (!tagOpenWith) {
                         aggregateUnindexedText(index, tag, "/", undefined, undefined, _isRecentlyCosedAnyTag);
                     }
-                } else if (InvalidTagsToBeLong.has(tag)) {
+                } else if ((disableLongTextTagsInLastOption && actualOptionIdx === options.length -1) || InvalidTagsToBeLong.has(tag)) {
                     aggregateUnindexedText(index, tag, "", undefined, undefined, _isRecentlyCosedAnyTag);
                     continue;
                 } else if (!tagOpenWith) {

@@ -176,22 +176,22 @@ YunaParser({
     enabled: {
         /** especify what longText tags you want
          *
-         * ` " ` => `"penguin life"`
+         * " => "penguin life"
          *
-         * ` ' ` => `'beautiful sentence'`
+         * ' => 'beautiful sentence'
          *
-         * **&#96;** => **\`LiSA『Shouted Serenade』 is a good song\`**
+         * ` => `LiSA『Shouted Serenade』 is a good song`
          *
          * @default 🐧 all enabled
          */
         longTextTags: ['"', "'", "`"];
         /** especify what named syntax you want
          *
-         * ` - ` -option content value
+         *  -  => -option content value
          *
-         * ` -- ` --option content value
+         *  -- => --option content value
          *
-         * ` : ` option: content value
+         *  :  => option: content value
          *
          * @default 🐧 all enabled
          */
