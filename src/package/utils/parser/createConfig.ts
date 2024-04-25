@@ -99,13 +99,19 @@ export const createRegexs = ({ enabled }: YunaParserCreateOptions) => {
 
     escapeModes.All = new RegExp(`(\\+)([${escapedLongTextTags}\s:\\-])`);
 
+    let checkNextChar: RegExp | undefined = undefined;
+
     if (hasAnyEspecialSyntax) {
         const extras: string[] = [];
 
         (has1HaphenSyntax || has2HaphenSyntax) && extras.push("\\-");
         hasDottedSyntax && extras.push(":");
 
-        syntaxes.push(`(?<tag>[${escapedLongTextTags}${extras.join("")}])`);
+        const render = `${escapedLongTextTags}${extras.join("")}`
+
+        checkNextChar = new RegExp(`[${escapedLongTextTags}${extras.join("")}]`)
+
+        syntaxes.push(`(?<tag>[${render}])`);
     }
 
     syntaxes.push(`(?<value>[^\\s\\x7F${escapedLongTextTags}${backescape}]+)`);
@@ -142,6 +148,7 @@ export const createRegexs = ({ enabled }: YunaParserCreateOptions) => {
     return {
         elementsRegex: RegExp(syntaxes.join("|"), "g"),
         escapeModes: escapeModes,
+        checkNextChar,
     };
 };
 
@@ -183,9 +190,7 @@ const keyConfig = Symbol("YunaParserConfig");
 export const ParserRecommendedConfig = {
     Eval: {
         breakSearchOnConsumeAllOptions: true,
-        enabled: {
-            longTextTags: []
-        }
+        disableLongTextTagsInLastOption: true
     }
 } satisfies Record<string, YunaParserCreateOptions>
 

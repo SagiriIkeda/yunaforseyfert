@@ -171,7 +171,7 @@ YunaParser({
     /**
      * this only show console.log with the options parsed.
      * @default false */
-    logResult: false;
+    logResult: false,
 
     enabled: {
         /** especify what longText tags you want
@@ -184,7 +184,7 @@ YunaParser({
          *
          * @default 🐧 all enabled
          */
-        longTextTags: ['"', "'", "`"];
+        longTextTags: ['"', "'", "`"],
         /** especify what named syntax you want
          *
          *  -  => -option content value
@@ -195,22 +195,27 @@ YunaParser({
          *
          * @default 🐧 all enabled
          */
-        namedOptions: ["-", "--", ":"];
-    };
+        namedOptions: ["-", "--", ":"]
+    },
 
     /**
      * Turning it on can be useful for when once all the options are obtained,
      * the last one can take all the remaining content, ignoring any other syntax.
      * @default {false}
      */
-    breakSearchOnConsumeAllOptions: false;
+    breakSearchOnConsumeAllOptions: false,
 
     /**
      * Limit that you can't use named syntax "-" and ":" at the same time,
      * but only the first one used, sometimes it's useful to avoid confusion.
      * @default {false}
      */
-    useUniqueNamedSyntaxAtSameTime: false;
+    useUniqueNamedSyntaxAtSameTime: false,
+    /**
+    * This disables the use of longTextTags in the last option
+    * @default {false}
+    */
+    disableLongTextTagsInLastOption: false,
 })
 ```
 
@@ -223,6 +228,11 @@ YunaParser({
 
 
 <img src="https://i.imgur.com/LsBV6Xq.png" width="100%" />
+
+**disableLongTextTagsInLastOption example**
+
+
+<img src="https://i.imgur.com/kkwN0gx.png" width="100%" />
 
 Also, if necessary, each command can use a specific configuration. For this, you can use the `@DeclareParserConfig` decorator
 
@@ -256,7 +266,7 @@ import { DeclareParserConfig, ParserRecommendedConfig } from "yunaforseyfert";
 
 @DeclareParserConfig(ParserRecommendedConfig.Eval)
 ```
-This will **disable longTextTags** and **enable breakSearchOnConsumeAll**. Things that I consider necessary in an eval.
+This will enable **disableLongTextTagsInLastOption** and **breakSearchOnConsumeAll**. Things that I consider necessary in an eval.
 
 
 ### "Demostration" thanks to @justo

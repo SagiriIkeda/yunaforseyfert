@@ -4,10 +4,13 @@ import { RemoveNamedEscapeMode, createRegexs as createRegexes, getYunaMetaDataFr
 
 const InvalidTagsToBeLong = new Set(["-", ":"]);
 
-const evaluateBackescapes = (backspaces: string, nextChar: string) => {
+// /["'`\:\-]/
+
+const evaluateBackescapes = (backspaces: string, nextChar: string, regexToCheckNextChar?: RegExp, isDisabledLongTextTagsInLastOption?: boolean) => {
+
     const isJustPair = backspaces.length % 2 === 0;
 
-    const isPossiblyEscapingNext = !isJustPair && /["'`\:\-]/.test(nextChar);
+    const isPossiblyEscapingNext = !isJustPair && ((/["'`]/.test(nextChar)) && isDisabledLongTextTagsInLastOption) ? false :  regexToCheckNextChar?.test(nextChar);
 
     const strRepresentation = "\\".repeat(Math.floor(backspaces.length / 2)) + (isJustPair || isPossiblyEscapingNext ? "" : "\\");
 
@@ -56,6 +59,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
         const elementsRegex = commandRegexes?.elementsRegex ?? globalRegexes.elementsRegex;
         const realEscapeModes = commandRegexes?.escapeModes ?? globalRegexes.escapeModes;
+        const checkNextChar = commandRegexes?.checkNextChar ?? globalRegexes.checkNextChar;
 
         const { breakSearchOnConsumeAllOptions, useUniqueNamedSyntaxAtSameTime, disableLongTextTagsInLastOption } = commandConfig ?? config;
 
@@ -257,11 +261,13 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             if (lastestLongWord || namedOptionInitialized) continue;
 
             if (backescape) {
+                const isDisabledLongTextTagsInLastOption = disableLongTextTagsInLastOption && actualOptionIdx >= options.length -1;
+
                 const { length } = backescape;
 
                 const nextChar = content[index + length];
 
-                const { isPossiblyEscapingNext, strRepresentation } = evaluateBackescapes(backescape, nextChar);
+                const { isPossiblyEscapingNext, strRepresentation } = evaluateBackescapes(backescape, nextChar, checkNextChar, isDisabledLongTextTagsInLastOption);
 
                 if (isPossiblyEscapingNext) isEscapingNext = true;
 
@@ -270,12 +276,14 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             }
 
             if (tag) {
+                const isDisabledLongTextTagsInLastOption = disableLongTextTagsInLastOption && actualOptionIdx >= options.length - 1;
+
                 if (isEscapingNext) {
                     isEscapingNext = false;
                     if (!tagOpenWith) {
                         aggregateUnindexedText(index, tag, "/", undefined, undefined, _isRecentlyCosedAnyTag);
                     }
-                } else if ((disableLongTextTagsInLastOption && actualOptionIdx === options.length -1) || InvalidTagsToBeLong.has(tag)) {
+                } else if (isDisabledLongTextTagsInLastOption || InvalidTagsToBeLong.has(tag)) {
                     aggregateUnindexedText(index, tag, "", undefined, undefined, _isRecentlyCosedAnyTag);
                     continue;
                 } else if (!tagOpenWith) {
