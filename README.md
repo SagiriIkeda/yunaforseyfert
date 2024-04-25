@@ -32,19 +32,7 @@ Then, you need to add it as seyfert's default argsParser, as follows
 // your bot's client
 new Client({ 
     commands: {
-        argsParser: YunaParser({
-          // all config is optional, this is the default
-          config: {
-              namedOptions: {
-                  /** enable syntax option: content */
-                  ":": true,
-                  /** enable syntax -option: content */
-                  "-": true,
-                  /** enable syntax --option: content */
-                  "--": true,
-              }
-          }
-        })
+        argsParser: YunaParser() // Here are the settings, but that will be explained below
     }
 });
 ```
@@ -76,24 +64,24 @@ export default class TestCommand extends Command {
 
   async run(ctx: CommandContext<typeof options>) { 
 
-    const {first, second} = ctx.options;
+    const { first, second } = ctx.options;
+
+    const embed = new Embed({
+        title: "Parsed!",
+        fields: [
+            {
+                name: "First",
+                value: first
+            },
+            {
+                name: "Second",
+                value: second
+            }
+        ]
+    })
 
     await ctx.write({
-      embeds: [
-        new Embed({
-            title: "Parsed!",
-            fields: [
-                    {
-                        name: "First",
-                        value: first
-                    },
-                    {
-                        name: "Second",
-                        value: second
-                    }
-                ]
-            })
-        ]
+      embeds: [embeds]
     });
   }
 
@@ -153,12 +141,6 @@ Like this.
 <img src="https://i.imgur.com/6olfDEu.png" width="100%" />
 
 
-> ### **Note**
-> 
-> You can **configure** which named syntaxes **you want** and which **you don't**, when setting up YunaParser, see `#installation`.
-> 
-> Also, for consistency and to **avoid confusion**, only **one syntax can be used at a time**.
-
 #### Escaping characters
 
 You can escape any special character or syntax, if you need to, using `\`
@@ -181,8 +163,103 @@ also this works with
 
 `/` *(in urls, like https://)*
 
+### Config
+The configurations allow changing the behavior of the parser; this is done when using `YunaParser` The allowed ones are as follows:
 
-#### "Demostration" thanks to @justo
+```ts
+YunaParser({
+    /**
+     * this only show console.log with the options parsed.
+     * @default false */
+    logResult: false;
+
+    enabled: {
+        /** especify what longText tags you want
+         *
+         * ` " ` => `"penguin life"`
+         *
+         * ` ' ` => `'beautiful sentence'`
+         *
+         * **&#96;** => **\`LiSA『Shouted Serenade』 is a good song\`**
+         *
+         * @default 🐧 all enabled
+         */
+        longTextTags: ['"', "'", "`"];
+        /** especify what named syntax you want
+         *
+         * ` - ` -option content value
+         *
+         * ` -- ` --option content value
+         *
+         * ` : ` option: content value
+         *
+         * @default 🐧 all enabled
+         */
+        namedOptions: ["-", "--", ":"];
+    };
+
+    /**
+     * Turning it on can be useful for when once all the options are obtained,
+     * the last one can take all the remaining content, ignoring any other syntax.
+     * @default {false}
+     */
+    breakSearchOnConsumeAllOptions: false;
+
+    /**
+     * Limit that you can't use named syntax "-" and ":" at the same time,
+     * but only the first one used, sometimes it's useful to avoid confusion.
+     * @default {false}
+     */
+    useUniqueNamedSyntaxAtSameTime: false;
+})
+```
+
+**breakSearchOnConsumeAllOptions example**
+
+
+<img src="https://i.imgur.com/8lf8K5C.png" width="100%" />
+
+**useUniqueNamedSyntaxAtSameTime example**
+
+
+<img src="https://i.imgur.com/LsBV6Xq.png" width="100%" />
+
+Also, if necessary, each command can use a specific configuration. For this, you can use the `@DeclareParserConfig` decorator
+
+```js
+import { DeclareParserConfig } from "yunaforseyfert";
+
+
+const options = {
+    first: createStringOption({
+        description: "first option",
+        required: true,
+    }),
+};
+
+@Declare({
+    name: "test",
+    description: "with penguins the life is better.",
+})
+@Options(options)
+@DeclareParserConfig({}) // Place your settings here
+export default class TestCommand extends Command {}
+```
+
+Also, we provide some recommended configurations `(only one at the moment :] )` for commands such as an Eval.
+
+This can be used as
+
+```js
+import { DeclareParserConfig, ParserRecommendedConfig } from "yunaforseyfert";
+
+
+@DeclareParserConfig(ParserRecommendedConfig.Eval)
+```
+This will **disable longTextTags** and **enable breakSearchOnConsumeAll**. Things that I consider necessary in an eval.
+
+
+### "Demostration" thanks to @justo
 <img src="https://i.imgur.com/cRrLoG2.gif" width="100%" />
 
 > ```

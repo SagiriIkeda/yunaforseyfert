@@ -36,16 +36,15 @@ export interface YunaParserCreateOptions {
     };
 
     /**
-     * this can be useful is you want to no-overwrite options when using named-syntax after all args are especified.
-     * Or take all content ignoring the named-syntax after all args are especified,
-     * i will find a better way to explain this.
+     * Turning it on can be useful for when once all the options are obtained,
+     * the last one can take all the remaining content, ignoring any other syntax.
      * @default {false}
      */
     breakSearchOnConsumeAllOptions?: boolean;
 
     /**
-     * this limit the usage of multiple syntax at same time in a sentence
-     * (this no distinguish between -- and -. you can use it at same time.)
+     * Limit that you can't use named syntax "-" and ":" at the same time,
+     * but only the first one used, sometimes it's useful to avoid confusion.
      * @default {false}
      */
     useUniqueNamedSyntaxAtSameTime?: boolean;

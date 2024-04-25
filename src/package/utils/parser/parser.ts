@@ -26,6 +26,8 @@ const sanitizeBackescapes = (text: string, regx?: RegExp) =>
 const spacesRegex = /[\s\x7F\n]/;
 
 
+
+
 /**
  * @version 0.9
  * @example
