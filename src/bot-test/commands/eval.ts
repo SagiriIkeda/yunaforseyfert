@@ -2,9 +2,9 @@
  * @Justo take my code and I'll take his
  */
 
-import { type CommandContext, Declare, Embed, Options, createStringOption, Command } from "seyfert";
-import { EmbedColors } from "seyfert/lib/common/index.js";
 import { inspect } from "node:util";
+import { Command, type CommandContext, Declare, Embed, Options, createStringOption } from "seyfert";
+import { EmbedColors } from "seyfert/lib/common/index.js";
 import { DeclareParserConfig, ParserRecommendedConfig } from "../../package/utils/parser/createConfig";
 
 export const codeBlock = (language: string, code: string) => `\`\`\`${language}\n${code}\n\`\`\``;
@@ -25,10 +25,8 @@ const evalOptions = {
 @Options(evalOptions)
 @DeclareParserConfig(ParserRecommendedConfig.Eval)
 export default class EvalCommand extends Command {
-
     async run(ctx: CommandContext<typeof evalOptions>) {
-
-        if(ctx.author.id !== "388415190225518602") return ctx.write({ content: "you can't use this."})
+        if (ctx.author.id !== "388415190225518602") return ctx.write({ content: "you can't use this." });
 
         const { options, client, guildId, channelId, member, author } = ctx;
         const { code } = options;
@@ -81,7 +79,7 @@ export default class EvalCommand extends Command {
                     { name: "🐧 Input", value: sliceText(codeBlock("js", code), 1024) },
                 );
 
-            await ctx.write({ embeds: [embed] }).catch(() => { });
+            await ctx.write({ embeds: [embed] }).catch(() => {});
         } catch (error) {
             const timeExec = Date.now() - timeStart;
 
@@ -106,7 +104,7 @@ export default class EvalCommand extends Command {
                     },
                 );
 
-            await ctx.write({ embeds: [embed] }).catch(() => { });
+            await ctx.write({ embeds: [embed] }).catch(() => {});
         }
     }
 }

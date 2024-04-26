@@ -1,5 +1,5 @@
-import { Command, type CommandContext, Declare, Embed, Options, createStringOption } from "seyfert";
 import { inspect } from "node:util";
+import { Command, type CommandContext, Declare, Embed, Options, createStringOption } from "seyfert";
 
 const options = {
     first: createStringOption({
@@ -19,7 +19,6 @@ const options = {
 @Options(options)
 export default class TestCommand extends Command {
     async run(ctx: CommandContext<typeof options>) {
-
         const embed = new Embed({
             title: "Parsed!",
             fields: [

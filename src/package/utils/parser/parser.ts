@@ -1,35 +1,41 @@
-import type { SubCommand, Command } from "seyfert";
-import { RemoveNamedEscapeMode, createRegexs as createRegexes, getYunaMetaDataFromCommand, type YunaParserCreateOptions, createConfig } from "./createConfig";
-
+import type { Command, SubCommand } from "seyfert";
+import {
+    RemoveFromCheckNextChar,
+    RemoveNamedEscapeMode,
+    type YunaParserCreateOptions,
+    createConfig,
+    createRegexs as createRegexes,
+    getYunaMetaDataFromCommand,
+} from "./createConfig";
 
 const InvalidTagsToBeLong = new Set(["-", ":"]);
 
-// /["'`\:\-]/
-
-const evaluateBackescapes = (backspaces: string, nextChar: string, regexToCheckNextChar?: RegExp, isDisabledLongTextTagsInLastOption?: boolean) => {
-
+const evaluateBackescapes = (
+    backspaces: string,
+    nextChar: string,
+    regexToCheckNextChar: RegExp | undefined,
+    isDisabledLongTextTagsInLastOption?: boolean,
+) => {
     const isJustPair = backspaces.length % 2 === 0;
 
-    const isPossiblyEscapingNext = !isJustPair && ((/["'`]/.test(nextChar)) && isDisabledLongTextTagsInLastOption) ? false :  regexToCheckNextChar?.test(nextChar);
+    const isPossiblyEscapingNext =
+        !isJustPair && /["'`]/.test(nextChar) && isDisabledLongTextTagsInLastOption ? false : regexToCheckNextChar?.test(nextChar);
 
     const strRepresentation = "\\".repeat(Math.floor(backspaces.length / 2)) + (isJustPair || isPossiblyEscapingNext ? "" : "\\");
 
     return { isPossiblyEscapingNext, strRepresentation };
 };
 
-const sanitizeBackescapes = (text: string, regx?: RegExp) =>
+const sanitizeBackescapes = (text: string, regx: RegExp | undefined, regexToCheckNextChar: RegExp | undefined) =>
     regx
         ? text.replace(regx, (_, backescapes, next) => {
-            const { strRepresentation } = evaluateBackescapes(backescapes, next[0]);
+              const { strRepresentation } = evaluateBackescapes(backescapes, next[0], regexToCheckNextChar);
 
-            return strRepresentation + next;
-        })
+              return strRepresentation + next;
+          })
         : text;
 
 const spacesRegex = /[\s\x7F\n]/;
-
-
-
 
 /**
  * @version 0.9
@@ -45,21 +51,25 @@ const spacesRegex = /[\s\x7F\n]/;
  * ```
  */
 
-
 export const YunaParser = (config: YunaParserCreateOptions = {}) => {
-
     config = createConfig(config);
 
     const globalRegexes = createRegexes(config);
 
     // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: omitting this rule the life is better
     return (content: string, command: Command | SubCommand): Record<string, string> => {
+        const {
+            options,
+            depth: skipElementsCount,
+            config: commandConfig,
+            regexes: commandRegexes,
+        } = getYunaMetaDataFromCommand(config, command);
 
-        const { options, depth: skipElementsCount, config: commandConfig, regexes: commandRegexes } = getYunaMetaDataFromCommand(config, command);
+        const realConfig = commandConfig ?? config;
 
-        const elementsRegex = commandRegexes?.elementsRegex ?? globalRegexes.elementsRegex;
-        const realEscapeModes = commandRegexes?.escapeModes ?? globalRegexes.escapeModes;
-        const checkNextChar = commandRegexes?.checkNextChar ?? globalRegexes.checkNextChar;
+        const regexes = commandRegexes ?? globalRegexes;
+        const { elementsRegex, escapeModes: realEscapeModes } = regexes;
+        let { checkNextChar } = regexes;
 
         const { breakSearchOnConsumeAllOptions, useUniqueNamedSyntaxAtSameTime, disableLongTextTagsInLastOption } = commandConfig ?? config;
 
@@ -129,7 +139,11 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
             lastestLongWord = undefined;
 
-            result[name] = (unindexedRightText + sanitizeBackescapes(content.slice(start, end), localEscapeModes.All) + postText).trim();
+            result[name] = (
+                unindexedRightText +
+                sanitizeBackescapes(content.slice(start, end), localEscapeModes.All, checkNextChar) +
+                postText
+            ).trim();
             return;
         };
 
@@ -175,14 +189,18 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             isRecentlyClosedAnyTag = true;
             const reg = localEscapeModes[tag as keyof typeof localEscapeModes];
 
-            aggregateNextOption(reg ? sanitizeBackescapes(value, reg) : value, null);
+            aggregateNextOption(reg ? sanitizeBackescapes(value, reg, checkNextChar) : value, null);
         };
 
         const aggregateNextNamedOption = (end: number) => {
             if (!namedOptionInitialized) return;
             const { name, start, dotted } = namedOptionInitialized;
 
-            const value = sanitizeBackescapes(content.slice(start, end).trimStart(), localEscapeModes[dotted ? "forNamedDotted" : "forNamed"]);
+            const value = sanitizeBackescapes(
+                content.slice(start, end).trimStart(),
+                localEscapeModes[dotted ? "forNamedDotted" : "forNamed"],
+                checkNextChar,
+            );
 
             namedOptionInitialized = null;
 
@@ -216,8 +234,11 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
                 if (!namedOptionTagUsed) {
                     namedOptionTagUsed = tagUsed;
-                    RemoveNamedEscapeMode(localEscapeModes, tagUsed === "-" ? ":" : "\\-");
-                } else if ((useUniqueNamedSyntaxAtSameTime && namedOptionTagUsed !== tagUsed)) {
+                    const tagToDisable = tagUsed === "-" ? ":" : "\\-";
+                    if (checkNextChar) checkNextChar = RemoveFromCheckNextChar(checkNextChar, tagToDisable);
+
+                    RemoveNamedEscapeMode(localEscapeModes, tagToDisable);
+                } else if (useUniqueNamedSyntaxAtSameTime && namedOptionTagUsed !== tagUsed) {
                     aggregateUnindexedText(index, named, undefined, named, undefined, _isRecentlyCosedAnyTag);
                     continue;
                 }
@@ -227,7 +248,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                 if (backescapes) {
                     const nextChar = named[backescapes.length];
 
-                    const { isPossiblyEscapingNext, strRepresentation } = evaluateBackescapes(backescapes, nextChar);
+                    const { isPossiblyEscapingNext, strRepresentation } = evaluateBackescapes(backescapes, nextChar, checkNextChar);
                     backescapesStrRepresentation = strRepresentation;
 
                     if (hyphensname && isPossiblyEscapingNext) {
@@ -261,13 +282,18 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             if (lastestLongWord || namedOptionInitialized) continue;
 
             if (backescape) {
-                const isDisabledLongTextTagsInLastOption = disableLongTextTagsInLastOption && actualOptionIdx >= options.length -1;
+                const isDisabledLongTextTagsInLastOption = disableLongTextTagsInLastOption && actualOptionIdx >= options.length - 1;
 
                 const { length } = backescape;
 
                 const nextChar = content[index + length];
 
-                const { isPossiblyEscapingNext, strRepresentation } = evaluateBackescapes(backescape, nextChar, checkNextChar, isDisabledLongTextTagsInLastOption);
+                const { isPossiblyEscapingNext, strRepresentation } = evaluateBackescapes(
+                    backescape,
+                    nextChar,
+                    checkNextChar,
+                    isDisabledLongTextTagsInLastOption,
+                );
 
                 if (isPossiblyEscapingNext) isEscapingNext = true;
 
@@ -317,7 +343,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             aggregateNextNamedOption(content.length);
         } else if (tagOpenPosition && tagOpenWith) aggregateTagLongText(tagOpenWith, tagOpenPosition);
 
-        config.logResult && console.log(result);
+        realConfig.logResult && console.log(result);
 
         return result;
     };

@@ -252,7 +252,9 @@ const options = {
     description: "with penguins the life is better.",
 })
 @Options(options)
-@DeclareParserConfig({}) // Place your settings here
+@DeclareParserConfig({
+  // Place your settings here
+}) 
 export default class TestCommand extends Command {}
 ```
 

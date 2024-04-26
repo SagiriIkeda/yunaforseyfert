@@ -50,9 +50,9 @@ export interface YunaParserCreateOptions {
     useUniqueNamedSyntaxAtSameTime?: boolean;
 
     /**
-    * This disables the use of longTextTags in the last option
-    * @default {false}
-    */
+     * This disables the use of longTextTags in the last option
+     * @default {false}
+     */
     disableLongTextTagsInLastOption?: boolean;
 }
 
@@ -60,16 +60,21 @@ type EscapeModeType = Record<string, RegExp | undefined>;
 
 const RemoveNamedEscapeModeKeys = ["All", "forNamed", "forNamedDotted"];
 
-export const RemoveNamedEscapeMode = (EscapeMode: EscapeModeType, text: "\\-" | ":") => {
-    for (const mode of RemoveNamedEscapeModeKeys) {
+export const RemoveFromCheckNextChar = (regex: RegExp, char: "\\-" | ":") => {
+    return new RegExp(regex.source.replace(char, ""), regex.flags);
+};
 
+export const RemoveNamedEscapeMode = (EscapeMode: EscapeModeType, char: "\\-" | ":") => {
+    for (const mode of RemoveNamedEscapeModeKeys) {
         const regx = EscapeMode[mode];
         if (!regx) continue;
 
-        const regexStr = regx.source.replace(text, "");
+        const regexStr = regx.source.replace(char, "");
 
         EscapeMode[mode] = new RegExp(regexStr, EscapeMode[mode]?.flags);
     }
+
+    return EscapeMode;
 };
 
 export const createRegexs = ({ enabled }: YunaParserCreateOptions) => {
@@ -97,8 +102,6 @@ export const createRegexs = ({ enabled }: YunaParserCreateOptions) => {
             })
             .join("") ?? "";
 
-    escapeModes.All = new RegExp(`(\\+)([${escapedLongTextTags}\s:\\-])`);
-
     let checkNextChar: RegExp | undefined = undefined;
 
     if (hasAnyEspecialSyntax) {
@@ -107,9 +110,11 @@ export const createRegexs = ({ enabled }: YunaParserCreateOptions) => {
         (has1HaphenSyntax || has2HaphenSyntax) && extras.push("\\-");
         hasDottedSyntax && extras.push(":");
 
-        const render = `${escapedLongTextTags}${extras.join("")}`
+        const render = `${escapedLongTextTags}${extras.join("")}`;
 
-        checkNextChar = new RegExp(`[${escapedLongTextTags}${extras.join("")}]`)
+        escapeModes.All = new RegExp(`(\\+)([${render}\s])`);
+
+        checkNextChar = new RegExp(`[${render}\\s]`);
 
         syntaxes.push(`(?<tag>[${render}])`);
     }
@@ -154,65 +159,61 @@ export const createRegexs = ({ enabled }: YunaParserCreateOptions) => {
 
 const removeDuplicates = <A>(arr: A extends Array<infer R> ? R[] : never[]): A => {
     return [...new Set(arr)] as A;
-}
-
+};
 
 export const createConfig = (config: YunaParserCreateOptions, isFull = true) => {
-    
-    if (isFull || config.enabled && (config.enabled.longTextTags || config.enabled.namedOptions)) {
-
+    if (isFull || (config.enabled && (config.enabled.longTextTags || config.enabled.namedOptions))) {
         config.enabled ??= {};
 
-        if (isFull || config.enabled.longTextTags) config.enabled.longTextTags = removeDuplicates(config?.enabled?.longTextTags ?? ['"', "'", "`"]);
-        if (isFull || config.enabled.namedOptions) config.enabled.namedOptions = removeDuplicates(config?.enabled?.namedOptions ?? ["-", "--", ":"]);
+        if (isFull || config.enabled.longTextTags)
+            config.enabled.longTextTags = removeDuplicates(config?.enabled?.longTextTags ?? ['"', "'", "`"]);
+        if (isFull || config.enabled.namedOptions)
+            config.enabled.namedOptions = removeDuplicates(config?.enabled?.namedOptions ?? ["-", "--", ":"]);
     }
 
-    if (isFull || "breakSearchOnConsumeAllOptions" in config) config.breakSearchOnConsumeAllOptions = config.breakSearchOnConsumeAllOptions === true;
-    if (isFull || "useUniqueNamedSyntaxAtSameTime" in config) config.useUniqueNamedSyntaxAtSameTime = config.useUniqueNamedSyntaxAtSameTime === true;
+    if (isFull || "breakSearchOnConsumeAllOptions" in config)
+        config.breakSearchOnConsumeAllOptions = config.breakSearchOnConsumeAllOptions === true;
+    if (isFull || "useUniqueNamedSyntaxAtSameTime" in config)
+        config.useUniqueNamedSyntaxAtSameTime = config.useUniqueNamedSyntaxAtSameTime === true;
     if (isFull || "logResult" in config) config.logResult = config.logResult === true;
-    if (isFull || "disableLongTextTagsInLastOption" in config) config.disableLongTextTagsInLastOption = config.disableLongTextTagsInLastOption === true;
+    if (isFull || "disableLongTextTagsInLastOption" in config)
+        config.disableLongTextTagsInLastOption = config.disableLongTextTagsInLastOption === true;
 
     return config;
-
-}
+};
 
 interface CommandYunaMetaData {
     options: CommandOption[];
     depth: number;
-    config?: YunaParserCreateOptions,
-    regexes?: ReturnType<typeof createRegexs>,
+    config?: YunaParserCreateOptions;
+    regexes?: ReturnType<typeof createRegexs>;
 }
 
 const keyMetadata = Symbol("YunaParserMetaData");
 const keyConfig = Symbol("YunaParserConfig");
 
-
 export const ParserRecommendedConfig = {
     Eval: {
         breakSearchOnConsumeAllOptions: true,
-        disableLongTextTagsInLastOption: true
-    }
-} satisfies Record<string, YunaParserCreateOptions>
+        disableLongTextTagsInLastOption: true,
+    },
+} satisfies Record<string, YunaParserCreateOptions>;
 
 export function DeclareParserConfig(config: YunaParserCreateOptions = {}) {
-
-    return <T extends { new(...args: any[]): {} }>(target: T) => {
-
+    return <T extends { new (...args: any[]): {} }>(target: T) => {
         if (!Object.keys(config).length) return target;
 
         return class extends target {
             [keyConfig] = createConfig(config, false);
         };
-    }
+    };
 }
-
 
 type Object = Record<string | number | symbol, any>;
 
-const isObject = (obj: unknown): obj is Object => typeof obj === "object" && obj !== null && !Array.isArray(obj)
+const isObject = (obj: unknown): obj is Object => typeof obj === "object" && obj !== null && !Array.isArray(obj);
 
 const mergeObjects = <A, B>(obj: A, obj2: B): (A & B) | B => {
-
     if (!(isObject(obj) && isObject(obj2))) return obj2;
 
     const merged = { ...obj };
@@ -227,7 +228,7 @@ const mergeObjects = <A, B>(obj: A, obj2: B): (A & B) | B => {
     }
 
     return merged as A & B;
-}
+};
 
 const InvalidOptionType = new Set([
     ApplicationCommandOptionType.Attachment,
@@ -235,7 +236,10 @@ const InvalidOptionType = new Set([
     ApplicationCommandOptionType.SubcommandGroup,
 ]);
 
-export const getYunaMetaDataFromCommand = (config: YunaParserCreateOptions, command: (Command | SubCommand) & { [keyMetadata]?: CommandYunaMetaData;[keyConfig]?: YunaParserCreateOptions }) => {
+export const getYunaMetaDataFromCommand = (
+    config: YunaParserCreateOptions,
+    command: (Command | SubCommand) & { [keyMetadata]?: CommandYunaMetaData; [keyConfig]?: YunaParserCreateOptions },
+) => {
     const InCache = command[keyMetadata];
     if (InCache) return InCache;
 
@@ -244,12 +248,10 @@ export const getYunaMetaDataFromCommand = (config: YunaParserCreateOptions, comm
         depth: command instanceof SubCommand ? (command.group ? 3 : 2) : 1,
     };
 
-
-    const commandConfig = command[keyConfig]
+    const commandConfig = command[keyConfig];
 
     if (commandConfig) {
-
-        const realConfig = mergeObjects(config, commandConfig)
+        const realConfig = mergeObjects(config, commandConfig);
 
         metadata.config = realConfig;
         metadata.regexes = createRegexs(realConfig);
@@ -259,6 +261,3 @@ export const getYunaMetaDataFromCommand = (config: YunaParserCreateOptions, comm
 
     return metadata;
 };
-
-
-
