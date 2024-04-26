@@ -91,12 +91,12 @@ export const createRegexs = ({ enabled }: YunaParserCreateOptions) => {
 
     const has1HaphenSyntax = enabled?.namedOptions?.includes("-");
     const has2HaphenSyntax = enabled?.namedOptions?.includes("--");
-    const hasDottedSyntax = enabled?.namedOptions?.includes(":");
+    const hasDottedSyntax = enabled?.namedOptions?.includes(":");    
 
     const escapedLongTextTags =
         enabled?.longTextTags
             ?.map((tag) => {
-                escapeModes[tag!] = new RegExp(`(\\\\+)([${tag}\\s])`, "g");
+                escapeModes[tag!] = new RegExp(`(\\\\+)([${tag}\\s]|$)`, "g");
 
                 return `\\${tag}`;
             })
@@ -112,9 +112,9 @@ export const createRegexs = ({ enabled }: YunaParserCreateOptions) => {
 
         const render = `${escapedLongTextTags}${extras.join("")}`;
 
-        escapeModes.All = new RegExp(`(\\+)([${render}\s])`);
+        escapeModes.All = new RegExp(`(\\\\+)([${render}\\s]|$)`);
 
-        checkNextChar = new RegExp(`[${render}\\s]`);
+        checkNextChar = new RegExp(`[${render}\\s]|$`);
 
         syntaxes.push(`(?<tag>[${render}])`);
     }
@@ -131,14 +131,14 @@ export const createRegexs = ({ enabled }: YunaParserCreateOptions) => {
             has2HaphenSyntax && HaphenLength.push(2);
 
             namedSyntaxes.push(`(?<hyphens>-{${HaphenLength.join(",")}})(?<hyphensname>[a-zA-Z_\\d]+)`);
-            escapeModes.forNamed = /(\\+)([\:\s\-])/g;
+            escapeModes.forNamed = /(\\+)([\:\s\-]|$)/g;
         } else {
             RemoveNamedEscapeMode(escapeModes, "\\-");
         }
 
         if (hasDottedSyntax) {
             namedSyntaxes.push("(?<dotsname>[a-zA-Z_\\d]+)(?<dots>:)(?!\\/\\/[^\\s\\x7F])");
-            escapeModes.forNamedDotted = /(\\+)([\:\s\-\/])/g;
+            escapeModes.forNamedDotted = /(\\+)([\:\s\-\/]|$)/g;
         } else {
             RemoveNamedEscapeMode(escapeModes, ":");
         }
@@ -162,24 +162,26 @@ const removeDuplicates = <A>(arr: A extends Array<infer R> ? R[] : never[]): A =
 };
 
 export const createConfig = (config: YunaParserCreateOptions, isFull = true) => {
-    if (isFull || (config.enabled && (config.enabled.longTextTags || config.enabled.namedOptions))) {
-        config.enabled ??= {};
+    const newConfig: YunaParserCreateOptions = {};
 
-        if (isFull || config.enabled.longTextTags)
-            config.enabled.longTextTags = removeDuplicates(config?.enabled?.longTextTags ?? ['"', "'", "`"]);
-        if (isFull || config.enabled.namedOptions)
-            config.enabled.namedOptions = removeDuplicates(config?.enabled?.namedOptions ?? ["-", "--", ":"]);
+    if (isFull || (config.enabled && (config.enabled.longTextTags || config.enabled.namedOptions))) {
+        newConfig.enabled ??= {};
+
+        if (isFull || config?.enabled?.longTextTags)
+            newConfig.enabled.longTextTags = removeDuplicates(config?.enabled?.longTextTags ?? ['"', "'", "`"]);
+        if (isFull || config?.enabled?.namedOptions)
+            newConfig.enabled.namedOptions = removeDuplicates(config?.enabled?.namedOptions ?? ["-", "--", ":"]);
     }
 
     if (isFull || "breakSearchOnConsumeAllOptions" in config)
-        config.breakSearchOnConsumeAllOptions = config.breakSearchOnConsumeAllOptions === true;
+        newConfig.breakSearchOnConsumeAllOptions = config.breakSearchOnConsumeAllOptions === true;
     if (isFull || "useUniqueNamedSyntaxAtSameTime" in config)
-        config.useUniqueNamedSyntaxAtSameTime = config.useUniqueNamedSyntaxAtSameTime === true;
-    if (isFull || "logResult" in config) config.logResult = config.logResult === true;
+        newConfig.useUniqueNamedSyntaxAtSameTime = config.useUniqueNamedSyntaxAtSameTime === true;
+    if (isFull || "logResult" in config) newConfig.logResult = config.logResult === true;
     if (isFull || "disableLongTextTagsInLastOption" in config)
-        config.disableLongTextTagsInLastOption = config.disableLongTextTagsInLastOption === true;
+        newConfig.disableLongTextTagsInLastOption = config.disableLongTextTagsInLastOption === true;
 
-    return config;
+    return newConfig;
 };
 
 interface CommandYunaMetaData {
@@ -193,6 +195,7 @@ const keyMetadata = Symbol("YunaParserMetaData");
 const keyConfig = Symbol("YunaParserConfig");
 
 export const ParserRecommendedConfig = {
+    /** things that I consider necessary in an Eval command. */
     Eval: {
         breakSearchOnConsumeAllOptions: true,
         disableLongTextTagsInLastOption: true,

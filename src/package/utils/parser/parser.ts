@@ -17,11 +17,11 @@ const evaluateBackescapes = (
     isDisabledLongTextTagsInLastOption?: boolean,
 ) => {
     const isJustPair = backspaces.length % 2 === 0;
-
+    
     const isPossiblyEscapingNext =
-        !isJustPair && /["'`]/.test(nextChar) && isDisabledLongTextTagsInLastOption ? false : regexToCheckNextChar?.test(nextChar);
+        !isJustPair && ((/["'`]/.test(nextChar) && isDisabledLongTextTagsInLastOption) ? false : regexToCheckNextChar?.test(nextChar));
 
-    const strRepresentation = "\\".repeat(Math.floor(backspaces.length / 2)) + (isJustPair || isPossiblyEscapingNext ? "" : "\\");
+    const strRepresentation = "\\".repeat(Math.floor(backspaces.length / 2)) + ((isJustPair || isPossiblyEscapingNext) ? "" : "\\");
 
     return { isPossiblyEscapingNext, strRepresentation };
 };
@@ -29,10 +29,10 @@ const evaluateBackescapes = (
 const sanitizeBackescapes = (text: string, regx: RegExp | undefined, regexToCheckNextChar: RegExp | undefined) =>
     regx
         ? text.replace(regx, (_, backescapes, next) => {
-              const { strRepresentation } = evaluateBackescapes(backescapes, next[0], regexToCheckNextChar);
+            const { strRepresentation } = evaluateBackescapes(backescapes, next[0], regexToCheckNextChar);
 
-              return strRepresentation + next;
-          })
+            return strRepresentation + next;
+        })
         : text;
 
 const spacesRegex = /[\s\x7F\n]/;
@@ -71,7 +71,9 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
         const { elementsRegex, escapeModes: realEscapeModes } = regexes;
         let { checkNextChar } = regexes;
 
-        const { breakSearchOnConsumeAllOptions, useUniqueNamedSyntaxAtSameTime, disableLongTextTagsInLastOption } = commandConfig ?? config;
+        const validNamedOptionSyntaxes = Object.fromEntries(realConfig.enabled?.namedOptions?.map((t) => [t, true]) ?? []);
+
+        const { breakSearchOnConsumeAllOptions, useUniqueNamedSyntaxAtSameTime, disableLongTextTagsInLastOption } = realConfig;
 
         if (!options) return {};
 
@@ -196,11 +198,14 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             if (!namedOptionInitialized) return;
             const { name, start, dotted } = namedOptionInitialized;
 
+            const escapeModeType = dotted ? "forNamedDotted" : "forNamed";
+            const escapeMode = localEscapeModes[escapeModeType];
+
             const value = sanitizeBackescapes(
                 content.slice(start, end).trimStart(),
-                localEscapeModes[dotted ? "forNamedDotted" : "forNamed"],
+                escapeMode,
                 checkNextChar,
-            );
+            ).trim();
 
             namedOptionInitialized = null;
 
@@ -230,15 +235,17 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
                 const tagName = hyphensname ?? dotsname;
 
-                const tagUsed = (hyphens ?? dots)[0] as "-" | ":";
+                const zeroTagUsed = (hyphens ?? dots)[0] as "-" | ":";
 
-                if (!namedOptionTagUsed) {
-                    namedOptionTagUsed = tagUsed;
-                    const tagToDisable = tagUsed === "-" ? ":" : "\\-";
+                const isValidTag = validNamedOptionSyntaxes[hyphens ?? dots] === true;
+
+                if (isValidTag && !namedOptionTagUsed && realConfig.useUniqueNamedSyntaxAtSameTime) {
+                    namedOptionTagUsed = zeroTagUsed;
+                    const tagToDisable = zeroTagUsed === "-" ? ":" : "\\-";
                     if (checkNextChar) checkNextChar = RemoveFromCheckNextChar(checkNextChar, tagToDisable);
 
                     RemoveNamedEscapeMode(localEscapeModes, tagToDisable);
-                } else if (useUniqueNamedSyntaxAtSameTime && namedOptionTagUsed !== tagUsed) {
+                } else if (!isValidTag || useUniqueNamedSyntaxAtSameTime && namedOptionTagUsed !== zeroTagUsed) {
                     aggregateUnindexedText(index, named, undefined, named, undefined, _isRecentlyCosedAnyTag);
                     continue;
                 }
@@ -254,7 +261,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                     if (hyphensname && isPossiblyEscapingNext) {
                         aggregateUnindexedText(
                             index,
-                            strRepresentation + named.slice(backescapes.length),
+                            strRepresentation + tagName,
                             undefined,
                             named,
                             undefined,
@@ -262,11 +269,12 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                         );
                         continue;
                     }
-                    if (!lastestLongWord && strRepresentation)
+                    if (!lastestLongWord && strRepresentation) {
                         aggregateUnindexedText(index, strRepresentation, undefined, backescapes, false, _isRecentlyCosedAnyTag);
+                    }
                 }
 
-                aggregateNextNamedOption(index - 1);
+                aggregateNextNamedOption(index + (backescapesStrRepresentation ? backescapes.length : 0));
 
                 if (lastestLongWord) aggregateLastestLongWord(index, backescapesStrRepresentation);
 
@@ -303,13 +311,14 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
             if (tag) {
                 const isDisabledLongTextTagsInLastOption = disableLongTextTagsInLastOption && actualOptionIdx >= options.length - 1;
+                const isInvalidTag = InvalidTagsToBeLong.has(tag);
 
                 if (isEscapingNext) {
                     isEscapingNext = false;
                     if (!tagOpenWith) {
                         aggregateUnindexedText(index, tag, "/", undefined, undefined, _isRecentlyCosedAnyTag);
                     }
-                } else if (isDisabledLongTextTagsInLastOption || InvalidTagsToBeLong.has(tag)) {
+                } else if (isInvalidTag || isDisabledLongTextTagsInLastOption) {
                     aggregateUnindexedText(index, tag, "", undefined, undefined, _isRecentlyCosedAnyTag);
                     continue;
                 } else if (!tagOpenWith) {
