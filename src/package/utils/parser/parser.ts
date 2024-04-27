@@ -1,6 +1,7 @@
 import type { Command, SubCommand } from "seyfert";
 import {
     RemoveFromCheckNextChar,
+    RemoveLongCharEscapeMode,
     RemoveNamedEscapeMode,
     type YunaParserCreateOptions,
     createConfig,
@@ -68,7 +69,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
         const realConfig = commandConfig ?? config;
 
         const regexes = commandRegexes ?? globalRegexes;
-        const { elementsRegex, escapeModes: realEscapeModes } = regexes;
+        const { elementsRegex, escapeModes: __realEscapeModes } = regexes;
         let { checkNextChar } = regexes;
 
         const validNamedOptionSyntaxes = Object.fromEntries(realConfig.enabled?.namedOptions?.map((t) => [t, true]) ?? []);
@@ -77,7 +78,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
         if (!options) return {};
 
-        const localEscapeModes = { ...realEscapeModes };
+        const localEscapeModes = { ...__realEscapeModes };
 
         const matches = content.matchAll(elementsRegex);
 
@@ -141,10 +142,17 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
             lastestLongWord = undefined;
 
+            if (disableLongTextTagsInLastOption) {
+                RemoveLongCharEscapeMode(localEscapeModes);
+            }
+
+            const canUseAsLiterally = disableLongTextTagsInLastOption && breakSearchOnConsumeAllOptions && end === content.length;
+
+            const slicedContent = content.slice(start, end);
+
             result[name] = (
                 unindexedRightText +
-                sanitizeBackescapes(content.slice(start, end), localEscapeModes.All, checkNextChar) +
-                postText
+                (canUseAsLiterally ? slicedContent : sanitizeBackescapes(slicedContent, localEscapeModes.All, checkNextChar) + postText)
             ).trim();
             return;
         };

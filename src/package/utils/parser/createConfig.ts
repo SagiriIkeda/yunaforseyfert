@@ -76,6 +76,16 @@ export const RemoveNamedEscapeMode = (EscapeMode: EscapeModeType, char: "\\-" | 
 
     return EscapeMode;
 };
+export const RemoveLongCharEscapeMode = (EscapeMode: EscapeModeType) => {
+    const regx = EscapeMode.All;
+    if (!regx) return;
+
+    const regexStr = regx.source.replace(/\\"|\\'|\\`/g, "");
+
+    EscapeMode.All = new RegExp(regexStr, EscapeMode.All?.flags);
+
+    return EscapeMode;
+};
 
 export const createRegexs = ({ enabled }: YunaParserCreateOptions) => {
     const hasAnyLongTextTag = (enabled?.longTextTags?.length ?? 0) >= 1;
