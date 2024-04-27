@@ -110,7 +110,7 @@ You can use the following syntax
 
 `"your words"` `'yout beutiful sentence'` **\`penguin world\`**
 
-<img src="https://i.imgur.com/mB9Jgfp.png" width="100%" />
+<img src="https://i.imgur.com/Us2zi3V.png" width="100%" />
 
 it will return 
 
@@ -122,7 +122,7 @@ it will return
 ```
 Another case is that the option is the last or only one, in this case it will not be necessary to use "" and all the remaining content will be taken as the option, Example:
 
-<img src="https://i.imgur.com/9zjO00U.png" width="100%" />
+<img src="https://i.imgur.com/MayfQbj.png" width="100%" />
 
 #### Named Syntax
 
@@ -145,14 +145,14 @@ Like this.
 
 You can escape any special character or syntax, if you need to, using `\`
 
-<img src="https://i.imgur.com/Us2zi3V.png" width="100%"/>
+<img src="https://i.imgur.com/i1SROrV.png" width="100%"/>
 
 this will return:
 
 ```json
 {
-    "first": "your",
-    "second": "words --second penguin life"
+    "first": "hey!",
+    "second": "how are you? --second well."
 }
 ```
 also this works with 
@@ -222,17 +222,17 @@ YunaParser({
 **breakSearchOnConsumeAllOptions example**
 
 
-<img src="https://i.imgur.com/8lf8K5C.png" width="100%" />
+<img src="https://i.imgur.com/duer8NK.png" width="100%" />
 
 **useUniqueNamedSyntaxAtSameTime example**
 
 
-<img src="https://i.imgur.com/LsBV6Xq.png" width="100%" />
+<img src="https://i.imgur.com/myHrl9L.png" width="100%" />
 
 **disableLongTextTagsInLastOption example**
 
 
-<img src="https://i.imgur.com/kkwN0gx.png" width="100%" />
+<img src="https://i.imgur.com/2BNIBIx.png" width="100%" />
 
 Also, if necessary, each command can use a specific configuration. For this, you can use the `@DeclareParserConfig` decorator
 
