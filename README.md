@@ -32,7 +32,7 @@ Then, you need to add it as seyfert's default argsParser, as follows
 // your bot's client
 new Client({ 
     commands: {
-        argsParser: YunaParser()
+        argsParser: YunaParser() // Here are the settings, but that will be explained below
     }
 });
 ```
@@ -64,24 +64,24 @@ export default class TestCommand extends Command {
 
   async run(ctx: CommandContext<typeof options>) { 
 
-    const {first, second} = ctx.options;
+    const { first, second } = ctx.options;
+
+    const embed = new Embed({
+        title: "Parsed!",
+        fields: [
+            {
+                name: "First",
+                value: first
+            },
+            {
+                name: "Second",
+                value: second
+            }
+        ]
+    })
 
     await ctx.write({
-      embeds: [
-        new Embed({
-            title: "Parsed!",
-            fields: [
-                    {
-                        name: "First",
-                        value: first
-                    },
-                    {
-                        name: "Second",
-                        value: second
-                    }
-                ]
-            })
-        ]
+      embeds: [embeds]
     });
   }
 
@@ -93,7 +93,7 @@ The command has two options `first` and `second`, in that order.
 
 For the parser, each word counts as an option, and will be added in the order of the command. That is, if we use the command in the following way:
 
-<img src="https://i.imgur.com/xdpSRIg.png" />
+<img src="https://i.imgur.com/xdpSRIg.png" width="100%" />
 
 
 `ctx.options` will be return 
@@ -110,7 +110,7 @@ You can use the following syntax
 
 `"your words"` `'yout beutiful sentence'` **\`penguin world\`**
 
-<img src="https://i.imgur.com/mB9Jgfp.png" />
+<img src="https://i.imgur.com/Us2zi3V.png" width="100%" />
 
 it will return 
 
@@ -122,7 +122,7 @@ it will return
 ```
 Another case is that the option is the last or only one, in this case it will not be necessary to use "" and all the remaining content will be taken as the option, Example:
 
-<img src="https://i.imgur.com/9zjO00U.png" />
+<img src="https://i.imgur.com/MayfQbj.png" width="100%" />
 
 #### Named Syntax
 
@@ -138,20 +138,21 @@ you can use the following syntaxes
 
 Like this.
 
-<img src="https://i.imgur.com/6olfDEu.png" />
+<img src="https://i.imgur.com/6olfDEu.png" width="100%" />
+
 
 #### Escaping characters
 
 You can escape any special character or syntax, if you need to, using `\`
 
-<img src="https://i.imgur.com/xNMc1eu.png" />
+<img src="https://i.imgur.com/i1SROrV.png" width="100%"/>
 
 this will return:
 
 ```json
 {
-    "first": "your",
-    "second": "words --second penguin life"
+    "first": "hey!",
+    "second": "how are you? --second well."
 }
 ```
 also this works with 
@@ -162,9 +163,116 @@ also this works with
 
 `/` *(in urls, like https://)*
 
+### Config
+The configurations allow changing the behavior of the parser; this is done when using `YunaParser` The allowed ones are as follows:
 
-#### "Demostration" thanks to @justo
-<img src="https://i.imgur.com/cRrLoG2.gif" />
+```ts
+YunaParser({
+    /**
+     * this only show console.log with the options parsed.
+     * @default false */
+    logResult: false,
+
+    enabled: {
+        /** especify what longText tags you want
+         *
+         * " => "penguin life"
+         *
+         * ' => 'beautiful sentence'
+         *
+         * ` => `LiSA『Shouted Serenade』 is a good song`
+         *
+         * @default 🐧 all enabled
+         */
+        longTextTags: ['"', "'", "`"],
+        /** especify what named syntax you want
+         *
+         *  -  => -option content value
+         *
+         *  -- => --option content value
+         *
+         *  :  => option: content value
+         *
+         * @default 🐧 all enabled
+         */
+        namedOptions: ["-", "--", ":"]
+    },
+
+    /**
+     * Turning it on can be useful for when once all the options are obtained,
+     * the last one can take all the remaining content, ignoring any other syntax.
+     * @default {false}
+     */
+    breakSearchOnConsumeAllOptions: false,
+
+    /**
+     * Limit that you can't use named syntax "-" and ":" at the same time,
+     * but only the first one used, sometimes it's useful to avoid confusion.
+     * @default {false}
+     */
+    useUniqueNamedSyntaxAtSameTime: false,
+    /**
+    * This disables the use of longTextTags in the last option
+    * @default {false}
+    */
+    disableLongTextTagsInLastOption: false,
+})
+```
+
+**breakSearchOnConsumeAllOptions example**
+
+
+<img src="https://i.imgur.com/duer8NK.png" width="100%" />
+
+**useUniqueNamedSyntaxAtSameTime example**
+
+
+<img src="https://i.imgur.com/myHrl9L.png" width="100%" />
+
+**disableLongTextTagsInLastOption example**
+
+
+<img src="https://i.imgur.com/2BNIBIx.png" width="100%" />
+
+Also, if necessary, each command can use a specific configuration. For this, you can use the `@DeclareParserConfig` decorator
+
+```js
+import { DeclareParserConfig } from "yunaforseyfert";
+
+
+const options = {
+    first: createStringOption({
+        description: "first option",
+        required: true,
+    }),
+};
+
+@Declare({
+    name: "test",
+    description: "with penguins the life is better.",
+})
+@Options(options)
+@DeclareParserConfig({
+  // Place your settings here
+}) 
+export default class TestCommand extends Command {}
+```
+
+Also, we provide some recommended configurations `(only one at the moment :] )` for commands such as an Eval.
+
+This can be used as
+
+```js
+import { DeclareParserConfig, ParserRecommendedConfig } from "yunaforseyfert";
+
+
+@DeclareParserConfig(ParserRecommendedConfig.Eval)
+```
+This will enable **disableLongTextTagsInLastOption** and **breakSearchOnConsumeAll**. Things that I consider necessary in an eval.
+
+
+### "Demostration" thanks to @justo
+<img src="https://i.imgur.com/cRrLoG2.gif" width="100%" />
 
 > ```
 > Thanks for read and using yunaforseyfert!

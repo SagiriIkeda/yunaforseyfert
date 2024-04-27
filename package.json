@@ -1,15 +1,21 @@
 {
   "name": "yunaforseyfert",
-  "version": "0.8.7",
+  "version": "0.9",
   "description": "Yunathings for seyfert",
   "main": "build/index.js",
   "type": "commonjs",
-  "types": "./types/index.d.ts",
+  "types": "./types/package/index.d.ts",
   "scripts": {
-    "build":"tsc && esbuild --bundle src/index.ts --minify --outdir=build --platform=node --packages=external",
-    "tsc": "tsc"
+    "build": "tsc && esbuild --bundle src/package/index.ts --minify --outdir=build --platform=node --packages=external",
+    "tsc": "tsc",
+    "lint": "biome lint --apply ./src",
+    "format": "biome check --apply ./src",
+    "test": "vitest"
   },
-  "keywords": ["parser", "penguin"],
+  "keywords": [
+    "parser",
+    "penguin"
+  ],
   "author": "SagiriIkeda",
   "license": "ISC",
   "dependencies": {
@@ -22,8 +28,10 @@
     "url": "https://github.com/SagiriIkeda/yunaforseyfert.git"
   },
   "devDependencies": {
+    "@biomejs/biome": "1.7.0",
     "@types/node": "^20.11.30",
     "esbuild": "^0.20.2",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "vitest": "^1.5.2"
   }
 }
