@@ -6,7 +6,7 @@
   "type": "commonjs",
   "types": "./types/package/index.d.ts",
   "scripts": {
-    "build": "tsc && esbuild --bundle src/index.ts --minify --outdir=build --platform=node --packages=external",
+    "build": "tsc && esbuild --bundle src/package/index.ts --minify --outdir=build --platform=node --packages=external",
     "tsc": "tsc",
     "lint": "biome lint --apply ./src",
     "format": "biome check --apply ./src",
