@@ -4,7 +4,7 @@
   "description": "Yunathings for seyfert",
   "main": "build/index.js",
   "type": "commonjs",
-  "types": "./types/index.d.ts",
+  "types": "./types/package/index.d.ts",
   "scripts": {
     "build": "tsc && esbuild --bundle src/index.ts --minify --outdir=build --platform=node --packages=external",
     "tsc": "tsc",

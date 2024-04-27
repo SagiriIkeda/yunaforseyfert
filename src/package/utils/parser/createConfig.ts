@@ -91,7 +91,7 @@ export const createRegexs = ({ enabled }: YunaParserCreateOptions) => {
 
     const has1HaphenSyntax = enabled?.namedOptions?.includes("-");
     const has2HaphenSyntax = enabled?.namedOptions?.includes("--");
-    const hasDottedSyntax = enabled?.namedOptions?.includes(":");    
+    const hasDottedSyntax = enabled?.namedOptions?.includes(":");
 
     const escapedLongTextTags =
         enabled?.longTextTags

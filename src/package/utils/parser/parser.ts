@@ -17,11 +17,11 @@ const evaluateBackescapes = (
     isDisabledLongTextTagsInLastOption?: boolean,
 ) => {
     const isJustPair = backspaces.length % 2 === 0;
-    
+
     const isPossiblyEscapingNext =
         !isJustPair && ((/["'`]/.test(nextChar) && isDisabledLongTextTagsInLastOption) ? false : regexToCheckNextChar?.test(nextChar));
 
-    const strRepresentation = "\\".repeat(Math.floor(backspaces.length / 2)) + ((isJustPair || isPossiblyEscapingNext) ? "" : "\\");
+    const strRepresentation = "\\".repeat(Math.floor(backspaces.length / 2)) + (isJustPair || isPossiblyEscapingNext ? "" : "\\");
 
     return { isPossiblyEscapingNext, strRepresentation };
 };
@@ -29,10 +29,10 @@ const evaluateBackescapes = (
 const sanitizeBackescapes = (text: string, regx: RegExp | undefined, regexToCheckNextChar: RegExp | undefined) =>
     regx
         ? text.replace(regx, (_, backescapes, next) => {
-            const { strRepresentation } = evaluateBackescapes(backescapes, next[0], regexToCheckNextChar);
+              const { strRepresentation } = evaluateBackescapes(backescapes, next[0], regexToCheckNextChar);
 
-            return strRepresentation + next;
-        })
+              return strRepresentation + next;
+          })
         : text;
 
 const spacesRegex = /[\s\x7F\n]/;
@@ -201,11 +201,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             const escapeModeType = dotted ? "forNamedDotted" : "forNamed";
             const escapeMode = localEscapeModes[escapeModeType];
 
-            const value = sanitizeBackescapes(
-                content.slice(start, end).trimStart(),
-                escapeMode,
-                checkNextChar,
-            ).trim();
+            const value = sanitizeBackescapes(content.slice(start, end).trimStart(), escapeMode, checkNextChar).trim();
 
             namedOptionInitialized = null;
 
@@ -245,7 +241,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                     if (checkNextChar) checkNextChar = RemoveFromCheckNextChar(checkNextChar, tagToDisable);
 
                     RemoveNamedEscapeMode(localEscapeModes, tagToDisable);
-                } else if (!isValidTag || useUniqueNamedSyntaxAtSameTime && namedOptionTagUsed !== zeroTagUsed) {
+                } else if (!isValidTag || (useUniqueNamedSyntaxAtSameTime && namedOptionTagUsed !== zeroTagUsed)) {
                     aggregateUnindexedText(index, named, undefined, named, undefined, _isRecentlyCosedAnyTag);
                     continue;
                 }
@@ -259,14 +255,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                     backescapesStrRepresentation = strRepresentation;
 
                     if (hyphensname && isPossiblyEscapingNext) {
-                        aggregateUnindexedText(
-                            index,
-                            strRepresentation + tagName,
-                            undefined,
-                            named,
-                            undefined,
-                            _isRecentlyCosedAnyTag,
-                        );
+                        aggregateUnindexedText(index, strRepresentation + tagName, undefined, named, undefined, _isRecentlyCosedAnyTag);
                         continue;
                     }
                     if (!lastestLongWord && strRepresentation) {
