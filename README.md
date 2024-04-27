@@ -145,7 +145,7 @@ Like this.
 
 You can escape any special character or syntax, if you need to, using `\`
 
-<img src="https://i.imgur.com/lZZ34nW.png" width="100%"/>
+<img src="https://i.imgur.com/Us2zi3V.png" width="100%"/>
 
 this will return:
 
