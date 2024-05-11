@@ -56,11 +56,11 @@ export interface YunaParserCreateOptions {
     disableLongTextTagsInLastOption?: boolean;
 
     /** Use Yuna's choice resolver instead of the default one, put null if you don't want it,
-     * 
-     * YunaChoiceResolver allows you to search through choices regardless of case or lowercase, 
+     *
+     * YunaChoiceResolver allows you to search through choices regardless of case or lowercase,
      * as well as allowing direct use of an choice's value,
-     * and not being forced to use only the name. 
-     * 
+     * and not being forced to use only the name.
+     *
      * @default enabled
      */
     resolveCommandOptionsChoices?: {
@@ -210,8 +210,8 @@ export const createConfig = (config: YunaParserCreateOptions, isFull = true) => 
             config.resolveCommandOptionsChoices === null
                 ? null
                 : {
-                    canUseDirectlyValue: !(config.resolveCommandOptionsChoices?.canUseDirectlyValue === false),
-                };
+                      canUseDirectlyValue: !(config.resolveCommandOptionsChoices?.canUseDirectlyValue === false),
+                  };
 
     return newConfig;
 };
@@ -242,7 +242,7 @@ export const ParserRecommendedConfig = {
 } satisfies Record<string, YunaParserCreateOptions>;
 
 export function DeclareParserConfig(config: YunaParserCreateOptions = {}) {
-    return <T extends { new(...args: any[]): {} }>(target: T) => {
+    return <T extends { new (...args: any[]): {} }>(target: T) => {
         if (!Object.keys(config).length) return target;
 
         return class extends target {
