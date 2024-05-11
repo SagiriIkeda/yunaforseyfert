@@ -1,6 +1,5 @@
 import { ApplicationCommandOptionType } from "discord-api-types/v10";
-import { type Command, type CommandOption, SubCommand, __CommandOption, SeyfertNumberOption, SeyfertStringOption } from "seyfert";
-import { YunaParserOptionsChoicesResolver } from "./choicesResolver";
+import { type Command, type CommandOption, type SeyfertNumberOption, type SeyfertStringOption, SubCommand } from "seyfert";
 
 type ValidLongTextTags = "'" | '"' | "`";
 type ValidNamedOptionSyntax = "-" | "--" | ":";
@@ -56,7 +55,20 @@ export interface YunaParserCreateOptions {
      */
     disableLongTextTagsInLastOption?: boolean;
 
-    resolveOptionsChoices?: typeof YunaParserOptionsChoicesResolver | null
+    /** Use Yuna's choice resolver instead of the default one, put null if you don't want it,
+     * 
+     * YunaChoiceResolver allows you to search through choices regardless of case or lowercase, 
+     * as well as allowing direct use of an choice's value,
+     * and not being forced to use only the name. 
+     * 
+     * @default enabled
+     */
+    resolveCommandOptionsChoices?: {
+        /** Allow you to use the value of a choice directly, not necessarily search by name
+         * @default {true}
+         */
+        canUseDirectlyValue?: boolean;
+    } | null;
 }
 
 type EscapeModeType = Record<string, RegExp | undefined>;
@@ -193,6 +205,13 @@ export const createConfig = (config: YunaParserCreateOptions, isFull = true) => 
     if (isFull || "logResult" in config) newConfig.logResult = config.logResult === true;
     if (isFull || "disableLongTextTagsInLastOption" in config)
         newConfig.disableLongTextTagsInLastOption = config.disableLongTextTagsInLastOption === true;
+    if (isFull || "resolveCommandOptionsChoices" in config)
+        newConfig.resolveCommandOptionsChoices =
+            config.resolveCommandOptionsChoices === null
+                ? null
+                : {
+                    canUseDirectlyValue: !(config.resolveCommandOptionsChoices?.canUseDirectlyValue === false),
+                };
 
     return newConfig;
 };
@@ -202,15 +221,17 @@ export interface CommandYunaMetaDataConfig {
     depth: number;
     config?: YunaParserCreateOptions;
     regexes?: ReturnType<typeof createRegexs>;
-    namesOfOptionsWithChoices?: string[],
+    namesOfOptionsWithChoices?: string[];
     optionsWithChoicesDecored?: Record<string, [name: string, value: string | number, realName: string][]>;
 }
-
 
 export const keyMetadata = Symbol("YunaParserMetaData");
 const keyConfig = Symbol("YunaParserConfig");
 
-export type YunaParserUsableCommand = (Command | SubCommand) & { [keyMetadata]?: CommandYunaMetaDataConfig, [keyConfig]?: YunaParserCreateOptions }
+export type YunaParserUsableCommand = (Command | SubCommand) & {
+    [keyMetadata]?: CommandYunaMetaDataConfig;
+    [keyConfig]?: YunaParserCreateOptions;
+};
 
 export const ParserRecommendedConfig = {
     /** things that I consider necessary in an Eval command. */
@@ -257,10 +278,7 @@ const InvalidOptionType = new Set([
     ApplicationCommandOptionType.SubcommandGroup,
 ]);
 
-export const getYunaMetaDataFromCommand = (
-    config: YunaParserCreateOptions,
-    command: YunaParserUsableCommand,
-) => {
+export const getYunaMetaDataFromCommand = (config: YunaParserCreateOptions, command: YunaParserUsableCommand) => {
     const InCache = command[keyMetadata];
     if (InCache) return InCache;
 

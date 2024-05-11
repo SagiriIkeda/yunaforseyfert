@@ -216,6 +216,22 @@ YunaParser({
     * @default {false}
     */
     disableLongTextTagsInLastOption: false,
+
+
+    /** Use Yuna's choice resolver instead of the default one, put null if you don't want it,
+     * 
+     * YunaChoiceResolver allows you to search through choices regardless of case or lowercase, 
+     * as well as allowing direct use of an choice's value,
+     * and not being forced to use only the name. 
+     * 
+     * @default enabled
+     */
+    resolveCommandOptionsChoices: {
+        /** Allow you to use the value of a choice directly, not necessarily search by name
+         * @default {true}
+         */
+        canUseDirectlyValue: true;
+    };
 })
 ```
 

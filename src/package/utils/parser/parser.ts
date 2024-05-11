@@ -1,4 +1,5 @@
 import type { Command, SubCommand } from "seyfert";
+import { YunaParserOptionsChoicesResolver } from "./choicesResolver";
 import {
     RemoveFromCheckNextChar,
     RemoveLongCharEscapeMode,
@@ -8,7 +9,6 @@ import {
     createRegexs as createRegexes,
     getYunaMetaDataFromCommand,
 } from "./createConfig";
-import { YunaParserOptionsChoicesResolver } from "./choicesResolver";
 
 const InvalidTagsToBeLong = new Set(["-", ":"]);
 
@@ -21,7 +21,7 @@ const evaluateBackescapes = (
     const isJustPair = backspaces.length % 2 === 0;
 
     const isPossiblyEscapingNext =
-        !isJustPair && ((/["'`]/.test(nextChar) && isDisabledLongTextTagsInLastOption) ? false : regexToCheckNextChar?.test(nextChar));
+        !isJustPair && (/["'`]/.test(nextChar) && isDisabledLongTextTagsInLastOption ? false : regexToCheckNextChar?.test(nextChar));
 
     const strRepresentation = "\\".repeat(Math.floor(backspaces.length / 2)) + (isJustPair || isPossiblyEscapingNext ? "" : "\\");
 
@@ -31,16 +31,16 @@ const evaluateBackescapes = (
 const sanitizeBackescapes = (text: string, regx: RegExp | undefined, regexToCheckNextChar: RegExp | undefined) =>
     regx
         ? text.replace(regx, (_, backescapes, next) => {
-            const { strRepresentation } = evaluateBackescapes(backescapes, next[0], regexToCheckNextChar);
+              const { strRepresentation } = evaluateBackescapes(backescapes, next[0], regexToCheckNextChar);
 
-            return strRepresentation + next;
-        })
+              return strRepresentation + next;
+          })
         : text;
 
 const spacesRegex = /[\s\x7F\n]/;
 
 /**
- * @version 0.9.1
+ * @version 0.10.0
  * @example
  * ```js
  * import { YunaParser } from "yunaforseyfert"
@@ -351,11 +351,9 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             aggregateNextNamedOption(content.length);
         } else if (tagOpenPosition && tagOpenWith) aggregateTagLongText(tagOpenWith, tagOpenPosition);
 
-
-        if (namesOfOptionsWithChoices?.length) {
-            YunaParserOptionsChoicesResolver(command, namesOfOptionsWithChoices, result)
+        if (namesOfOptionsWithChoices?.length && realConfig.resolveCommandOptionsChoices !== null) {
+            YunaParserOptionsChoicesResolver(command, namesOfOptionsWithChoices, result, realConfig);
         }
-
 
         realConfig.logResult && console.log(result);
 
