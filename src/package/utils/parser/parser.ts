@@ -8,6 +8,7 @@ import {
     createRegexs as createRegexes,
     getYunaMetaDataFromCommand,
 } from "./createConfig";
+import { YunaParserOptionsChoicesResolver } from "./choicesResolver";
 
 const InvalidTagsToBeLong = new Set(["-", ":"]);
 
@@ -30,16 +31,16 @@ const evaluateBackescapes = (
 const sanitizeBackescapes = (text: string, regx: RegExp | undefined, regexToCheckNextChar: RegExp | undefined) =>
     regx
         ? text.replace(regx, (_, backescapes, next) => {
-              const { strRepresentation } = evaluateBackescapes(backescapes, next[0], regexToCheckNextChar);
+            const { strRepresentation } = evaluateBackescapes(backescapes, next[0], regexToCheckNextChar);
 
-              return strRepresentation + next;
-          })
+            return strRepresentation + next;
+        })
         : text;
 
 const spacesRegex = /[\s\x7F\n]/;
 
 /**
- * @version 0.9
+ * @version 0.9.1
  * @example
  * ```js
  * import { YunaParser } from "yunaforseyfert"
@@ -64,6 +65,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             depth: skipElementsCount,
             config: commandConfig,
             regexes: commandRegexes,
+            namesOfOptionsWithChoices,
         } = getYunaMetaDataFromCommand(config, command);
 
         const realConfig = commandConfig ?? config;
@@ -348,6 +350,12 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
         if (namedOptionInitialized) {
             aggregateNextNamedOption(content.length);
         } else if (tagOpenPosition && tagOpenWith) aggregateTagLongText(tagOpenWith, tagOpenPosition);
+
+
+        if (namesOfOptionsWithChoices?.length) {
+            YunaParserOptionsChoicesResolver(command, namesOfOptionsWithChoices, result)
+        }
+
 
         realConfig.logResult && console.log(result);
 

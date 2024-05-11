@@ -1,5 +1,6 @@
 import { ApplicationCommandOptionType } from "discord-api-types/v10";
-import { type Command, type CommandOption, SubCommand } from "seyfert";
+import { type Command, type CommandOption, SubCommand, __CommandOption, SeyfertNumberOption, SeyfertStringOption } from "seyfert";
+import { YunaParserOptionsChoicesResolver } from "./choicesResolver";
 
 type ValidLongTextTags = "'" | '"' | "`";
 type ValidNamedOptionSyntax = "-" | "--" | ":";
@@ -54,6 +55,8 @@ export interface YunaParserCreateOptions {
      * @default {false}
      */
     disableLongTextTagsInLastOption?: boolean;
+
+    resolveOptionsChoices?: typeof YunaParserOptionsChoicesResolver | null
 }
 
 type EscapeModeType = Record<string, RegExp | undefined>;
@@ -194,15 +197,20 @@ export const createConfig = (config: YunaParserCreateOptions, isFull = true) => 
     return newConfig;
 };
 
-interface CommandYunaMetaData {
+export interface CommandYunaMetaDataConfig {
     options: CommandOption[];
     depth: number;
     config?: YunaParserCreateOptions;
     regexes?: ReturnType<typeof createRegexs>;
+    namesOfOptionsWithChoices?: string[],
+    optionsWithChoicesDecored?: Record<string, [name: string, value: string | number, realName: string][]>;
 }
 
-const keyMetadata = Symbol("YunaParserMetaData");
+
+export const keyMetadata = Symbol("YunaParserMetaData");
 const keyConfig = Symbol("YunaParserConfig");
+
+export type YunaParserUsableCommand = (Command | SubCommand) & { [keyMetadata]?: CommandYunaMetaDataConfig, [keyConfig]?: YunaParserCreateOptions }
 
 export const ParserRecommendedConfig = {
     /** things that I consider necessary in an Eval command. */
@@ -213,7 +221,7 @@ export const ParserRecommendedConfig = {
 } satisfies Record<string, YunaParserCreateOptions>;
 
 export function DeclareParserConfig(config: YunaParserCreateOptions = {}) {
-    return <T extends { new (...args: any[]): {} }>(target: T) => {
+    return <T extends { new(...args: any[]): {} }>(target: T) => {
         if (!Object.keys(config).length) return target;
 
         return class extends target {
@@ -251,12 +259,12 @@ const InvalidOptionType = new Set([
 
 export const getYunaMetaDataFromCommand = (
     config: YunaParserCreateOptions,
-    command: (Command | SubCommand) & { [keyMetadata]?: CommandYunaMetaData; [keyConfig]?: YunaParserCreateOptions },
+    command: YunaParserUsableCommand,
 ) => {
     const InCache = command[keyMetadata];
     if (InCache) return InCache;
 
-    const metadata: CommandYunaMetaData = {
+    const metadata: CommandYunaMetaDataConfig = {
         options: command.options?.filter((option) => "type" in option && !InvalidOptionType.has(option.type)) as CommandOption[],
         depth: command instanceof SubCommand ? (command.group ? 3 : 2) : 1,
     };
@@ -270,7 +278,16 @@ export const getYunaMetaDataFromCommand = (
         metadata.regexes = createRegexs(realConfig);
     }
 
-    command[keyMetadata];
+    for (const option of metadata.options as ((SeyfertStringOption | SeyfertNumberOption) & CommandOption)[]) {
+        const { name, choices } = option;
+
+        if (!choices?.length) continue;
+
+        metadata.namesOfOptionsWithChoices ??= [];
+        metadata.namesOfOptionsWithChoices.push(name);
+    }
+
+    command[keyMetadata] = metadata;
 
     return metadata;
 };
