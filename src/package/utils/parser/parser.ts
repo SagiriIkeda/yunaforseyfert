@@ -1,4 +1,5 @@
 import type { Command, SubCommand } from "seyfert";
+import { YunaParserOptionsChoicesResolver } from "./choicesResolver";
 import {
     RemoveFromCheckNextChar,
     RemoveLongCharEscapeMode,
@@ -20,7 +21,7 @@ const evaluateBackescapes = (
     const isJustPair = backspaces.length % 2 === 0;
 
     const isPossiblyEscapingNext =
-        !isJustPair && ((/["'`]/.test(nextChar) && isDisabledLongTextTagsInLastOption) ? false : regexToCheckNextChar?.test(nextChar));
+        !isJustPair && (/["'`]/.test(nextChar) && isDisabledLongTextTagsInLastOption ? false : regexToCheckNextChar?.test(nextChar));
 
     const strRepresentation = "\\".repeat(Math.floor(backspaces.length / 2)) + (isJustPair || isPossiblyEscapingNext ? "" : "\\");
 
@@ -39,7 +40,7 @@ const sanitizeBackescapes = (text: string, regx: RegExp | undefined, regexToChec
 const spacesRegex = /[\s\x7F\n]/;
 
 /**
- * @version 0.9
+ * @version 0.10.0
  * @example
  * ```js
  * import { YunaParser } from "yunaforseyfert"
@@ -64,6 +65,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             depth: skipElementsCount,
             config: commandConfig,
             regexes: commandRegexes,
+            namesOfOptionsWithChoices,
         } = getYunaMetaDataFromCommand(config, command);
 
         const realConfig = commandConfig ?? config;
@@ -348,6 +350,10 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
         if (namedOptionInitialized) {
             aggregateNextNamedOption(content.length);
         } else if (tagOpenPosition && tagOpenWith) aggregateTagLongText(tagOpenWith, tagOpenPosition);
+
+        if (namesOfOptionsWithChoices?.length && realConfig.resolveCommandOptionsChoices !== null) {
+            YunaParserOptionsChoicesResolver(command, namesOfOptionsWithChoices, result, realConfig);
+        }
 
         realConfig.logResult && console.log(result);
 

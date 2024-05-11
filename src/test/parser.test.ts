@@ -1,11 +1,18 @@
 import { describe, expect, test } from "vitest";
+import ChoicesTestCommand from "../bot-test/commands/choicesTest";
 import TestCommand from "../bot-test/commands/test";
 import { ParserRecommendedConfig, YunaParser } from "../package";
-import type { YunaParserCreateOptions } from "../package/utils/parser/createConfig";
+import type { YunaParserCreateOptions, YunaParserUsableCommand } from "../package/utils/parser/createConfig";
 
 const testCommand = new TestCommand();
+const choicesCommand = new ChoicesTestCommand();
 
-const testParser = (text: string, equalTo: Record<string, string>, config?: YunaParserCreateOptions, command = testCommand) => {
+const testParser = (
+    text: string,
+    equalTo: Record<string, string>,
+    config?: YunaParserCreateOptions,
+    command: YunaParserUsableCommand = testCommand,
+) => {
     return expect(YunaParser(config)(`${testCommand.name} ${text}`, command)).toEqual(equalTo);
 };
 
@@ -99,6 +106,24 @@ describe("escaping", () => {
     });
 });
 
+describe("choices", () => {
+    test("common", () => {
+        // choices resolver need to return choice name always.
+
+        testParser("ganyu", { choice: "Ganyu" }, {}, choicesCommand);
+        testParser("gAnYU", { choice: "Ganyu" }, {}, choicesCommand);
+        testParser("gAnYU Supremacy", { choice: "Ganyu" }, {}, choicesCommand);
+
+        testParser(
+            "Ganyu Supremacy",
+            { choice: "Ganyu Supremacy" },
+            { resolveCommandOptionsChoices: { canUseDirectlyValue: false } },
+            choicesCommand,
+        );
+        // not using Yuna's command options choices resolver
+        testParser("gAnYU", { choice: "gAnYU" }, { resolveCommandOptionsChoices: null }, choicesCommand);
+    });
+});
 describe("RecommendedConfig", () => {
     test("Eval", () => {
         const code = `const h = 5;
