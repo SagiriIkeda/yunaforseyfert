@@ -1,6 +1,6 @@
 {
   "name": "yunaforseyfert",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "description": "Yunathings for seyfert",
   "main": "build/index.js",
   "type": "commonjs",
@@ -20,7 +20,7 @@
   "license": "ISC",
   "dependencies": {
     "discord-api-types": "^0.37.77",
-    "seyfert": "^1.2.0"
+    "seyfert": "^1.3.3"
   },
   "homepage": "https://github.com/SagiriIkeda/yunaforseyfert#readme",
   "repository": {

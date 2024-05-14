@@ -2,23 +2,24 @@ import type { CommandOption, SeyfertNumberOption, SeyfertStringOption } from "se
 import { type CommandYunaMetaDataConfig, type YunaParserCreateOptions, type YunaParserUsableCommand, keyMetadata } from "./createConfig";
 
 const getChoicesOptions = (commandMetadata: CommandYunaMetaDataConfig) => {
-    if (commandMetadata.optionsWithChoicesDecored) return commandMetadata.optionsWithChoicesDecored;
+    const inCache = commandMetadata.choicesOptions?.decored;
+    if (inCache) return inCache;
+
+    const decored: NonNullable<CommandYunaMetaDataConfig["choicesOptions"]>["decored"] = {};
 
     for (const option of commandMetadata.options as ((SeyfertStringOption | SeyfertNumberOption) & CommandOption)[]) {
-        const { name, choices } = option;
+        if (!option.choices?.length) continue;
 
-        if (!choices?.length) continue;
-
-        commandMetadata.optionsWithChoicesDecored ??= {};
-
-        commandMetadata.optionsWithChoicesDecored[name] = choices.map(({ name, value }) => [
+        decored[option.name] = option.choices.map(({ name, value }) => [
+            name,
             name.toLowerCase(),
             typeof value === "string" ? value.toLowerCase() : value,
-            name,
         ]);
     }
 
-    return commandMetadata.optionsWithChoicesDecored;
+    if (commandMetadata.choicesOptions) commandMetadata.choicesOptions.decored = decored;
+
+    return decored;
 };
 
 export const YunaParserOptionsChoicesResolver = (
@@ -33,18 +34,18 @@ export const YunaParserOptionsChoicesResolver = (
     const choiceOptions = getChoicesOptions(commandMetadata);
     if (!choiceOptions) return;
 
+    const canUseDirectlyValue = config.resolveCommandOptionsChoices?.canUseDirectlyValue === true;
+
     for (const optionName of namesOfOptionsWithChoices) {
         const choices = choiceOptions?.[optionName];
         const optionValue = result[optionName];
+
         if (!choices || optionValue === undefined) continue;
 
         const finderText = optionValue.toLowerCase();
 
-        const choiceName = choices?.find(
-            ([name, value]) =>
-                name === finderText || (config.resolveCommandOptionsChoices?.canUseDirectlyValue === true && value === finderText),
-        )?.[2];
+        const choiceName = choices?.find(([, name, value]) => name === finderText || (canUseDirectlyValue && value === finderText))?.[0];
 
-        if (choiceName) result[optionName] = choiceName;
+        if (choiceName !== undefined) result[optionName] = choiceName;
     }
 };

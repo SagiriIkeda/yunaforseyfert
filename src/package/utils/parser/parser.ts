@@ -40,7 +40,7 @@ const sanitizeBackescapes = (text: string, regx: RegExp | undefined, regexToChec
 const spacesRegex = /[\s\x7F\n]/;
 
 /**
- * @version 0.10.0
+ * 🐧 
  * @example
  * ```js
  * import { YunaParser } from "yunaforseyfert"
@@ -65,7 +65,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             depth: skipElementsCount,
             config: commandConfig,
             regexes: commandRegexes,
-            namesOfOptionsWithChoices,
+            choicesOptions,
         } = getYunaMetaDataFromCommand(config, command);
 
         const realConfig = commandConfig ?? config;
@@ -351,8 +351,8 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             aggregateNextNamedOption(content.length);
         } else if (tagOpenPosition && tagOpenWith) aggregateTagLongText(tagOpenWith, tagOpenPosition);
 
-        if (namesOfOptionsWithChoices?.length && realConfig.resolveCommandOptionsChoices !== null) {
-            YunaParserOptionsChoicesResolver(command, namesOfOptionsWithChoices, result, realConfig);
+        if (choicesOptions?.names?.length && realConfig.resolveCommandOptionsChoices !== null) {
+            YunaParserOptionsChoicesResolver(command, choicesOptions.names, result, realConfig);
         }
 
         realConfig.logResult && console.log(result);
