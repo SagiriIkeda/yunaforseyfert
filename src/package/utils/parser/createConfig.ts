@@ -217,12 +217,14 @@ export const createConfig = (config: YunaParserCreateOptions, isFull = true) => 
 };
 
 export interface CommandYunaMetaDataConfig {
-    options: CommandOption[];
+    options?: CommandOption[];
     depth: number;
     config?: YunaParserCreateOptions;
     regexes?: ReturnType<typeof createRegexs>;
-    namesOfOptionsWithChoices?: string[];
-    optionsWithChoicesDecored?: Record<string, [name: string, value: string | number, realName: string][]>;
+    choicesOptions?: {
+        names: string[];
+        decored?: Record<string, [rawName: string, /** in lowercase */ name: string, value: string | number][]>;
+    };
 }
 
 export const keyMetadata = Symbol("YunaParserMetaData");
@@ -283,7 +285,10 @@ export const getYunaMetaDataFromCommand = (config: YunaParserCreateOptions, comm
     if (InCache) return InCache;
 
     const metadata: CommandYunaMetaDataConfig = {
-        options: command.options?.filter((option) => "type" in option && !InvalidOptionType.has(option.type)) as CommandOption[],
+        options: command.options?.filter((option) => "type" in option && !InvalidOptionType.has(option.type)) as
+            | CommandOption[]
+            | undefined,
+        /** remove this in next seyfert update */
         depth: command instanceof SubCommand ? (command.group ? 3 : 2) : 1,
     };
 
@@ -296,13 +301,18 @@ export const getYunaMetaDataFromCommand = (config: YunaParserCreateOptions, comm
         metadata.regexes = createRegexs(realConfig);
     }
 
-    for (const option of metadata.options as ((SeyfertStringOption | SeyfertNumberOption) & CommandOption)[]) {
-        const { name, choices } = option;
+    if (metadata.options?.length) {
+        const namesOfOptionsWithChoices: string[] = [];
 
-        if (!choices?.length) continue;
+        for (const option of metadata.options as ((SeyfertStringOption | SeyfertNumberOption) & CommandOption)[]) {
+            if (!option.choices?.length) continue;
 
-        metadata.namesOfOptionsWithChoices ??= [];
-        metadata.namesOfOptionsWithChoices.push(name);
+            namesOfOptionsWithChoices.push(option.name);
+        }
+
+        metadata.choicesOptions = {
+            names: namesOfOptionsWithChoices,
+        };
     }
 
     command[keyMetadata] = metadata;
