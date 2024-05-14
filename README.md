@@ -81,7 +81,7 @@ export default class TestCommand extends Command {
     })
 
     await ctx.write({
-      embeds: [embeds]
+      embeds: [embed]
     });
   }
 
