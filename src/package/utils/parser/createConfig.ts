@@ -1,5 +1,5 @@
 import { ApplicationCommandOptionType } from "discord-api-types/v10";
-import { type Command, type CommandOption, type SeyfertNumberOption, type SeyfertStringOption, SubCommand } from "seyfert";
+import type { Command, CommandOption, SeyfertNumberOption, SeyfertStringOption, SubCommand } from "seyfert";
 
 type ValidLongTextTags = "'" | '"' | "`";
 type ValidNamedOptionSyntax = "-" | "--" | ":";
@@ -218,7 +218,6 @@ export const createConfig = (config: YunaParserCreateOptions, isFull = true) => 
 
 export interface CommandYunaMetaDataConfig {
     options?: CommandOption[];
-    depth: number;
     config?: YunaParserCreateOptions;
     regexes?: ReturnType<typeof createRegexs>;
     choicesOptions?: {
@@ -288,8 +287,6 @@ export const getYunaMetaDataFromCommand = (config: YunaParserCreateOptions, comm
         options: command.options?.filter((option) => "type" in option && !InvalidOptionType.has(option.type)) as
             | CommandOption[]
             | undefined,
-        /** remove this in next seyfert update */
-        depth: command instanceof SubCommand ? (command.group ? 3 : 2) : 1,
     };
 
     const commandConfig = command[keyConfig];

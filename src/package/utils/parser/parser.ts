@@ -60,13 +60,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
     // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: omitting this rule the life is better
     return (content: string, command: Command | SubCommand): Record<string, string> => {
-        const {
-            options,
-            depth: skipElementsCount,
-            config: commandConfig,
-            regexes: commandRegexes,
-            choicesOptions,
-        } = getYunaMetaDataFromCommand(config, command);
+        const { options, config: commandConfig, regexes: commandRegexes, choicesOptions } = getYunaMetaDataFromCommand(config, command);
 
         const realConfig = commandConfig ?? config;
 
@@ -102,7 +96,6 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
         let lastOptionNameAdded: string | undefined;
         let isRecentlyClosedAnyTag = false;
-        let matchIdx = 0;
 
         const result: Record<string, string> = {};
 
@@ -119,7 +112,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
             const isLastOption = actualOptionIdx === options.length - 1;
 
-            if (isLastOption && start) {
+            if (isLastOption && start !== null) {
                 lastestLongWord = {
                     start,
                     name: optionAtIndexName,
@@ -225,7 +218,6 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
         for (const match of matches) {
             if (actualOptionIdx >= options.length && breakSearchOnConsumeAllOptions) break;
-            if (matchIdx++ < skipElementsCount) continue;
 
             const _isRecentlyCosedAnyTag = isRecentlyClosedAnyTag;
             isRecentlyClosedAnyTag = false;
@@ -331,8 +323,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             }
 
             if (value && tagOpenWith === null) {
-                const placeIsForLeft =
-                    matchIdx > skipElementsCount && !_isRecentlyCosedAnyTag && !unindexedRightText && !spacesRegex.test(content[index - 1]);
+                const placeIsForLeft = !(_isRecentlyCosedAnyTag || unindexedRightText || spacesRegex.test(content[index - 1]));
 
                 if (placeIsForLeft && lastOptionNameAdded) {
                     result[lastOptionNameAdded] += value;

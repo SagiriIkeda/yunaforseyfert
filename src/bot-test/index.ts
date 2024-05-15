@@ -8,7 +8,7 @@ const client = new Client({
         },
         argsParser: YunaParser({
             logResult: true,
-            disableLongTextTagsInLastOption: true,
+            //disableLongTextTagsInLastOption: true,
         }),
     },
 });

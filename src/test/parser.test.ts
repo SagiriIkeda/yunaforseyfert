@@ -13,7 +13,7 @@ const testParser = (
     config?: YunaParserCreateOptions,
     command: YunaParserUsableCommand = testCommand,
 ) => {
-    return expect(YunaParser(config)(`${testCommand.name} ${text}`, command)).toEqual(equalTo);
+    return expect(YunaParser(config)(text, command)).toEqual(equalTo);
 };
 
 describe("words", () => {
