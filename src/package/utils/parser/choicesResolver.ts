@@ -10,11 +10,7 @@ const getChoicesOptions = (commandMetadata: CommandYunaMetaDataConfig) => {
     for (const option of commandMetadata.options as ((SeyfertStringOption | SeyfertNumberOption) & CommandOption)[]) {
         if (!option.choices?.length) continue;
 
-        decored[option.name] = option.choices.map(({ name, value }) => [
-            name,
-            name.toLowerCase(),
-            typeof value === "string" ? value.toLowerCase() : value,
-        ]);
+        decored[option.name] = option.choices.map(({ name, value }) => [name, name.toLowerCase(), value.toString().toLowerCase()]);
     }
 
     if (commandMetadata.choicesOptions) commandMetadata.choicesOptions.decored = decored;

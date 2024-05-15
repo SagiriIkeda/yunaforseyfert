@@ -1,11 +1,12 @@
 import { describe, expect, test } from "vitest";
-import ChoicesTestCommand from "../bot-test/commands/choicesTest";
+import ChoicesNumberTestCommand, { ChoicesTestCommand } from "../bot-test/commands/choicesTest";
 import TestCommand from "../bot-test/commands/test";
 import { ParserRecommendedConfig, YunaParser } from "../package";
 import type { YunaParserCreateOptions, YunaParserUsableCommand } from "../package/utils/parser/createConfig";
 
 const testCommand = new TestCommand();
 const choicesCommand = new ChoicesTestCommand();
+const choicesNumberCommand = new ChoicesNumberTestCommand();
 
 const testParser = (
     text: string,
@@ -113,6 +114,9 @@ describe("choices", () => {
         testParser("ganyu", { choice: "Ganyu" }, {}, choicesCommand);
         testParser("gAnYU", { choice: "Ganyu" }, {}, choicesCommand);
         testParser("gAnYU Supremacy", { choice: "Ganyu" }, {}, choicesCommand);
+
+        testParser("arlecchino", { choice: "Arlecchino" }, {}, choicesNumberCommand);
+        testParser("5.5344342", { choice: "Arlecchino" }, {}, choicesNumberCommand);
 
         testParser(
             "Ganyu Supremacy",

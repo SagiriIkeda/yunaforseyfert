@@ -1,5 +1,5 @@
 import { inspect } from "node:util";
-import { Command, type CommandContext, Declare, Options, createStringOption } from "seyfert";
+import { Command, type CommandContext, Declare, Options, createNumberOption, createStringOption } from "seyfert";
 
 const options = {
     choice: createStringOption({
@@ -19,8 +19,33 @@ const options = {
     description: "testing",
 })
 @Options(options)
-export default class ChoicesTestCommand extends Command {
+export class ChoicesTestCommand extends Command {
     async run(ctx: CommandContext<typeof options>) {
+        await ctx.write({
+            content: inspect(ctx.options),
+        });
+    }
+}
+const optionsNumber = {
+    choice: createNumberOption({
+        description: "Penguins are life",
+        required: true,
+        choices: [
+            { name: "Ganyu", value: 2 },
+            { name: "Penwin", value: 3 },
+            { name: "Furina", value: 4 },
+            { name: "Arlecchino", value: 5.5344342 },
+        ],
+    }),
+};
+
+@Declare({
+    name: "ch",
+    description: "testing",
+})
+@Options(optionsNumber)
+export default class ChoicesNumberTestCommand extends Command {
+    async run(ctx: CommandContext<typeof optionsNumber>) {
         await ctx.write({
             content: inspect(ctx.options),
         });

@@ -1,6 +1,6 @@
 {
   "name": "yunaforseyfert",
-  "version": "0.10.2",
+  "version": "0.10.3",
   "description": "Yunathings for seyfert",
   "main": "build/index.js",
   "type": "commonjs",
@@ -25,7 +25,7 @@
   "homepage": "https://github.com/SagiriIkeda/yunaforseyfert#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/SagiriIkeda/yunaforseyfert.git"
+    "url": "git+https://github.com/SagiriIkeda/yunaforseyfert.git"
   },
   "devDependencies": {
     "@biomejs/biome": "1.7.0",
