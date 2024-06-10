@@ -10,10 +10,10 @@ export default class PingCommand extends Command {
         // average latency between shards
         const ping = ctx.client.gateway.latency;
 
-        const watcher = createMessageWatcher.call({ message: ctx.message!, ctx }, { idle: 220000 });
+        const watcher = createMessageWatcher.call({ message: ctx.message!, ctx }, { idle: 10_000 });
 
-        watcher.onChange(() => {
-            ctx.write({ content: "cambio detected" })
+        watcher.onChange((message) => {
+            console.log(message.content);
         })
         watcher.onStop((reason) => {
             ctx.write({ content: `watcher muerto, "${reason}"` })

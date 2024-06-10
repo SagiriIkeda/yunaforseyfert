@@ -10,7 +10,7 @@ export function createId(message: BaseMessage | string, channelId?: string): str
 }
 
 class BaseMessageWatcherController {
-    values = new Map<string, MessageWatcherCollector>();
+    values = new Map<string, MessageWatcherCollector[]>();
 
     watching = false;
 
@@ -30,8 +30,12 @@ class BaseMessageWatcherController {
             const key = isChannel ? "channelId" : "guildId";
             const errorName = isChannel ? "channelDelete" : "guildDelete";
 
-            for (const instance of cache.values()) {
-                instance.message[key] === id && instance.stop(errorName);
+            for (const instances of cache.values()) {
+                const [zero] = instances;
+                if (!zero || zero.message[key] !== id) continue;
+
+                for (const instance of instances) instance.stop(errorName);
+
             }
         }
 
@@ -40,8 +44,14 @@ class BaseMessageWatcherController {
             return cache.get(id);
         }
 
+        const deleteByMessage = (messageId: string, channelId: string, reason: string) => {
+            const instances = get(messageId, channelId) ?? [];
+            for (const instance of instances) instance.stop(reason);
+        }
+
         client.collectors.create({
             event: "RAW",
+
             filter() { return true },
 
             run({ t: event, d: data }) {
@@ -59,19 +69,18 @@ class BaseMessageWatcherController {
                         break;
                     case GatewayDispatchEvents.MessageDeleteBulk:
                         for (const id of data.ids) {
-                            get(id, data.channel_id)?.stop("MessageBulkDelete")
+                            deleteByMessage(id, data.channel_id, "MessageBulkDelete")
                         }
                         break;
                     case GatewayDispatchEvents.MessageDelete:
-                        get(data.id, data.channel_id)?.stop("MessageDelete")
+                        deleteByMessage(data.id, data.channel_id, "MessageDelete")
                         break;
-                    case GatewayDispatchEvents.MessageUpdate:
-                        get(data.id, data.channel_id)?.update(data)
+                    case GatewayDispatchEvents.MessageUpdate: {
+                        const instances = get(data.id, data.channel_id) ?? [];
+                        instances[0].update(data);
                         break;
-
+                    }
                 }
-
-
             },
         })
     }
@@ -89,13 +98,13 @@ export function createMessageWatcher(
 
     const inCache = MessageWatcherController.values.get(id)
 
-    if (inCache) return inCache;
-
     MessageWatcherController.init(ctx.client)
 
     const watcher = new MessageWatcherCollector(message, ctx, options);
 
-    MessageWatcherController.values.set(id, watcher)
+    if (!inCache) MessageWatcherController.values.set(id, []);
+
+    MessageWatcherController.values.get(id)?.push(watcher)
 
     return watcher;
 }

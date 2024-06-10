@@ -1,6 +1,6 @@
-import type { GatewayMessageUpdateDispatchData } from "discord-api-types/v10";
 import type { BaseMessage, CommandContext } from "seyfert";
 import MessageWatcherController, { createId } from "./watcherController";
+import type { GatewayMessageUpdateDispatchData } from "discord-api-types/v10";
 
 export type MessageWatcherCollectorOptions = {
     idle?: number;
@@ -8,8 +8,11 @@ export type MessageWatcherCollectorOptions = {
     time?: number;
 };
 
-type OnChangeEvent = (options: any) => any;
+
+
+type OnChangeEvent = (message: GatewayMessageUpdateDispatchData) => any;
 type OnStopEvent = (reason: string) => any;
+
 
 export class MessageWatcherCollector {
     readonly options: MessageWatcherCollectorOptions;
@@ -42,31 +45,43 @@ export class MessageWatcherCollector {
         }, timeout);
     }
 
+    get instances() {
+        return MessageWatcherController.values.get(this.id) ?? [];
+    }
+
     update(message: GatewayMessageUpdateDispatchData) {
         if (this.options.idle) this.refresh();
 
-        for (const callback of this.#onStopEvents) callback("🐧");
+
+        for (const instance of this.instances) instance.onChangeEvent?.(message)
     }
 
-    /** @internal */
-    #onChangeEvents: OnChangeEvent[] = [];
+    /** @private */
+    onChangeEvent?: OnChangeEvent;
 
     onChange(callback: OnChangeEvent) {
-        this.#onChangeEvents.push(callback);
+        this.onChangeEvent = callback;
         return this;
     }
 
-    #onStopEvents: OnStopEvent[] = [];
+    #onStopEvent?: OnStopEvent;
 
     onStop(callback: OnStopEvent) {
-        this.#onStopEvents.push(callback);
+        this.#onStopEvent = callback;
         return this;
     }
 
     stop(reason: string) {
         clearTimeout(this.#timer);
-        MessageWatcherController.values.delete(this.id);
 
-        for (const callback of this.#onStopEvents) callback(reason);
+        const { instances } = this;
+
+        const instanceId = instances.indexOf(this);
+
+        if (instanceId !== -1) instances.splice(instanceId, 1);
+        if (instances.length === 0) MessageWatcherController.values.delete(this.id)
+
+        this.#onStopEvent?.(reason);
+        return this;
     }
 }
