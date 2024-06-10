@@ -1,5 +1,5 @@
 import { Command, type CommandContext, Declare } from "seyfert";
-import { createMessageWatcher } from "../../package/utils/messageWatcher/messageWatcher";
+import { createMessageWatcher } from "../../package/utils/messageWatcher/watcherController";
 
 @Declare({
     name: "ping",
@@ -10,7 +10,14 @@ export default class PingCommand extends Command {
         // average latency between shards
         const ping = ctx.client.gateway.latency;
 
-        createMessageWatcher.call({ message: ctx.message!, ctx }, { idle: 220000 });
+        const watcher = createMessageWatcher.call({ message: ctx.message!, ctx }, { idle: 220000 });
+
+        watcher.onChange(() => {
+            ctx.write({ content: "cambio detected" })
+        })
+        watcher.onStop((reason) => {
+            ctx.write({ content: `watcher muerto, "${reason}"` })
+        })
 
         await ctx.write({
             content: `The ping is \`${ping}\``,

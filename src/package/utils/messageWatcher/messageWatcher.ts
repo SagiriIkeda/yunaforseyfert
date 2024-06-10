@@ -1,40 +1,17 @@
-import type { BaseMessage, CommandContext, Message } from "seyfert";
+import type { GatewayMessageUpdateDispatchData } from "discord-api-types/v10";
+import type { BaseMessage, CommandContext } from "seyfert";
+import MessageWatcherController, { createId } from "./watcherController";
 
-const cache = new Map<string, MessageWatcherCollector>();
-
-const id = (message: BaseMessage) => `${message.channelId}.${message.id}`;
-
-type MessageWatcherCollectorOptions = {
+export type MessageWatcherCollectorOptions = {
     idle?: number;
-
     /** @default 10min */
     time?: number;
 };
 
-let isStarted = false;
-
-export function createMessageWatcher(
-    this: { message: Message; ctx: CommandContext },
-    options: Omit<MessageWatcherCollectorOptions, "ctx">,
-) {
-    const { message, ctx } = this;
-    const wId = id(message);
-
-    if (cache.has(wId)) throw Error("Already Watching this.");
-
-    if (!isStarted) {
-        isStarted = true;
-    }
-
-    const watcher = new MessageWatcherCollector(message, ctx, options);
-
-    return watcher;
-}
-
 type OnChangeEvent = (options: any) => any;
 type OnStopEvent = (reason: string) => any;
 
-class MessageWatcherCollector {
+export class MessageWatcherCollector {
     readonly options: MessageWatcherCollectorOptions;
 
     message: BaseMessage;
@@ -51,9 +28,7 @@ class MessageWatcherCollector {
         this.options = { time: TenMinutes, ...(options ?? {}) };
         this.message = message;
 
-        this.id = id(message);
-
-        cache.set(this.id, this);
+        this.id = createId(message);
         this.refresh();
     }
 
@@ -62,33 +37,36 @@ class MessageWatcherCollector {
 
         clearTimeout(this.#timer);
 
-        this.#timer = setTimeout(() => { }, timeout);
+        this.#timer = setTimeout(() => {
+            this.stop(this.options.idle ? "idle" : "timeout")
+        }, timeout);
     }
 
-    update(message: Message) {
+    update(message: GatewayMessageUpdateDispatchData) {
         if (this.options.idle) this.refresh();
 
-        this.#onChange?.("🐧")
+        for (const callback of this.#onStopEvents) callback("🐧");
     }
 
     /** @internal */
-    #onChange?: OnChangeEvent;
+    #onChangeEvents: OnChangeEvent[] = [];
 
     onChange(callback: OnChangeEvent) {
-        this.#onChange = callback;
+        this.#onChangeEvents.push(callback);
         return this;
     }
 
-    #onStop?: OnStopEvent;
+    #onStopEvents: OnStopEvent[] = [];
 
     onStop(callback: OnStopEvent) {
-        this.#onStop = callback;
+        this.#onStopEvents.push(callback);
         return this;
     }
 
     stop(reason: string) {
         clearTimeout(this.#timer);
-        cache.delete(this.id);
-        this.#onStop?.(reason);
+        MessageWatcherController.values.delete(this.id);
+
+        for (const callback of this.#onStopEvents) callback(reason);
     }
 }
