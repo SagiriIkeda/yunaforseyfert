@@ -1,4 +1,4 @@
-import { Command, Declare, Options } from "seyfert";
+import { Command, Declare, Groups, Options } from "seyfert";
 import CreateCommand from "./create";
 
 @Declare({
@@ -8,4 +8,7 @@ import CreateCommand from "./create";
 })
 // Being in the same folder with @AutoLoad() you can save this
 @Options([CreateCommand])
-export default class AccountCommand extends Command {}
+@Groups({
+    pengu: { defaultDescription: "si" }
+})
+export default class AccountCommand extends Command { }

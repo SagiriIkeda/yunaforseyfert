@@ -210,8 +210,8 @@ export const createConfig = (config: YunaParserCreateOptions, isFull = true) => 
             config.resolveCommandOptionsChoices === null
                 ? null
                 : {
-                      canUseDirectlyValue: !(config.resolveCommandOptionsChoices?.canUseDirectlyValue === false),
-                  };
+                    canUseDirectlyValue: !(config.resolveCommandOptionsChoices?.canUseDirectlyValue === false),
+                };
 
     return newConfig;
 };
@@ -228,10 +228,12 @@ export interface CommandYunaMetaDataConfig {
 
 export const keyMetadata = Symbol("YunaParserMetaData");
 const keyConfig = Symbol("YunaParserConfig");
+export const keyHasSubcommands = Symbol("hasSubCommands");
 
-export type YunaParserUsableCommand = (Command | SubCommand) & {
+export type YunaUsableCommand = (Command | SubCommand) & {
     [keyMetadata]?: CommandYunaMetaDataConfig;
     [keyConfig]?: YunaParserCreateOptions;
+    [keyHasSubcommands]?: boolean;
 };
 
 export const ParserRecommendedConfig = {
@@ -243,7 +245,7 @@ export const ParserRecommendedConfig = {
 } satisfies Record<string, YunaParserCreateOptions>;
 
 export function DeclareParserConfig(config: YunaParserCreateOptions = {}) {
-    return <T extends { new (...args: any[]): {} }>(target: T) => {
+    return <T extends { new(...args: any[]): {} }>(target: T) => {
         if (!Object.keys(config).length) return target;
 
         return class extends target {
@@ -279,7 +281,7 @@ const InvalidOptionType = new Set([
     ApplicationCommandOptionType.SubcommandGroup,
 ]);
 
-export const getYunaMetaDataFromCommand = (config: YunaParserCreateOptions, command: YunaParserUsableCommand) => {
+export const getYunaMetaDataFromCommand = (config: YunaParserCreateOptions, command: YunaUsableCommand) => {
     const InCache = command[keyMetadata];
     if (InCache) return InCache;
 

@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 import ChoicesNumberTestCommand, { ChoicesTestCommand } from "../bot-test/commands/choicesTest";
 import TestCommand from "../bot-test/commands/test";
 import { ParserRecommendedConfig, YunaParser } from "../package";
-import type { YunaParserCreateOptions, YunaParserUsableCommand } from "../package/utils/parser/createConfig";
+import type { YunaParserCreateOptions, YunaUsableCommand } from "../package/utils/parser/createConfig";
 
 const testCommand = new TestCommand();
 const choicesCommand = new ChoicesTestCommand();
@@ -12,7 +12,7 @@ const testParser = (
     text: string,
     equalTo: Record<string, string>,
     config?: YunaParserCreateOptions,
-    command: YunaParserUsableCommand = testCommand,
+    command: YunaUsableCommand = testCommand,
 ) => {
     return expect(YunaParser(config)(text, command)).toEqual(equalTo);
 };
