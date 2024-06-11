@@ -1,9 +1,12 @@
 import { Client } from "seyfert";
 import { YunaParser } from "../package/utils/parser/parser";
-import YunaCommands from "../package/utils/commandsResolver/init";
+import { YunaCommandsResolver } from "../package/utils/commandsResolver/resolver";
+import { UseYuna } from "../package";
 
 const client = new Client({
     commands: {
+
+        resolver: YunaCommandsResolver(),
         prefix(message) {
             return ["yuna", "y", `<@${message.client.botId}>`];
         },
@@ -14,6 +17,6 @@ const client = new Client({
     },
 });
 
-YunaCommands.prepare(client)
+UseYuna.commands.prepare(client)
 
 client.start();

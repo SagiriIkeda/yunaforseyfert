@@ -1,5 +1,5 @@
 import { type CommandContext, Declare, Options, SubCommand, createStringOption, Group } from "seyfert";
-import { LinkToRootPath } from "../../../package/utils/commandsResolver/init";
+import { LinkToRootPath } from "../../../package/utils/commandsResolver/decorators";
 
 const options = {
     pengu: createStringOption({

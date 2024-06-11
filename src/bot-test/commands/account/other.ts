@@ -1,5 +1,5 @@
 import { type CommandContext, Declare, SubCommand } from "seyfert";
-import { LinkToRootPath } from "../../../package/utils/commandsResolver/init";
+import { LinkToRootPath } from "../../../package/utils/commandsResolver/decorators";
 
 
 @Declare({

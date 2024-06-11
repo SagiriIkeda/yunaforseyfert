@@ -1,41 +1,43 @@
 import { type Command, SubCommand, type UsingClient, type ContextMenuCommand } from "seyfert";
-import { type YunaUsableCommand, keySubCommands } from "../parser/createConfig";
 import { ApplicationCommandType } from "discord-api-types/v10";
-import YunaCommands from "./init";
+import { keySubCommands, type YunaUsableCommand } from "../../things";
+import type { YunaCommandsResolverConfig } from "./resolver";
+import { type UseYunaCommandsClient, preparedKey } from "./prepare";
 
 type UsableCommand = Command | SubCommand;
 
 interface YunaCommandsResolverData {
-    parent?: Command | YunaUsableCommand
+    parent?: Command
     command: UsableCommand,
     endPad?: number
 }
 
-interface YunaCommandsResolverOptions {
-    useDefaultSubCommand?: boolean,
-}
+export function baseResolver(client: UsingClient, query: string | string[], forMessage: YunaCommandsResolverConfig): YunaCommandsResolverData | undefined;
+export function baseResolver(client: UsingClient, query: string | string[], forMessage?: undefined): UsableCommand | undefined;
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: 🐧
+export function baseResolver(client: UsingClient, query: string | string[], forMessage?: YunaCommandsResolverConfig): UsableCommand | YunaCommandsResolverData | undefined {
 
-export function commandsResolver(client: UsingClient, query: string | string[], forMessage: YunaCommandsResolverOptions): YunaCommandsResolverData | undefined;
-export function commandsResolver(client: UsingClient, query: string | string[], forMessage?: undefined): UsableCommand | undefined;
-export function commandsResolver(client: UsingClient, query: string | string[], forMessage?: YunaCommandsResolverOptions | undefined): UsableCommand | YunaCommandsResolverData | undefined {
+    const metadata = (client as UseYunaCommandsClient)[preparedKey];
+    if (!metadata) return;
 
     const matchs = typeof query === "string" ? Array.from(query.matchAll(/[^\s\x7F\n]+/g)).slice(0, 3) : undefined;
 
     const queryArray = (matchs?.map(([val]) => val.toLowerCase()) ?? (Array.isArray(query) && query.slice(0, 3).map(t => t.toLowerCase()))) || []
 
-    if (!queryArray.length) return;
+    if (!(queryArray.length && client.commands)) return;
 
     const [parent, group, sub] = queryArray;
+
     const searchFn = (command: Command | ContextMenuCommand | SubCommand) =>
         command.type === ApplicationCommandType.ChatInput && (command.name === parent || "aliases" in command && command.aliases?.includes(parent));
 
-    const parentCommand = client.commands?.values.find(searchFn) as YunaUsableCommand | undefined;
-    const inRoot = parentCommand ? undefined : YunaCommands.linkedSubCommands.find(searchFn);
+    const parentCommand = client.commands.values.find(searchFn) as YunaUsableCommand | undefined;
+    const inRoot = parentCommand ? undefined : metadata.links.find(searchFn);
 
     if (!(parentCommand || inRoot)) return undefined;
 
 
-    const parentSubCommandsMetadata = (parentCommand as YunaUsableCommand)[keySubCommands];
+    const parentSubCommandsMetadata = parentCommand?.[keySubCommands];
     const useCommand = (parentCommand ?? inRoot!);
 
     const getPadEnd = (id: number) => {
@@ -75,7 +77,7 @@ export function commandsResolver(client: UsingClient, query: string | string[], 
     const useSubCommand = subCommand ?? virtualSubCommand;
 
     return forMessage && useSubCommand ? {
-        parent: parentCommand,
+        parent: parentCommand as Command,
         command: useSubCommand,
         endPad: getPadEnd(padIdx)
     } : useSubCommand;

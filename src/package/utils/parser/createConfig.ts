@@ -1,5 +1,6 @@
 import { ApplicationCommandOptionType } from "discord-api-types/v10";
-import type { Command, CommandOption, SeyfertNumberOption, SeyfertStringOption, SubCommand } from "seyfert";
+import type { CommandOption, SeyfertNumberOption, SeyfertStringOption } from "seyfert";
+import { keyMetadata, keyConfig, type YunaUsableCommand } from "../../things";
 
 type ValidLongTextTags = "'" | '"' | "`";
 type ValidNamedOptionSyntax = "-" | "--" | ":";
@@ -226,20 +227,7 @@ export interface CommandYunaMetaDataConfig {
     };
 }
 
-export const keyMetadata = Symbol("YunaParserMetaData");
-const keyConfig = Symbol("YunaParserConfig");
-export const keySubCommands = Symbol("hasSubCommands");
-export const keyRoot = Symbol("LinkedToRootPath");
 
-export type InstantiableSubCommand = { new(...args: any[]): SubCommand };
-
-export type YunaUsableCommand = (Command | SubCommand) & {
-
-    [keyMetadata]?: CommandYunaMetaDataConfig;
-    [keyConfig]?: YunaParserCreateOptions;
-    [keySubCommands]?: { default?: InstantiableSubCommand, has: boolean };
-    [keyRoot]?: boolean;
-};
 
 export const ParserRecommendedConfig = {
     /** things that I consider necessary in an Eval command. */

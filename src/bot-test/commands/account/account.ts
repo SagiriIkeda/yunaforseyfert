@@ -1,6 +1,6 @@
 import { Command, Declare, Groups, Options } from "seyfert";
 import CreateCommand from "./create";
-import { UseDefaultSubCommand } from "../../../package/utils/commandsResolver/init";
+import { UseDefaultSubCommand } from "../../../package/utils/commandsResolver/decorators";
 import OtherCommand from "./other";
 
 @Declare({

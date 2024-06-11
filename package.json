@@ -20,7 +20,7 @@
   "license": "ISC",
   "dependencies": {
     "discord-api-types": "^0.37.77",
-    "seyfert": "^1.4.0"
+    "seyfert": "github:SagiriIkeda/seyfert"
   },
   "homepage": "https://github.com/SagiriIkeda/yunaforseyfert#readme",
   "repository": {
