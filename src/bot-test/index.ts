@@ -1,5 +1,6 @@
 import { Client } from "seyfert";
 import { YunaParser } from "../package/utils/parser/parser";
+import YunaCommands from "../package/utils/commandsResolver/init";
 
 const client = new Client({
     commands: {
@@ -12,5 +13,7 @@ const client = new Client({
         }),
     },
 });
+
+YunaCommands.prepare(client)
 
 client.start();

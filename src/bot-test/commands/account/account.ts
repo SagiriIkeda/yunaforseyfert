@@ -1,5 +1,7 @@
 import { Command, Declare, Groups, Options } from "seyfert";
 import CreateCommand from "./create";
+import { UseDefaultSubCommand } from "../../../package/utils/commandsResolver/init";
+import OtherCommand from "./other";
 
 @Declare({
     name: "account",
@@ -7,8 +9,11 @@ import CreateCommand from "./create";
     aliases: ["pinwino"],
 })
 // Being in the same folder with @AutoLoad() you can save this
-@Options([CreateCommand])
+@Options([CreateCommand, OtherCommand])
 @Groups({
-    pengu: { defaultDescription: "si" }
+    pengu: {
+        defaultDescription: "si",
+    }
 })
+@UseDefaultSubCommand(OtherCommand)
 export default class AccountCommand extends Command { }

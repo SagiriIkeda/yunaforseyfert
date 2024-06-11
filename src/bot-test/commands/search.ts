@@ -12,7 +12,7 @@ export default class SearchCommand extends Command {
 
     run(ctx: CommandContext<typeof options>) {
 
-        const resolve = commandsResolver(ctx.client, ctx.options.query);
+        const resolve = commandsResolver(ctx.client, ctx.options.query, { useDefaultSubCommand: true })?.command;
 
         ctx.write({
             content: `\`\`\`js\n${JSON.stringify(resolve, null, 4)}\`\`\``

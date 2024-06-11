@@ -56,8 +56,7 @@ export class MessageWatcherCollector {
         for (const instance of this.instances) instance.onChangeEvent?.(message)
     }
 
-    /** @private */
-    onChangeEvent?: OnChangeEvent;
+    private onChangeEvent?: OnChangeEvent;
 
     onChange(callback: OnChangeEvent) {
         this.onChangeEvent = callback;

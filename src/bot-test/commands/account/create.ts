@@ -1,4 +1,5 @@
 import { type CommandContext, Declare, Options, SubCommand, createStringOption, Group } from "seyfert";
+import { LinkToRootPath } from "../../../package/utils/commandsResolver/init";
 
 const options = {
     pengu: createStringOption({
@@ -13,6 +14,7 @@ const options = {
 })
 @Options(options)
 @Group("pengu")
+@LinkToRootPath()
 export default class CreateCommand extends SubCommand {
     run(ctx: CommandContext<typeof options>) {
         // some logic there

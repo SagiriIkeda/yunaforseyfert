@@ -1,11 +1,13 @@
-import { type Command, SubCommand, type UsingClient } from "seyfert";
-import { type YunaUsableCommand, keyHasSubcommands } from "../parser/createConfig";
+import { type Command, SubCommand, type UsingClient, type ContextMenuCommand } from "seyfert";
+import { type YunaUsableCommand, keySubCommands } from "../parser/createConfig";
+import { ApplicationCommandType } from "discord-api-types/v10";
+import YunaCommands from "./init";
 
-type Cmd = Command | SubCommand;
+type UsableCommand = Command | SubCommand;
 
 interface YunaCommandsResolverData {
     parent?: Command | YunaUsableCommand
-    command: Cmd,
+    command: UsableCommand,
     endPad?: number
 }
 
@@ -14,8 +16,8 @@ interface YunaCommandsResolverOptions {
 }
 
 export function commandsResolver(client: UsingClient, query: string | string[], forMessage: YunaCommandsResolverOptions): YunaCommandsResolverData | undefined;
-export function commandsResolver(client: UsingClient, query: string | string[], forMessage?: undefined): Cmd | undefined;
-export function commandsResolver(client: UsingClient, query: string | string[], forMessage?: YunaCommandsResolverOptions | undefined): Cmd | YunaCommandsResolverData | undefined {
+export function commandsResolver(client: UsingClient, query: string | string[], forMessage?: undefined): UsableCommand | undefined;
+export function commandsResolver(client: UsingClient, query: string | string[], forMessage?: YunaCommandsResolverOptions | undefined): UsableCommand | YunaCommandsResolverData | undefined {
 
     const matchs = typeof query === "string" ? Array.from(query.matchAll(/[^\s\x7F\n]+/g)).slice(0, 3) : undefined;
 
@@ -24,44 +26,58 @@ export function commandsResolver(client: UsingClient, query: string | string[], 
     if (!queryArray.length) return;
 
     const [parent, group, sub] = queryArray;
+    const searchFn = (command: Command | ContextMenuCommand | SubCommand) =>
+        command.type === ApplicationCommandType.ChatInput && (command.name === parent || "aliases" in command && command.aliases?.includes(parent));
 
-    const parentCommand = client.commands?.values.find((command) => command.name === parent || "aliases" in command && command.aliases?.includes(parent)) as YunaUsableCommand | undefined
+    const parentCommand = client.commands?.values.find(searchFn) as YunaUsableCommand | undefined;
+    const inRoot = parentCommand ? undefined : YunaCommands.linkedSubCommands.find(searchFn);
 
-    if (!parentCommand) return undefined;
+    if (!(parentCommand || inRoot)) return undefined;
 
-    if ((parentCommand as YunaUsableCommand)[keyHasSubcommands] === false) return forMessage ? {
-        command: parentCommand,
-        endPad: matchs && matchs[0]?.index + matchs[0]?.[0]?.length
-    } : parentCommand;
+
+    const parentSubCommandsMetadata = (parentCommand as YunaUsableCommand)[keySubCommands];
+    const useCommand = (parentCommand ?? inRoot!);
+
+    const getPadEnd = (id: number) => {
+        return matchs && matchs[id]?.index + matchs[id]?.[0]?.length;
+    }
+
+    if (!parentCommand || inRoot || parentSubCommandsMetadata?.has !== true) return forMessage ? {
+        parent: inRoot?.parent,
+        command: useCommand,
+        endPad: getPadEnd(0)
+    } : useCommand;
 
     const groupKeyName = sub && group;
 
+    let padIdx = 0;
+
     const groupName = "groups" in parentCommand ? (parentCommand.groupsAliases?.[groupKeyName] || ((groupKeyName in (parentCommand.groups ?? {})) ? groupKeyName : undefined)) : undefined;
+
+    groupName && padIdx++;
 
     const subName = sub ?? group;
 
-    let hasSubCommands = false;
-
     const subCommand = ("options" in parentCommand && parentCommand.options?.find(
-        (o) => {
-            if (!(o instanceof SubCommand)) return false;
-
-            hasSubCommands = true;
-
-            return (o.name === subName || o.aliases?.includes(subName)) && o.group === groupName;
-        }
+        (o) => o instanceof SubCommand && o.group === groupName && (o.name === subName || o.aliases?.includes(subName))
     )) as SubCommand | undefined || undefined;
 
-    (parentCommand as YunaUsableCommand)[keyHasSubcommands] = hasSubCommands;
+    subCommand && padIdx++;
 
-    const padIdx = groupName && subCommand ? 2 : (subCommand) ? 1 : 0;
+    let virtualSubCommand: SubCommand | undefined;
 
-    const endPad = matchs && matchs[padIdx]?.index + matchs[padIdx]?.[0]?.length;
+    if (forMessage?.useDefaultSubCommand === true) {
+        const defaultInstance = parentSubCommandsMetadata.default;
 
-    return forMessage && subCommand ? {
+        virtualSubCommand = ((defaultInstance && parentCommand.options?.find(o => (o as SubCommand & { __proto__: any }).__proto__.constructor === defaultInstance)) ?? parentCommand.options?.[0]) as SubCommand | undefined;
+    }
+
+    const useSubCommand = subCommand ?? virtualSubCommand;
+
+    return forMessage && useSubCommand ? {
         parent: parentCommand,
-        command: subCommand,
-        endPad
-    } : subCommand;
+        command: useSubCommand,
+        endPad: getPadEnd(padIdx)
+    } : useSubCommand;
 
 }

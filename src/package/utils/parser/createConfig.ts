@@ -228,12 +228,17 @@ export interface CommandYunaMetaDataConfig {
 
 export const keyMetadata = Symbol("YunaParserMetaData");
 const keyConfig = Symbol("YunaParserConfig");
-export const keyHasSubcommands = Symbol("hasSubCommands");
+export const keySubCommands = Symbol("hasSubCommands");
+export const keyRoot = Symbol("LinkedToRootPath");
+
+export type InstantiableSubCommand = { new(...args: any[]): SubCommand };
 
 export type YunaUsableCommand = (Command | SubCommand) & {
+
     [keyMetadata]?: CommandYunaMetaDataConfig;
     [keyConfig]?: YunaParserCreateOptions;
-    [keyHasSubcommands]?: boolean;
+    [keySubCommands]?: { default?: InstantiableSubCommand, has: boolean };
+    [keyRoot]?: boolean;
 };
 
 export const ParserRecommendedConfig = {
