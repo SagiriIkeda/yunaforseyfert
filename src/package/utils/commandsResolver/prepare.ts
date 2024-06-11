@@ -1,4 +1,4 @@
-import { type UsingClient, BaseCommand, Command, SubCommand, type Client } from "seyfert";
+import { type UsingClient, Command, SubCommand, type Client } from "seyfert";
 import { type YunaUsableCommand, keySubCommands, keyRoot } from "../../things";
 import type { YunaCommandsResolverConfig } from "./resolver";
 import { baseResolver } from "./base";
@@ -13,7 +13,8 @@ export type UseYunaCommandsClient = UsingClient & {
 
 export function prepare(client: Client | UsingClient) {
 
-    if (!client.commands) return;
+    if (!client.commands?.values.length) return client.logger.warn("UseYuna.commands.prepare The commands have not been loaded yet or there are none at all.");
+
     const self = client as UseYunaCommandsClient;
     const isFirst = !self[preparedKey];
 
@@ -23,18 +24,7 @@ export function prepare(client: Client | UsingClient) {
 
     const metadata = self[preparedKey];
 
-    const defaultReload = BaseCommand.prototype.reload;
-
-    const applyReload = (to: YunaUsableCommand) => {
-        if (!isFirst || to.reload !== BaseCommand.prototype.reload) return;
-        Object.defineProperty(to, "reload", {
-            async value(...args: Parameters<typeof defaultReload>) {
-                const val = await defaultReload.apply(this, args);
-                prepare(client);
-                return val;
-            }
-        })
-    }
+    metadata.links = [];
 
     for (const command of client.commands?.values ?? []) {
         if (!(command instanceof Command)) continue;
@@ -44,12 +34,8 @@ export function prepare(client: Client | UsingClient) {
         if (command.options?.[0] instanceof SubCommand) (command as YunaUsableCommand)[keySubCommands] = { ...subCommandsMetadata, has: true };
         else { delete (command as YunaUsableCommand)[keySubCommands] }
 
-
-        applyReload(command);
-
         for (const sub of command.options ?? []) {
             if (!(sub instanceof SubCommand)) continue;
-            applyReload(sub);
             sub.parent = command;
             if ((sub as YunaUsableCommand)[keyRoot] === true) metadata.links.push(sub)
         }
@@ -71,8 +57,6 @@ export function prepare(client: Client | UsingClient) {
             }
         })
     }
-
-
 
 }
 
