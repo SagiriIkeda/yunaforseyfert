@@ -11,7 +11,7 @@ export type UseYunaCommandsClient = UsingClient & {
     }
 }
 
-export function prepare(client: Client | UsingClient) {
+export function prepareCommands(client: Client | UsingClient) {
 
     if (!client.commands?.values.length) return client.logger.warn("UseYuna.commands.prepare The commands have not been loaded yet or there are none at all.");
 
@@ -52,7 +52,7 @@ export function prepare(client: Client | UsingClient) {
         Object.defineProperty(client.commands, event, {
             async value(...args: Parameters<typeof def>) {
                 const val = await def.apply(this, args);
-                prepare(client);
+                prepareCommands(client);
                 return val;
             }
         })

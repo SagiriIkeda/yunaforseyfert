@@ -1,6 +1,6 @@
 import type { Command, Message, UsingClient } from "seyfert"
 import { baseResolver } from "./base"
-import { createResolver, prepare } from "./prepare"
+import { createResolver, prepareCommands } from "./prepare"
 import { once } from "../pengu"
 
 export interface YunaCommandsResolverConfig {
@@ -14,13 +14,15 @@ export const YunaCommandsResolver = ({ useDefaultSubCommand = true }: YunaComman
     }
 
     const init = once((client: UsingClient) => {
-        prepare(client)
+        prepareCommands(client)
         createResolver(client, config)
     })
 
     return (client: UsingClient, prefix: string, content: string, message: Message) => {
 
         init(client)
+
+        message.prefix = prefix;
 
         const { endPad = 0, command, parent } = baseResolver(client, content, config) ?? {};
 

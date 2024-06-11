@@ -1,5 +1,5 @@
 import type { BaseMessage, CommandContext } from "seyfert";
-import MessageWatcherController, { createId } from "./watcherController";
+import { type YunaMessageWatcherController, createId } from "./watcherController";
 import type { GatewayMessageUpdateDispatchData } from "discord-api-types/v10";
 
 export type MessageWatcherCollectorOptions = {
@@ -7,8 +7,6 @@ export type MessageWatcherCollectorOptions = {
     /** @default 10min */
     time?: number;
 };
-
-
 
 type OnChangeEvent = (message: GatewayMessageUpdateDispatchData) => any;
 type OnStopEvent = (reason: string) => any;
@@ -19,13 +17,19 @@ export class MessageWatcherCollector {
 
     message: BaseMessage;
 
-    #timer?: NodeJS.Timeout;
+    #idle?: NodeJS.Timeout;
+    #timeout?: NodeJS.Timeout;
+
     ctx: CommandContext;
 
     readonly id: string;
 
-    constructor(message: BaseMessage, ctx: CommandContext, options?: MessageWatcherCollectorOptions) {
+    invoker: YunaMessageWatcherController;
+
+    constructor(invoker: YunaMessageWatcherController, message: BaseMessage, ctx: CommandContext, options?: MessageWatcherCollectorOptions) {
         const TenMinutes = 1000 * 60 * 10;
+
+        this.invoker = invoker;
 
         this.ctx = ctx;
         this.options = { time: TenMinutes, ...(options ?? {}) };
@@ -36,17 +40,21 @@ export class MessageWatcherCollector {
     }
 
     refresh() {
-        const timeout = this.options.idle ?? this.options.time;
+        const { idle, time } = this.options;
 
-        clearTimeout(this.#timer);
+        if (time && !this.#timeout) {
+            this.#timeout = setTimeout(() => this.stop("timeout"), time);
+        }
 
-        this.#timer = setTimeout(() => {
-            this.stop(this.options.idle ? "idle" : "timeout")
-        }, timeout);
+        if (!idle) return;
+
+        clearTimeout(this.#idle);
+
+        this.#idle = setTimeout(() => this.stop("idle"), idle);
     }
 
     get instances() {
-        return MessageWatcherController.values.get(this.id) ?? [];
+        return this.invoker.collectors.get(this.id) ?? [];
     }
 
     update(message: GatewayMessageUpdateDispatchData) {
@@ -71,14 +79,15 @@ export class MessageWatcherCollector {
     }
 
     stop(reason: string) {
-        clearTimeout(this.#timer);
+        clearTimeout(this.#idle);
+        clearTimeout(this.#timeout);
 
         const { instances } = this;
 
         const instanceId = instances.indexOf(this);
 
         if (instanceId !== -1) instances.splice(instanceId, 1);
-        if (instances.length === 0) MessageWatcherController.values.delete(this.id)
+        if (instances.length === 0) this.invoker.collectors.delete(this.id)
 
         this.#onStopEvent?.(reason);
         return this;

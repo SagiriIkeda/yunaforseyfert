@@ -1,6 +1,6 @@
-import type { BaseMessage, CommandContext, Message, UsingClient } from "seyfert";
-import { MessageWatcherCollector, type MessageWatcherCollectorOptions } from "./messageWatcher";
 import { GatewayDispatchEvents } from "discord-api-types/v10";
+import type { BaseMessage, CommandContext, LimitedCollection, UsingClient } from "seyfert";
+import { MessageWatcherCollector, type MessageWatcherCollectorOptions } from "./messageWatcher";
 
 export function createId(message: string, channelId: string): string
 export function createId(message: BaseMessage): string
@@ -9,18 +9,34 @@ export function createId(message: BaseMessage | string, channelId?: string): str
     return `${message.channelId}.${message.id}`;
 }
 
-class BaseMessageWatcherController {
-    values = new Map<string, MessageWatcherCollector[]>();
+type CollectorsCacheAdapter = Map<string, MessageWatcherCollector[]> | LimitedCollection<string, MessageWatcherCollector[]>;
+
+export interface YunaMessageWatcherControllerConfig {
+    client: UsingClient,
+    cache?: CollectorsCacheAdapter,
+}
+
+export class YunaMessageWatcherController {
+
+    collectors: CollectorsCacheAdapter = new Map<string, MessageWatcherCollector[]>();
 
     watching = false;
 
-    init(client: UsingClient) {
+    client: UsingClient;
+
+    constructor({ cache = new Map(), client }: YunaMessageWatcherControllerConfig) {
+        this.client = client;
+        this.collectors = cache;
+    }
+
+    init() {
 
         if (this.watching) return;
+        const { client } = this;
 
         this.watching = true;
 
-        const cache = this.values;
+        const cache = this.collectors;
 
         const deleteBy = (data: { channelId: string } | { guildId: string }) => {
 
@@ -30,7 +46,10 @@ class BaseMessageWatcherController {
             const key = isChannel ? "channelId" : "guildId";
             const errorName = isChannel ? "channelDelete" : "guildDelete";
 
-            for (const instances of cache.values()) {
+            for (const instancesData of [...cache.values()]) {
+
+                const instances = "value" in instancesData ? instancesData?.value : instancesData;
+
                 const [zero] = instances;
                 if (!zero || zero.message[key] !== id) continue;
 
@@ -84,27 +103,29 @@ class BaseMessageWatcherController {
             },
         })
     }
+
+    create(
+        ctx: CommandContext,
+        options?: MessageWatcherCollectorOptions,
+    ) {
+        const { message } = ctx;
+        if (!message) throw Error("CommandContext doesn't have a message");
+        if (!("prefix" in message)) throw Error("Command Message doesn't have a prefix");
+
+        const id = createId(message);
+
+        const inCache = this.collectors.get(id)
+
+        this.init()
+
+        const watcher = new MessageWatcherCollector(this, message, ctx, options);
+
+        if (!inCache) this.collectors.set(id, []);
+
+        this.collectors.get(id)?.push(watcher)
+
+        return watcher;
+    }
+
 }
-const MessageWatcherController = new BaseMessageWatcherController();
-export default MessageWatcherController;
 
-export function createMessageWatcher(
-    this: { message: Message; ctx: CommandContext },
-    options: Omit<MessageWatcherCollectorOptions, "ctx">,
-) {
-    const { message, ctx } = this;
-
-    const id = createId(message);
-
-    const inCache = MessageWatcherController.values.get(id)
-
-    MessageWatcherController.init(ctx.client)
-
-    const watcher = new MessageWatcherCollector(message, ctx, options);
-
-    if (!inCache) MessageWatcherController.values.set(id, []);
-
-    MessageWatcherController.values.get(id)?.push(watcher)
-
-    return watcher;
-}
