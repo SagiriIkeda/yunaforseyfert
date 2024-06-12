@@ -1,6 +1,6 @@
 import { Command, Declare, Groups, Options } from "seyfert";
-import CreateCommand from "./create";
 import { UseDefaultSubCommand } from "../../../package/utils/commandsResolver/decorators";
+import CreateCommand from "./create";
 import OtherCommand from "./other";
 
 @Declare({
@@ -13,7 +13,7 @@ import OtherCommand from "./other";
 @Groups({
     pengu: {
         defaultDescription: "si",
-    }
+    },
 })
 @UseDefaultSubCommand(OtherCommand)
-export default class AccountCommand extends Command { }
+export default class AccountCommand extends Command {}

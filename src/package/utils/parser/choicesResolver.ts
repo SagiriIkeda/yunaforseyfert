@@ -1,7 +1,6 @@
-import type { SeyfertStringOption, SeyfertNumberOption, CommandOption } from "seyfert";
+import type { CommandOption, SeyfertNumberOption, SeyfertStringOption } from "seyfert";
 import { type YunaUsableCommand, keyMetadata } from "../../things";
 import type { CommandYunaMetaDataConfig, YunaParserCreateOptions } from "./createConfig";
-
 
 const getChoicesOptions = (commandMetadata: CommandYunaMetaDataConfig) => {
     const inCache = commandMetadata.choicesOptions?.decored;

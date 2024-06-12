@@ -1,4 +1,4 @@
-import { type CommandContext, Declare, Options, SubCommand, createStringOption, Group } from "seyfert";
+import { type CommandContext, Declare, Group, Options, SubCommand, createStringOption } from "seyfert";
 import { LinkToRootPath } from "../../../package/utils/commandsResolver/decorators";
 
 const options = {

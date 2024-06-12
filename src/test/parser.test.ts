@@ -2,8 +2,8 @@ import { describe, expect, test } from "vitest";
 import ChoicesNumberTestCommand, { ChoicesTestCommand } from "../bot-test/commands/choicesTest";
 import TestCommand from "../bot-test/commands/test";
 import { ParserRecommendedConfig, YunaParser } from "../package";
-import type { YunaParserCreateOptions } from "../package/utils/parser/createConfig";
 import type { YunaUsableCommand } from "../package/things";
+import type { YunaParserCreateOptions } from "../package/utils/parser/createConfig";
 
 const testCommand = new TestCommand();
 const choicesCommand = new ChoicesTestCommand();

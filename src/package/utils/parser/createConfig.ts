@@ -1,6 +1,6 @@
 import { ApplicationCommandOptionType } from "discord-api-types/v10";
 import type { CommandOption, SeyfertNumberOption, SeyfertStringOption } from "seyfert";
-import { keyMetadata, keyConfig, type YunaUsableCommand } from "../../things";
+import { type YunaUsableCommand, keyConfig, keyMetadata } from "../../things";
 
 type ValidLongTextTags = "'" | '"' | "`";
 type ValidNamedOptionSyntax = "-" | "--" | ":";
@@ -211,8 +211,8 @@ export const createConfig = (config: YunaParserCreateOptions, isFull = true) => 
             config.resolveCommandOptionsChoices === null
                 ? null
                 : {
-                    canUseDirectlyValue: !(config.resolveCommandOptionsChoices?.canUseDirectlyValue === false),
-                };
+                      canUseDirectlyValue: !(config.resolveCommandOptionsChoices?.canUseDirectlyValue === false),
+                  };
 
     return newConfig;
 };
@@ -227,8 +227,6 @@ export interface CommandYunaMetaDataConfig {
     };
 }
 
-
-
 export const ParserRecommendedConfig = {
     /** things that I consider necessary in an Eval command. */
     Eval: {
@@ -238,7 +236,7 @@ export const ParserRecommendedConfig = {
 } satisfies Record<string, YunaParserCreateOptions>;
 
 export function DeclareParserConfig(config: YunaParserCreateOptions = {}) {
-    return <T extends { new(...args: any[]): {} }>(target: T) => {
+    return <T extends { new (...args: any[]): {} }>(target: T) => {
         if (!Object.keys(config).length) return target;
 
         return class extends target {

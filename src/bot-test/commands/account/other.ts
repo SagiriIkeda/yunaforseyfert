@@ -1,7 +1,6 @@
 import { type CommandContext, Declare, SubCommand } from "seyfert";
 import { LinkToRootPath } from "../../../package/utils/commandsResolver/decorators";
 
-
 @Declare({
     name: "others",
     description: "create a new something",

@@ -1,5 +1,6 @@
 import { inspect } from "node:util";
-import { Command, type CommandContext, Declare, Embed, Options, createStringOption } from "seyfert";
+import { Command, type CommandContext, Declare, Embed, type Message, Options, createStringOption } from "seyfert";
+import { createWatcher } from "../../package/utils/messageWatcher/prepare";
 
 const options = {
     first: createStringOption({
@@ -19,22 +20,37 @@ const options = {
 @Options(options)
 export default class TestCommand extends Command {
     async run(ctx: CommandContext<typeof options>) {
-        const embed = new Embed({
-            title: "Parsed!",
-            fields: [
-                {
-                    name: "input",
-                    value: `\`\`\`js\n${ctx.message?.content}\`\`\``,
-                },
-                {
-                    name: "Output",
-                    value: `\`\`\`js\n${inspect(ctx.options)}\`\`\``,
-                },
-            ],
+        const createEmbed = (options: typeof ctx.options, message: Pick<Message, "content">) => {
+            //code
+            return new Embed({
+                title: "Parsed!",
+                fields: [
+                    {
+                        name: "input",
+                        value: `\`\`\`js\n${message?.content}\`\`\``,
+                    },
+                    {
+                        name: "Output",
+                        value: `\`\`\`js\n${inspect(options)}\`\`\``,
+                    },
+                ],
+            });
+        };
+
+        const msg = await ctx.write({
+            embeds: [createEmbed(ctx.options, ctx.message!)],
         });
 
-        await ctx.write({
-            embeds: [embed],
+        const watcher = createWatcher(ctx, { time: 10_000 });
+
+        watcher.onChange((options, rawMsg) => {
+            if (!msg) return;
+
+            msg.edit({ embeds: [createEmbed(options, rawMsg)] });
+        });
+
+        watcher.onStop((reason) => {
+            ctx.write({ content: `watcher muerto, "${reason}"` });
         });
     }
 
