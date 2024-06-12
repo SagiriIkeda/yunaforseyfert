@@ -152,7 +152,7 @@ export class MessageWatcherCollector<const O extends OptionsRecord = any> {
         const args = argsParser(argsContent, command, this.message);
 
         /**
-         * THIS IS BASED IN
+         * THIS IS BASED ON
          * https://github.com/tiramisulabs/seyfert/blob/main/src/client/onmessagecreate.ts
          */
 

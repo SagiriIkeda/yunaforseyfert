@@ -10,7 +10,8 @@
     "tsc": "tsc",
     "lint": "biome lint --write ./src",
     "format": "biome check --write ./src",
-    "test": "vitest"
+    "test": "vitest",
+    "prepare": "husky"
   },
   "keywords": [
     "parser",
@@ -27,10 +28,18 @@
     "type": "git",
     "url": "git+https://github.com/SagiriIkeda/yunaforseyfert.git"
   },
+  "lint-staged": {
+    "*.ts": [
+      "biome check --write",
+      "biome format --write"
+    ]
+  },
   "devDependencies": {
     "@biomejs/biome": "1.8.0",
     "@types/node": "^20.11.30",
     "esbuild": "^0.20.2",
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.7",
     "typescript": "^5.0.0",
     "vitest": "^1.5.2"
   }

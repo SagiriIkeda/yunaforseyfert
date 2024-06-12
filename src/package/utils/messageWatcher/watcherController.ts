@@ -122,6 +122,7 @@ export class YunaMessageWatcherController {
         if (!message) throw Error("CommandContext doesn't have a message");
         const { prefix } = message;
         if (prefix === undefined) throw Error("Prefix isn't provided");
+        if (!ctx.command.options?.length) throw Error("Prefix isn't provided");
 
         const id = createId(message);
 
