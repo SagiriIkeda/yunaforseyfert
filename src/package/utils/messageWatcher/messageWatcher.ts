@@ -60,8 +60,14 @@ export class MessageWatcherCollector<const O extends OptionsRecord = any> {
     command: Command | SubCommand;
     shardId: number;
 
-    constructor(invoker: YunaMessageWatcherController, message: Message, prefix: string, command: Command | SubCommand, shardId?: number, options?: MessageWatcherCollectorOptions) {
-
+    constructor(
+        invoker: YunaMessageWatcherController,
+        message: Message,
+        prefix: string,
+        command: Command | SubCommand,
+        shardId?: number,
+        options?: MessageWatcherCollectorOptions,
+    ) {
         this.shardId = shardId ?? 1;
         this.invoker = invoker;
         this.prefix = prefix;
@@ -229,7 +235,6 @@ export class MessageWatcherCollector<const O extends OptionsRecord = any> {
         this.onChangeEvent = callback;
         return this;
     }
-
 
     /** @internal */
     onUsageErrorEvent?: OnUsageErrorEvent;

@@ -1,7 +1,7 @@
 import type { Command, Message, UsingClient } from "seyfert";
 import { once } from "../pengu";
 import { baseResolver } from "./base";
-import { createResolver, prepareCommands } from "./prepare";
+import { type UseYunaCommandsClient, commandsConfigKey, prepareCommands } from "./prepare";
 
 export interface YunaCommandsResolverConfig {
     useDefaultSubCommand?: boolean;
@@ -14,7 +14,8 @@ export const YunaCommandsResolver = ({ useDefaultSubCommand = true }: YunaComman
 
     const init = once((client: UsingClient) => {
         prepareCommands(client);
-        createResolver(client, config);
+        const metadata = (client as UseYunaCommandsClient)[commandsConfigKey];
+        if (metadata) metadata.config = config;
     });
 
     return (client: UsingClient, prefix: string, content: string, message: Message) => {

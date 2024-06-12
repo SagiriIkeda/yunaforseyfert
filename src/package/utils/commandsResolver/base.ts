@@ -1,7 +1,7 @@
 import { ApplicationCommandType } from "discord-api-types/v10";
 import { type Command, type ContextMenuCommand, SubCommand, type UsingClient } from "seyfert";
 import { type YunaUsableCommand, keySubCommands } from "../../things";
-import { type UseYunaCommandsClient, preparedKey } from "./prepare";
+import { type UseYunaCommandsClient, commandsConfigKey } from "./prepare";
 import type { YunaCommandsResolverConfig } from "./resolver";
 
 type UsableCommand = Command | SubCommand;
@@ -24,7 +24,7 @@ export function baseResolver(
     query: string | string[],
     forMessage?: YunaCommandsResolverConfig,
 ): UsableCommand | YunaCommandsResolverData | undefined {
-    const metadata = (client as UseYunaCommandsClient)[preparedKey];
+    const metadata = (client as UseYunaCommandsClient)[commandsConfigKey];
     if (!metadata) return;
 
     const matchs = typeof query === "string" ? Array.from(query.matchAll(/[^\s\x7F\n]+/g)).slice(0, 3) : undefined;

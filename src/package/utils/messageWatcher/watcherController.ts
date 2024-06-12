@@ -4,8 +4,8 @@ import { MessageWatcherCollector, type MessageWatcherCollectorOptions } from "./
 const Never = Symbol();
 
 export type NeverOptions = OptionsRecord & {
-    [Never]: null
-}
+    [Never]: null;
+};
 
 export function createId(message: string, channelId: string): string;
 export function createId(message: BaseMessage): string;
@@ -22,15 +22,14 @@ export interface YunaMessageWatcherControllerConfig {
 }
 
 export interface WatcherCreateData {
-    client: UsingClient,
-    message: Message,
-    prefix: string,
-    command: Command | SubCommand,
-    shardId?: number,
+    client: UsingClient;
+    message: Message;
+    prefix: string;
+    command: Command | SubCommand;
+    shardId?: number;
 }
 
 export type createT = WatcherCreateData | Pick<CommandContext, "client" | "command" | "message" | "shardId">;
-
 
 export class YunaMessageWatcherController {
     collectors: CollectorsCacheAdapter = new Map<string, MessageWatcherCollector<any>[]>();
@@ -115,7 +114,10 @@ export class YunaMessageWatcherController {
         });
     }
 
-    create<const O extends OptionsRecord = NeverOptions, const C extends createT = createT>(ctx: C, options?: MessageWatcherCollectorOptions) {
+    create<const O extends OptionsRecord = NeverOptions, const C extends createT = createT>(
+        ctx: C,
+        options?: MessageWatcherCollectorOptions,
+    ) {
         const { message, command } = ctx;
         if (!message) throw Error("CommandContext doesn't have a message");
         const { prefix } = message;
@@ -129,7 +131,6 @@ export class YunaMessageWatcherController {
 
         type OptionsType = O extends NeverOptions ? (C extends CommandContext<infer R> ? R : {}) : O;
 
-        // const watcher = new MessageWatcherCollector<C extends CommandContext<infer R> ? R : O>(this, message, prefix, command, ctx.shardId, options);
         const watcher = new MessageWatcherCollector<OptionsType>(this, message, prefix, command, ctx.shardId, options);
 
         if (!inCache) this.collectors.set(id, []);

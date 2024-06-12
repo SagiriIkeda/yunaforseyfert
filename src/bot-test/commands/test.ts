@@ -50,9 +50,8 @@ export default class TestCommand extends Command {
                 message: ctx.message,
                 prefix: "y",
                 shardId: ctx.shardId,
-            }
-            ,
-            { idle: 10_000 }
+            },
+            { idle: 10_000 },
         );
 
         watcher.onChange((options, rawMsg) => {

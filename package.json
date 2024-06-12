@@ -8,8 +8,8 @@
   "scripts": {
     "build": "tsc && esbuild --bundle src/package/index.ts --minify --outdir=build --platform=node --packages=external",
     "tsc": "tsc",
-    "lint": "biome lint --apply ./src",
-    "format": "biome check --apply ./src",
+    "lint": "biome lint --write ./src",
+    "format": "biome check --write ./src",
     "test": "vitest"
   },
   "keywords": [
