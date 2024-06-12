@@ -3,10 +3,13 @@ import {
     type Client,
     type Command,
     CommandContext,
+    type ContextOptions,
     type ContextOptionsResolved,
     type Message,
     type OnOptionsReturnObject,
     OptionResolver,
+    type OptionsRecord,
+    type SubCommand,
     type User,
     type UsingClient,
     type WorkerClient,
@@ -22,13 +25,13 @@ export type MessageWatcherCollectorOptions = {
 
 type RawMessageUpdated = MakeRequired<GatewayMessageUpdateDispatchData, "content">;
 
-type OnChangeEvent<C extends CommandContext> = (result: C["options"], rawMessage: RawMessageUpdated) => any;
+type OnChangeEvent<O extends OptionsRecord = any> = (result: ContextOptions<O>, rawMessage: RawMessageUpdated) => any;
 type OnStopEvent = (reason: string) => any;
 type OnOptionsErrorEvent = (metadata: OnOptionsReturnObject) => any;
 
 type OnUsageErrorEvent = (reason: "PrefixChanged" | "CommandChanged") => any;
 
-const createAPIUser = (user: User) => {
+const createFakeAPIUser = (user: User) => {
     const created: Record<string, any> = {};
 
     for (const [key, value] of Object.entries(user)) {
@@ -39,7 +42,7 @@ const createAPIUser = (user: User) => {
     return created as APIUser;
 };
 
-export class MessageWatcherCollector<C extends CommandContext> {
+export class MessageWatcherCollector<const O extends OptionsRecord = any> {
     readonly options: MessageWatcherCollectorOptions;
 
     message: Message;
@@ -47,25 +50,30 @@ export class MessageWatcherCollector<C extends CommandContext> {
     #idle?: NodeJS.Timeout;
     #timeout?: NodeJS.Timeout;
 
-    ctx: CommandContext;
-
     readonly id: string;
 
     invoker: YunaMessageWatcherController;
 
     protected user: APIUser;
 
-    constructor(invoker: YunaMessageWatcherController, message: Message, ctx: CommandContext, options?: MessageWatcherCollectorOptions) {
-        this.invoker = invoker;
+    prefix: string;
+    command: Command | SubCommand;
+    shardId: number;
 
-        this.ctx = ctx;
+    constructor(invoker: YunaMessageWatcherController, message: Message, prefix: string, command: Command | SubCommand, shardId?: number, options?: MessageWatcherCollectorOptions) {
+
+        this.shardId = shardId ?? 1;
+        this.invoker = invoker;
+        this.prefix = prefix;
+        this.command = command;
+
         this.options = options ?? {};
         this.message = message;
 
         this.id = createId(message);
         this.refresh();
 
-        this.user = this.instances[0]?.user ?? createAPIUser(this.message.author);
+        this.user = this.instances[0]?.user ?? createFakeAPIUser(this.message.author);
 
         if (options?.abortOnUsageError) {
             for (const instance of this.instances) {
@@ -104,8 +112,8 @@ export class MessageWatcherCollector<C extends CommandContext> {
         const prefix = this.message.prefix!;
         const c = message.content.trimStart();
 
-        type EventKeys = Extract<keyof MessageWatcherCollector<C>, `on${string}Event`>;
-        type EventParams<E extends EventKeys> = Parameters<NonNullable<MessageWatcherCollector<C>[E]>>;
+        type EventKeys = Extract<keyof MessageWatcherCollector<O>, `on${string}Event`>;
+        type EventParams<E extends EventKeys> = Parameters<NonNullable<MessageWatcherCollector<O>[E]>>;
 
         const runForAll = <E extends EventKeys>(event: E, ...parameters: EventParams<E>) => {
             //@ts-expect-error
@@ -133,7 +141,7 @@ export class MessageWatcherCollector<C extends CommandContext> {
 
         const { argsContent, command, parent } = resolver(client as UsingClient, prefix, c.slice(prefix.length), this.message);
 
-        if (command !== this.ctx.command) return usageError("CommandChanged");
+        if (command !== this.command) return usageError("CommandChanged");
 
         const args = argsParser(argsContent, command, this.message);
 
@@ -198,8 +206,8 @@ export class MessageWatcherCollector<C extends CommandContext> {
             resolved,
         );
 
-        const ctx = new CommandContext(client as UsingClient, this.message, optionsResolver, this.ctx.shardId, command);
-        /** @ts-ignore */
+        const ctx = new CommandContext<O>(client as UsingClient, this.message, optionsResolver, this.shardId, command);
+        /** @ts-expect-error */
         const [erroredOptions] = await command.__runOptions(ctx, optionsResolver);
 
         if (erroredOptions) return optionsError(erroredOptions);
@@ -207,28 +215,31 @@ export class MessageWatcherCollector<C extends CommandContext> {
         runForAll("onChangeEvent", ctx.options, message as RawMessageUpdated);
     }
 
+    /** @internal */
     onOptionsErrorEvent?: OnOptionsErrorEvent;
 
     onOptionsError(callback: OnOptionsErrorEvent) {
         this.onOptionsErrorEvent = callback;
         return this;
     }
+    /** @internal */
+    onChangeEvent?: OnChangeEvent<O>;
 
-    onChangeEvent?: OnChangeEvent<C>;
-
-    onChange(callback: OnChangeEvent<C>) {
+    onChange(callback: OnChangeEvent<O>) {
         this.onChangeEvent = callback;
         return this;
     }
 
-    onStopEvent?: OnStopEvent;
 
+    /** @internal */
     onUsageErrorEvent?: OnUsageErrorEvent;
 
     onUsageError(callback: OnUsageErrorEvent) {
         this.onUsageErrorEvent = callback;
         return this;
     }
+    /** @internal */
+    onStopEvent?: OnStopEvent;
 
     onStop(callback: OnStopEvent) {
         this.onStopEvent = callback;

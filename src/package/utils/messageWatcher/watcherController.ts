@@ -1,6 +1,11 @@
 import { GatewayDispatchEvents } from "discord-api-types/v10";
-import type { BaseMessage, CommandContext, LimitedCollection, UsingClient } from "seyfert";
+import type { BaseMessage, Command, CommandContext, LimitedCollection, Message, OptionsRecord, SubCommand, UsingClient } from "seyfert";
 import { MessageWatcherCollector, type MessageWatcherCollectorOptions } from "./messageWatcher";
+const Never = Symbol();
+
+export type NeverOptions = OptionsRecord & {
+    [Never]: null
+}
 
 export function createId(message: string, channelId: string): string;
 export function createId(message: BaseMessage): string;
@@ -16,8 +21,19 @@ export interface YunaMessageWatcherControllerConfig {
     cache?: CollectorsCacheAdapter;
 }
 
+export interface WatcherCreateData {
+    client: UsingClient,
+    message: Message,
+    prefix: string,
+    command: Command | SubCommand,
+    shardId?: number,
+}
+
+export type createT = WatcherCreateData | Pick<CommandContext, "client" | "command" | "message" | "shardId">;
+
+
 export class YunaMessageWatcherController {
-    collectors: CollectorsCacheAdapter = new Map<string, MessageWatcherCollector<CommandContext>[]>();
+    collectors: CollectorsCacheAdapter = new Map<string, MessageWatcherCollector<any>[]>();
 
     watching = false;
 
@@ -90,8 +106,8 @@ export class YunaMessageWatcherController {
                         deleteByMessage(data.id, data.channel_id, "MessageDelete");
                         break;
                     case GatewayDispatchEvents.MessageUpdate: {
-                        const instances = get(data.id, data.channel_id) ?? [];
-                        instances[0].update(data);
+                        const instances = get(data.id, data.channel_id);
+                        instances?.[0]?.update(data);
                         break;
                     }
                 }
@@ -99,10 +115,11 @@ export class YunaMessageWatcherController {
         });
     }
 
-    create<C extends CommandContext>(ctx: C, options?: MessageWatcherCollectorOptions) {
-        const { message } = ctx;
+    create<const O extends OptionsRecord = NeverOptions, const C extends createT = createT>(ctx: C, options?: MessageWatcherCollectorOptions) {
+        const { message, command } = ctx;
         if (!message) throw Error("CommandContext doesn't have a message");
-        if (!("prefix" in message)) throw Error("Command Message doesn't have a prefix");
+        const { prefix } = message;
+        if (prefix === undefined) throw Error("Prefix isn't provided");
 
         const id = createId(message);
 
@@ -110,7 +127,10 @@ export class YunaMessageWatcherController {
 
         this.init();
 
-        const watcher = new MessageWatcherCollector<C>(this, message, ctx, options);
+        type OptionsType = O extends NeverOptions ? (C extends CommandContext<infer R> ? R : {}) : O;
+
+        // const watcher = new MessageWatcherCollector<C extends CommandContext<infer R> ? R : O>(this, message, prefix, command, ctx.shardId, options);
+        const watcher = new MessageWatcherCollector<OptionsType>(this, message, prefix, command, ctx.shardId, options);
 
         if (!inCache) this.collectors.set(id, []);
 

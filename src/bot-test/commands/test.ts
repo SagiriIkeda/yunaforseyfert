@@ -41,11 +41,21 @@ export default class TestCommand extends Command {
             embeds: [createEmbed(ctx.options, ctx.message!)],
         });
 
-        const watcher = createWatcher(ctx, { time: 10_000 });
+        if (!msg) return;
+
+        const watcher = createWatcher<typeof options>(
+            {
+                client: ctx.client,
+                command: ctx.command,
+                message: ctx.message,
+                prefix: "y",
+                shardId: ctx.shardId,
+            }
+            ,
+            { idle: 10_000 }
+        );
 
         watcher.onChange((options, rawMsg) => {
-            if (!msg) return;
-
             msg.edit({ embeds: [createEmbed(options, rawMsg)] });
         });
 
