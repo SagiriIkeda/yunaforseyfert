@@ -1,11 +1,6 @@
 import { GatewayDispatchEvents } from "discord-api-types/v10";
 import type { BaseMessage, Command, CommandContext, LimitedCollection, Message, OptionsRecord, SubCommand, UsingClient } from "seyfert";
 import { MessageWatcherCollector, type MessageWatcherCollectorOptions } from "./messageWatcher";
-const Never = Symbol();
-
-export type NeverOptions = OptionsRecord & {
-    [Never]: null;
-};
 
 export function createId(message: string, channelId: string): string;
 export function createId(message: BaseMessage): string;
@@ -29,7 +24,7 @@ export interface WatcherCreateData {
     shardId?: number;
 }
 
-export type createT = WatcherCreateData | Pick<CommandContext, "client" | "command" | "message" | "shardId">;
+export type watcherCreateData = WatcherCreateData | Pick<CommandContext, "client" | "command" | "message" | "shardId">;
 
 export class YunaMessageWatcherController {
     collectors: CollectorsCacheAdapter = new Map<string, MessageWatcherCollector<any>[]>();
@@ -114,7 +109,7 @@ export class YunaMessageWatcherController {
         });
     }
 
-    create<const O extends OptionsRecord = NeverOptions, const C extends createT = createT>(
+    create<const O extends OptionsRecord | undefined = undefined, const C extends watcherCreateData = watcherCreateData>(
         ctx: C,
         options?: MessageWatcherCollectorOptions,
     ) {
@@ -130,7 +125,7 @@ export class YunaMessageWatcherController {
 
         this.init();
 
-        type OptionsType = O extends NeverOptions ? (C extends CommandContext<infer R> ? R : {}) : O;
+        type OptionsType = O extends undefined ? (C extends CommandContext<infer R> ? R : {}) : O;
 
         const watcher = new MessageWatcherCollector<OptionsType>(this, message, prefix, command, ctx.shardId, options);
 

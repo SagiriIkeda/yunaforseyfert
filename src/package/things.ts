@@ -1,4 +1,5 @@
 import type { Command, SubCommand } from "seyfert";
+import { fullNameOf } from "./lib/utils";
 import { prepareCommands, resolve } from "./utils/commandsResolver/prepare";
 import { getController, prepareWatchers } from "./utils/messageWatcher/prepare";
 import type { CommandYunaMetaDataConfig, YunaParserCreateOptions } from "./utils/parser/createConfig";
@@ -17,10 +18,11 @@ export type YunaUsableCommand = (Command | SubCommand) & {
     [keyRoot]?: boolean;
 };
 
-export const UseYuna = {
+export const useYuna = {
     commands: {
         prepare: prepareCommands,
         resolve,
+        fullNameOf,
     },
     watchers: {
         prepare: prepareWatchers,

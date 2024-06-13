@@ -1,5 +1,5 @@
 import { Command, Declare, Groups, Options } from "seyfert";
-import { UseDefaultSubCommand } from "../../../package/utils/commandsResolver/decorators";
+import { DeclareFallbackSubCommand } from "../../../package/utils/commandsResolver/decorators";
 import CreateCommand from "./create";
 import OtherCommand from "./other";
 
@@ -13,10 +13,10 @@ import OtherCommand from "./other";
 @Groups({
     pengu: {
         aliases: ["pengu", "pingu"],
-        linkToRootPath: true,
-        useDefaultSubCommand: null,
+        shortcut: true,
+        fallbackSubCommand: null,
         defaultDescription: "si",
     },
 })
-@UseDefaultSubCommand(OtherCommand)
+@DeclareFallbackSubCommand(OtherCommand)
 export default class AccountCommand extends Command {}

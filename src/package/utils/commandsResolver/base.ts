@@ -42,7 +42,7 @@ export function baseResolver(
 
     let parentCommand = client.commands.values.find(searchFn) as YunaUsableCommand | undefined;
 
-    const inRoot = parentCommand ? undefined : metadata.links.find(searchFn);
+    const inRoot = parentCommand ? undefined : metadata.shortcuts.find(searchFn);
     const isGroupLink = inRoot?.type === LinkType.Group;
 
     if (!(parentCommand || inRoot)) return undefined;
@@ -96,7 +96,7 @@ export function baseResolver(
         if (
             (groupName && isGroupLink && inRoot.useDefaultSubCommand !== null) ||
             parentMetadata?.default !== null ||
-            config?.useDefaultSubCommand === true
+            config?.useFallbackSubCommand === true
         )
             virtualSubCommand = firstGroupSubCommand;
     }

@@ -10,7 +10,7 @@ const options = {
 @Options(options)
 export default class SearchCommand extends Command {
     run(ctx: CommandContext<typeof options>) {
-        const resolve = baseResolver(ctx.client, ctx.options.query, { useDefaultSubCommand: true })?.command;
+        const resolve = baseResolver(ctx.client, ctx.options.query, { useFallbackSubCommand: true })?.command;
 
         ctx.write({
             content: `\`\`\`js\n${JSON.stringify(resolve, null, 4)}\`\`\``,

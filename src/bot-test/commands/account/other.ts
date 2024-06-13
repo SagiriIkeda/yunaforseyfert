@@ -1,11 +1,11 @@
 import { type CommandContext, Declare, SubCommand } from "seyfert";
-import { LinkToRootPath } from "../../../package/utils/commandsResolver/decorators";
+import { Shortcut } from "../../../package/utils/commandsResolver/decorators";
 
 @Declare({
     name: "others",
     description: "create a new something",
 })
-@LinkToRootPath()
+@Shortcut()
 export default class OtherCommand extends SubCommand {
     run(ctx: CommandContext) {
         // some logic there

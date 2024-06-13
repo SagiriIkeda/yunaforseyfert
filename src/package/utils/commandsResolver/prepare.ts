@@ -4,6 +4,14 @@ import { baseResolver } from "./base";
 import type { YunaCommandsResolverConfig } from "./resolver";
 
 export const commandsConfigKey = Symbol("YunaCommands");
+
+export type UseYunaCommandsClient = UsingClient & {
+    [commandsConfigKey]?: {
+        shortcuts: (SubCommand | GroupLink)[];
+        config?: YunaCommandsResolverConfig;
+    };
+};
+
 export const LinkType = {
     Group: Symbol(),
 };
@@ -17,13 +25,6 @@ export interface GroupLink {
     type: typeof LinkType.Group;
 }
 
-export type UseYunaCommandsClient = UsingClient & {
-    [commandsConfigKey]?: {
-        links: (SubCommand | GroupLink)[];
-        config?: YunaCommandsResolverConfig;
-    };
-};
-
 export function prepareCommands(client: Client | UsingClient) {
     if (!client.commands?.values.length)
         return client.logger.warn("UseYuna.commands.prepare The commands have not been loaded yet or there are none at all.");
@@ -32,12 +33,12 @@ export function prepareCommands(client: Client | UsingClient) {
     const isFirst = !self[commandsConfigKey];
 
     self[commandsConfigKey] ??= {
-        links: [],
+        shortcuts: [],
     };
 
     const metadata = self[commandsConfigKey];
 
-    metadata.links = [];
+    metadata.shortcuts = [];
 
     const defaultReload = BaseCommand.prototype.reload;
 
@@ -66,13 +67,13 @@ export function prepareCommands(client: Client | UsingClient) {
 
         if (command.groups)
             for (const [name, group] of Object.entries(command.groups)) {
-                if (!group.linkToRootPath) continue;
-                metadata.links.push({
+                if (!group.shortcut) continue;
+                metadata.shortcuts.push({
                     name,
                     parent: command,
                     aliases: group.aliases,
                     type: LinkType.Group,
-                    useDefaultSubCommand: group.useDefaultSubCommand,
+                    useDefaultSubCommand: group.fallbackSubCommand,
                 });
             }
 
@@ -81,7 +82,7 @@ export function prepareCommands(client: Client | UsingClient) {
         for (const sub of command.options ?? []) {
             if (!(sub instanceof SubCommand)) continue;
             sub.parent = command;
-            if ((sub as YunaUsableCommand)[keyRoot] === true) metadata.links.push(sub);
+            if ((sub as YunaUsableCommand)[keyRoot] === true) metadata.shortcuts.push(sub);
             applyReload(sub);
         }
     }

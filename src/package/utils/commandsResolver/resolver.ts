@@ -1,15 +1,19 @@
 import type { Command, Message, UsingClient } from "seyfert";
-import { once } from "../pengu";
+import { fullNameOf, once } from "../../lib/utils";
 import { baseResolver } from "./base";
 import { type UseYunaCommandsClient, commandsConfigKey, prepareCommands } from "./prepare";
 
 export interface YunaCommandsResolverConfig {
-    useDefaultSubCommand?: boolean;
+    /**
+     * It will allow that in case an unrecognized subcommand is used,
+     * use a specified default one or the first one you have.
+     */
+    useFallbackSubCommand?: boolean;
 }
 
-export const YunaCommandsResolver = ({ useDefaultSubCommand = true }: YunaCommandsResolverConfig = {}) => {
+export const YunaCommandsResolver = ({ useFallbackSubCommand = true }: YunaCommandsResolverConfig = {}) => {
     const config = {
-        useDefaultSubCommand,
+        useFallbackSubCommand,
     };
 
     const init = once((client: UsingClient) => {
@@ -27,14 +31,10 @@ export const YunaCommandsResolver = ({ useDefaultSubCommand = true }: YunaComman
 
         const argsContent = content.slice(endPad);
 
-        const fullCommandName = [parent?.name, command && "group" in command ? command?.group : undefined, command?.name]
-            .filter((x) => x)
-            .join(" ");
-
         return {
             parent: parent,
             command: command as Command,
-            fullCommandName,
+            fullCommandName: command && fullNameOf(command),
             argsContent,
         };
     };

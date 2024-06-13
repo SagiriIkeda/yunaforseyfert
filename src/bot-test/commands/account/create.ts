@@ -1,5 +1,5 @@
 import { type CommandContext, Declare, Group, Options, SubCommand, createStringOption } from "seyfert";
-import { LinkToRootPath } from "../../../package/utils/commandsResolver/decorators";
+import { Shortcut } from "../../../package/utils/commandsResolver/decorators";
 
 const options = {
     pengu: createStringOption({
@@ -14,7 +14,7 @@ const options = {
 })
 @Options(options)
 @Group("pengu")
-@LinkToRootPath()
+@Shortcut()
 export default class CreateCommand extends SubCommand {
     run(ctx: CommandContext<typeof options>) {
         // some logic there
