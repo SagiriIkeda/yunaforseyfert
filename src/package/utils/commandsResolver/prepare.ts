@@ -1,13 +1,25 @@
 import { BaseCommand, type Client, Command, SubCommand, type UsingClient } from "seyfert";
-import { type YunaUsableCommand, keyRoot, keySubCommands } from "../../things";
+import { type InstantiableSubCommand, type YunaUsableCommand, keyRoot } from "../../things";
 import { baseResolver } from "./base";
 import type { YunaCommandsResolverConfig } from "./resolver";
 
 export const commandsConfigKey = Symbol("YunaCommands");
+export const LinkType = {
+    Group: Symbol(),
+};
+
+export interface GroupLink {
+    name: string;
+    parent: Command;
+    aliases?: string[];
+    description?: string[];
+    useDefaultSubCommand?: InstantiableSubCommand | null;
+    type: typeof LinkType.Group;
+}
 
 export type UseYunaCommandsClient = UsingClient & {
     [commandsConfigKey]?: {
-        links: SubCommand[];
+        links: (SubCommand | GroupLink)[];
         config?: YunaCommandsResolverConfig;
     };
 };
@@ -52,13 +64,17 @@ export function prepareCommands(client: Client | UsingClient) {
     for (const command of client.commands?.values ?? []) {
         if (!(command instanceof Command)) continue;
 
-        const subCommandsMetadata = (command as YunaUsableCommand)[keySubCommands] ?? {};
-
-        if (command.options?.[0] instanceof SubCommand)
-            (command as YunaUsableCommand)[keySubCommands] = { ...subCommandsMetadata, has: true };
-        else {
-            delete (command as YunaUsableCommand)[keySubCommands];
-        }
+        if (command.groups)
+            for (const [name, group] of Object.entries(command.groups)) {
+                if (!group.linkToRootPath) continue;
+                metadata.links.push({
+                    name,
+                    parent: command,
+                    aliases: group.aliases,
+                    type: LinkType.Group,
+                    useDefaultSubCommand: group.useDefaultSubCommand,
+                });
+            }
 
         applyReload(command);
 

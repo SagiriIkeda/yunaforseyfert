@@ -12,6 +12,9 @@ import OtherCommand from "./other";
 @Options([CreateCommand, OtherCommand])
 @Groups({
     pengu: {
+        aliases: ["pengu", "pingu"],
+        linkToRootPath: true,
+        useDefaultSubCommand: null,
         defaultDescription: "si",
     },
 })

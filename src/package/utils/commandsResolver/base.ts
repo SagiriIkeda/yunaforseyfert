@@ -1,7 +1,7 @@
 import { ApplicationCommandType } from "discord-api-types/v10";
 import { type Command, type ContextMenuCommand, SubCommand, type UsingClient } from "seyfert";
 import { type YunaUsableCommand, keySubCommands } from "../../things";
-import { type UseYunaCommandsClient, commandsConfigKey } from "./prepare";
+import { type GroupLink, LinkType, type UseYunaCommandsClient, commandsConfigKey } from "./prepare";
 import type { YunaCommandsResolverConfig } from "./resolver";
 
 type UsableCommand = Command | SubCommand;
@@ -15,14 +15,14 @@ interface YunaCommandsResolverData {
 export function baseResolver(
     client: UsingClient,
     query: string | string[],
-    forMessage: YunaCommandsResolverConfig,
+    config: YunaCommandsResolverConfig,
 ): YunaCommandsResolverData | undefined;
-export function baseResolver(client: UsingClient, query: string | string[], forMessage?: undefined): UsableCommand | undefined;
+export function baseResolver(client: UsingClient, query: string | string[], config?: undefined): UsableCommand | undefined;
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: 🐧
 export function baseResolver(
     client: UsingClient,
     query: string | string[],
-    forMessage?: YunaCommandsResolverConfig,
+    config?: YunaCommandsResolverConfig,
 ): UsableCommand | YunaCommandsResolverData | undefined {
     const metadata = (client as UseYunaCommandsClient)[commandsConfigKey];
     if (!metadata) return;
@@ -34,32 +34,32 @@ export function baseResolver(
 
     if (!(queryArray.length && client.commands)) return;
 
-    const [parent, group, sub] = queryArray;
+    let [parent, group, sub] = queryArray;
 
-    const searchFn = (command: Command | ContextMenuCommand | SubCommand) =>
-        command.type === ApplicationCommandType.ChatInput &&
+    const searchFn = (command: Command | ContextMenuCommand | SubCommand | GroupLink) =>
+        (command.type === ApplicationCommandType.ChatInput || command.type === LinkType.Group) &&
         (command.name === parent || ("aliases" in command && command.aliases?.includes(parent)));
 
-    const parentCommand = client.commands.values.find(searchFn) as YunaUsableCommand | undefined;
+    let parentCommand = client.commands.values.find(searchFn) as YunaUsableCommand | undefined;
+
     const inRoot = parentCommand ? undefined : metadata.links.find(searchFn);
+    const isGroupLink = inRoot?.type === LinkType.Group;
 
     if (!(parentCommand || inRoot)) return undefined;
 
-    const parentSubCommandsMetadata = parentCommand?.[keySubCommands];
-    const useCommand = parentCommand ?? inRoot!;
+    if (isGroupLink) {
+        parentCommand = inRoot.parent;
+        parent = inRoot.parent.name;
+        [group, sub] = [parent, group];
+    }
 
     const getPadEnd = (id: number) => {
         return matchs && matchs[id]?.index + matchs[id]?.[0]?.length;
     };
 
-    if (!parentCommand || inRoot || parentSubCommandsMetadata?.has !== true)
-        return forMessage
-            ? {
-                  parent: inRoot?.parent,
-                  command: useCommand,
-                  endPad: getPadEnd(0),
-              }
-            : useCommand;
+    if (!parentCommand) return;
+
+    const parentMetadata = parentCommand?.[keySubCommands];
 
     const groupKeyName = sub && group;
 
@@ -70,35 +70,48 @@ export function baseResolver(
             ? parentCommand.groupsAliases?.[groupKeyName] || (groupKeyName in (parentCommand.groups ?? {}) ? groupKeyName : undefined)
             : undefined;
 
-    groupName && padIdx++;
+    if (!isGroupLink) groupName && padIdx++;
 
     const subName = sub ?? group;
 
+    const virtualInstance = isGroupLink ? inRoot.useDefaultSubCommand : parentMetadata?.default;
+
+    let virtualSubCommand: SubCommand | undefined;
+    let firstGroupSubCommand: SubCommand | undefined;
+
     const subCommand =
         (("options" in parentCommand &&
-            parentCommand.options?.find(
-                (o) => o instanceof SubCommand && o.group === groupName && (o.name === subName || o.aliases?.includes(subName)),
-            )) as SubCommand | undefined) || undefined;
+            parentCommand.options?.find((s) => {
+                if (!(s instanceof SubCommand && s.group === groupName)) return false;
+                firstGroupSubCommand ??= s;
+
+                if (virtualInstance && s.constructor === virtualInstance) {
+                    virtualSubCommand = s;
+                }
+
+                return s.name === subName || s.aliases?.includes(subName);
+            })) as SubCommand | undefined) || undefined;
+
+    if (!virtualSubCommand) {
+        if (
+            (groupName && isGroupLink && inRoot.useDefaultSubCommand !== null) ||
+            parentMetadata?.default !== null ||
+            config?.useDefaultSubCommand === true
+        )
+            virtualSubCommand = firstGroupSubCommand;
+    }
 
     subCommand && padIdx++;
 
-    let virtualSubCommand: SubCommand | undefined;
-
-    if (forMessage?.useDefaultSubCommand === true) {
-        const defaultInstance = parentSubCommandsMetadata.default;
-
-        virtualSubCommand = ((defaultInstance &&
-            parentCommand.options?.find((o) => (o as SubCommand & { __proto__: any }).__proto__.constructor === defaultInstance)) ??
-            parentCommand.options?.[0]) as SubCommand | undefined;
-    }
-
     const useSubCommand = subCommand ?? virtualSubCommand;
 
-    return forMessage && useSubCommand
+    const resultCommand = useSubCommand ?? parentCommand;
+
+    return config && resultCommand
         ? {
               parent: parentCommand as Command,
-              command: useSubCommand,
+              command: resultCommand,
               endPad: getPadEnd(padIdx),
           }
-        : useSubCommand;
+        : resultCommand;
 }

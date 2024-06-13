@@ -13,7 +13,7 @@ export type InstantiableSubCommand = { new (...args: any[]): SubCommand };
 export type YunaUsableCommand = (Command | SubCommand) & {
     [keyMetadata]?: CommandYunaMetaDataConfig;
     [keyConfig]?: YunaParserCreateOptions;
-    [keySubCommands]?: { default?: InstantiableSubCommand; has: boolean };
+    [keySubCommands]?: { default?: InstantiableSubCommand | null };
     [keyRoot]?: boolean;
 };
 
