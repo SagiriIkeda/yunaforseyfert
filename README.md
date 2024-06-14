@@ -1,5 +1,5 @@
 <center>
-<img src="https://i.imgur.com/brbipcY.png" alt="yunaforseyfert"  style="max-width: 100%"/>
+<img src="https://i.imgur.com/brbipcY.png" alt="yunaforseyfert"  style="max-width: 80%; padding-bottom: 30px"/>
 </center>
 
 > ` yunaforseyfert ` it's a package that tries to bring the features of my bot, but for seyfert, at a really slow pace. 
@@ -17,10 +17,15 @@ pnpm add yunaforseyfert
 
 <details style="padding: 10px">
 
-<summary>YunaParser</summary>
+<summary>
+<h3 style="display: inline">YunaParser</h3>
+<br/>
 
-### YunaParser
-An **args parser for text commands**, which adds various syntax for more convenient use of said commands, to the standard one provided.
+<blockquote style="padding-left:10px;margin-top:10px">
+<i>
+an <strong>args parser for text commands</strong>, which adds various syntax for more convenient use of said commands, to the standard one provided.</i>
+<blockquote>
+</summary>
 
 ### Installation
 
@@ -296,8 +301,12 @@ This will enable **disableLongTextTagsInLastOption** and **breakSearchOnConsumeA
 
 </details>
 
-> ```
-> Thanks for read and using yunaforseyfert!
-> By SagiriIkeda with 🐧
-> ```
+<br/>
+
+¡And more **features** coming soon! ***(not so soon)*** 🐧
+
+```
+    Thanks for read and using yunaforseyfert!
+    By SagiriIkeda with 🐧❤️
+```
 
