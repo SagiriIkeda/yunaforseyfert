@@ -34,7 +34,7 @@ export const YunaCommandsResolver = ({ useFallbackSubCommand = true }: YunaComma
         return {
             parent: parent,
             command: command as Command,
-            fullCommandName: command && fullNameOf(command),
+            fullCommandName: (command && fullNameOf(command)) ?? "",
             argsContent,
         };
     };

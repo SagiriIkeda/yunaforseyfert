@@ -1,7 +1,7 @@
 import { ApplicationCommandType } from "discord-api-types/v10";
 import { type Command, type ContextMenuCommand, SubCommand, type UsingClient } from "seyfert";
 import { type YunaUsableCommand, keySubCommands } from "../../things";
-import { type GroupLink, LinkType, type UseYunaCommandsClient, commandsConfigKey } from "./prepare";
+import { type GroupLink, LinkType as ShortcutType, type UseYunaCommandsClient, commandsConfigKey } from "./prepare";
 import type { YunaCommandsResolverConfig } from "./resolver";
 
 type UsableCommand = Command | SubCommand;
@@ -37,25 +37,32 @@ export function baseResolver(
     let [parent, group, sub] = queryArray;
 
     const searchFn = (command: Command | ContextMenuCommand | SubCommand | GroupLink) =>
-        (command.type === ApplicationCommandType.ChatInput || command.type === LinkType.Group) &&
+        (command.type === ApplicationCommandType.ChatInput || command.type === ShortcutType.Group) &&
         (command.name === parent || ("aliases" in command && command.aliases?.includes(parent)));
 
     let parentCommand = client.commands.values.find(searchFn) as YunaUsableCommand | undefined;
 
-    const inRoot = parentCommand ? undefined : metadata.shortcuts.find(searchFn);
-    const isGroupLink = inRoot?.type === LinkType.Group;
+    const shortcut = parentCommand ? undefined : metadata.shortcuts.find(searchFn);
+    const isGroupShortcut = shortcut?.type === ShortcutType.Group;
 
-    if (!(parentCommand || inRoot)) return undefined;
-
-    if (isGroupLink) {
-        parentCommand = inRoot.parent;
-        parent = inRoot.parent.name;
-        [group, sub] = [parent, group];
-    }
+    if (!(parentCommand || shortcut)) return;
 
     const getPadEnd = (id: number) => {
         return matchs && matchs[id]?.index + matchs[id]?.[0]?.length;
     };
+
+    if (isGroupShortcut) {
+        parentCommand = shortcut.parent;
+        [parent, group, sub] = [shortcut.parent.name, parent, group];
+    } else if (shortcut) {
+        const subCommand = shortcut as SubCommand;
+
+        return {
+            parent: subCommand.parent,
+            command: subCommand,
+            endPad: getPadEnd(0),
+        };
+    }
 
     if (!parentCommand) return;
 
@@ -70,11 +77,11 @@ export function baseResolver(
             ? parentCommand.groupsAliases?.[groupKeyName] || (groupKeyName in (parentCommand.groups ?? {}) ? groupKeyName : undefined)
             : undefined;
 
-    if (!isGroupLink) groupName && padIdx++;
+    if (!isGroupShortcut) groupName && padIdx++;
 
     const subName = sub ?? group;
 
-    const virtualInstance = isGroupLink ? inRoot.useDefaultSubCommand : parentMetadata?.default;
+    const virtualInstance = isGroupShortcut ? shortcut.fallbackSubCommand : parentMetadata?.default;
 
     let virtualSubCommand: SubCommand | undefined;
     let firstGroupSubCommand: SubCommand | undefined;
@@ -92,20 +99,18 @@ export function baseResolver(
                 return s.name === subName || s.aliases?.includes(subName);
             })) as SubCommand | undefined) || undefined;
 
-    if (!virtualSubCommand) {
-        if (
-            (groupName && isGroupLink && inRoot.useDefaultSubCommand !== null) ||
-            parentMetadata?.default !== null ||
-            config?.useFallbackSubCommand === true
-        )
-            virtualSubCommand = firstGroupSubCommand;
+    if (
+        !virtualSubCommand &&
+        ((groupName && isGroupShortcut && shortcut.fallbackSubCommand !== null) || parentMetadata?.default !== null)
+    ) {
+        virtualSubCommand = firstGroupSubCommand;
     }
 
     subCommand && padIdx++;
 
-    const useSubCommand = subCommand ?? virtualSubCommand;
+    const useSubCommand = subCommand ?? (config?.useFallbackSubCommand === true && virtualSubCommand);
 
-    const resultCommand = useSubCommand ?? parentCommand;
+    const resultCommand = useSubCommand || parentCommand;
 
     return config && resultCommand
         ? {

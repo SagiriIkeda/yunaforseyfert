@@ -1,5 +1,5 @@
 import { BaseCommand, type Client, Command, SubCommand, type UsingClient } from "seyfert";
-import { type InstantiableSubCommand, type YunaUsableCommand, keyRoot } from "../../things";
+import { type InstantiableSubCommand, type YunaUsableCommand, keyShortcut } from "../../things";
 import { baseResolver } from "./base";
 import type { YunaCommandsResolverConfig } from "./resolver";
 
@@ -21,7 +21,7 @@ export interface GroupLink {
     parent: Command;
     aliases?: string[];
     description?: string[];
-    useDefaultSubCommand?: InstantiableSubCommand | null;
+    fallbackSubCommand?: InstantiableSubCommand | null;
     type: typeof LinkType.Group;
 }
 
@@ -73,7 +73,7 @@ export function prepareCommands(client: Client | UsingClient) {
                     parent: command,
                     aliases: group.aliases,
                     type: LinkType.Group,
-                    useDefaultSubCommand: group.fallbackSubCommand,
+                    fallbackSubCommand: group.fallbackSubCommand,
                 });
             }
 
@@ -82,7 +82,7 @@ export function prepareCommands(client: Client | UsingClient) {
         for (const sub of command.options ?? []) {
             if (!(sub instanceof SubCommand)) continue;
             sub.parent = command;
-            if ((sub as YunaUsableCommand)[keyRoot] === true) metadata.shortcuts.push(sub);
+            if ((sub as YunaUsableCommand)[keyShortcut] === true) metadata.shortcuts.push(sub);
             applyReload(sub);
         }
     }

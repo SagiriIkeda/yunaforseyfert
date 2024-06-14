@@ -6,8 +6,8 @@ import type { CommandYunaMetaDataConfig, YunaParserCreateOptions } from "./utils
 
 export const keyMetadata = Symbol("YunaParserMetaData");
 export const keyConfig = Symbol("YunaParserConfig");
-export const keySubCommands = Symbol("hasSubCommands");
-export const keyRoot = Symbol("LinkedToRootPath");
+export const keySubCommands = Symbol("YunaSubCommands");
+export const keyShortcut = Symbol("YunaShortcut");
 
 export type InstantiableSubCommand = { new (...args: any[]): SubCommand };
 
@@ -15,7 +15,7 @@ export type YunaUsableCommand = (Command | SubCommand) & {
     [keyMetadata]?: CommandYunaMetaDataConfig;
     [keyConfig]?: YunaParserCreateOptions;
     [keySubCommands]?: { default?: InstantiableSubCommand | null };
-    [keyRoot]?: boolean;
+    [keyShortcut]?: boolean;
 };
 
 export const useYuna = {

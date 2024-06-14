@@ -1,5 +1,5 @@
 import type { Command, SubCommand } from "seyfert";
-import { type InstantiableSubCommand, keyRoot, keySubCommands } from "../../things";
+import { type InstantiableSubCommand, keyShortcut, keySubCommands } from "../../things";
 
 /**
  * ### Yuna's Text Shortcuts
@@ -17,7 +17,7 @@ import { type InstantiableSubCommand, keyRoot, keySubCommands } from "../../thin
 export function Shortcut() {
     return <T extends InstantiableSubCommand>(target: T) => {
         return class extends target {
-            [keyRoot] = true;
+            [keyShortcut] = true;
             declare run: SubCommand["run"];
         };
     };
