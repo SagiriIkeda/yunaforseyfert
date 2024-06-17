@@ -1,5 +1,5 @@
 import type { Command, SubCommand } from "seyfert";
-import { type InstantiableSubCommand, keyShortcut, keySubCommands } from "../../things";
+import { type Instantiable, keyShortcut, keySubCommands } from "../../things";
 
 /**
  * ### Yuna's Text Shortcuts
@@ -15,7 +15,7 @@ import { type InstantiableSubCommand, keyShortcut, keySubCommands } from "../../
  * @requires YunaCommandsResolver to work.
  */
 export function Shortcut() {
-    return <T extends InstantiableSubCommand>(target: T) => {
+    return <T extends Instantiable<SubCommand>>(target: T) => {
         return class extends target {
             [keyShortcut] = true;
             declare run: SubCommand["run"];
@@ -28,8 +28,8 @@ export function Shortcut() {
  * @requires  YunaCommandsResolver setting `useFallbackSubCommand` be `true` (by default).
  * use `null` to disable this option for this command.
  */
-export function DeclareFallbackSubCommand(command: InstantiableSubCommand | null) {
-    return <T extends { new (...args: any[]): Command }>(target: T) => {
+export function DeclareFallbackSubCommand(command: Instantiable<SubCommand> | null) {
+    return <T extends Instantiable<Command>>(target: T) => {
         return class extends target {
             [keySubCommands] = { default: command };
         };

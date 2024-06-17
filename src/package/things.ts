@@ -9,12 +9,12 @@ export const keyConfig = Symbol("YunaParserConfig");
 export const keySubCommands = Symbol("YunaSubCommands");
 export const keyShortcut = Symbol("YunaShortcut");
 
-export type InstantiableSubCommand = { new (...args: any[]): SubCommand };
+export type Instantiable<C> = { new (...args: any[]): C };
 
 export type YunaUsableCommand = (Command | SubCommand) & {
     [keyMetadata]?: CommandYunaMetaDataConfig;
     [keyConfig]?: YunaParserCreateOptions;
-    [keySubCommands]?: { default?: InstantiableSubCommand | null };
+    [keySubCommands]?: { default?: Instantiable<SubCommand> | null };
     [keyShortcut]?: boolean;
 };
 

@@ -1,7 +1,7 @@
 import { ApplicationCommandType } from "discord-api-types/v10";
 import { type Command, type ContextMenuCommand, SubCommand, type UsingClient } from "seyfert";
 import { type YunaUsableCommand, keySubCommands } from "../../things";
-import { type GroupLink, LinkType as ShortcutType, type UseYunaCommandsClient, commandsConfigKey } from "./prepare";
+import { type GroupLink, ShortcutType, type UseYunaCommandsClient, commandsConfigKey } from "./prepare";
 import type { YunaCommandsResolverConfig } from "./resolver";
 
 type UsableCommand = Command | SubCommand;
@@ -25,8 +25,6 @@ export function baseResolver(
     config?: YunaCommandsResolverConfig,
 ): UsableCommand | YunaCommandsResolverData | undefined {
     const metadata = (client as UseYunaCommandsClient)[commandsConfigKey];
-    if (!metadata) return;
-
     const matchs = typeof query === "string" ? Array.from(query.matchAll(/[^\s\x7F\n]+/g)).slice(0, 3) : undefined;
 
     const queryArray =
@@ -40,9 +38,9 @@ export function baseResolver(
         (command.type === ApplicationCommandType.ChatInput || command.type === ShortcutType.Group) &&
         (command.name === parent || ("aliases" in command && command.aliases?.includes(parent)));
 
-    let parentCommand = client.commands.values.find(searchFn) as YunaUsableCommand | undefined;
+    let parentCommand = (metadata?.commands ?? client.commands.values).find(searchFn) as Exclude<YunaUsableCommand, SubCommand> | undefined;
 
-    const shortcut = parentCommand ? undefined : metadata.shortcuts.find(searchFn);
+    const shortcut = parentCommand ? undefined : metadata?.shortcuts.find(searchFn);
     const isGroupShortcut = shortcut?.type === ShortcutType.Group;
 
     if (!(parentCommand || shortcut)) return;
@@ -70,14 +68,11 @@ export function baseResolver(
 
     let padIdx = 0;
 
-    const groupName =
-        "groups" in parentCommand
-            ? parentCommand.groupsAliases?.[group] || (group in (parentCommand.groups ?? {}) ? group : undefined)
-            : undefined;
+    const groupName = parentCommand.groupsAliases?.[group] || (group in (parentCommand.groups ?? {}) ? group : undefined);
 
     if (!isGroupShortcut && groupName) padIdx++;
 
-    const groupData = groupName && (parentCommand as Command).groups?.[groupName];
+    const groupData = groupName !== undefined ? (parentCommand as Command).groups?.[groupName] : undefined;
 
     const subName = groupName ? sub : group;
 
@@ -86,35 +81,33 @@ export function baseResolver(
     let virtualSubCommand: SubCommand | undefined;
     let firstGroupSubCommand: SubCommand | undefined;
 
-    const subCommand =
-        (("options" in parentCommand &&
-            parentCommand.options?.find((s) => {
-                if (!(s instanceof SubCommand && s.group === groupName)) return false;
-                firstGroupSubCommand ??= s;
+    const subCommand = parentCommand.options?.find((s) => {
+        if (!(s instanceof SubCommand && s.group === groupName)) return false;
+        firstGroupSubCommand ??= s;
 
-                if (virtualInstance && s.constructor === virtualInstance) {
-                    virtualSubCommand = s;
-                }
+        if (virtualInstance && s.constructor === virtualInstance) {
+            virtualSubCommand = s;
+        }
 
-                return s.name === subName || s.aliases?.includes(subName);
-            })) as SubCommand | undefined) || undefined;
+        return s.name === subName || s.aliases?.includes(subName);
+    }) as SubCommand | undefined;
 
     if (
-        !virtualSubCommand &&
-        ((groupName && isGroupShortcut && shortcut.fallbackSubCommand !== null) || parentMetadata?.default !== null)
+        (!virtualSubCommand && (groupData?.fallbackSubCommand !== null || parentMetadata?.default !== null)) ||
+        config?.useFallbackSubCommand === true
     ) {
-        virtualSubCommand = firstGroupSubCommand;
+        virtualSubCommand ??= firstGroupSubCommand;
     }
 
     subCommand && padIdx++;
 
-    const useSubCommand = subCommand ?? (config?.useFallbackSubCommand === true && virtualSubCommand);
+    const useSubCommand = subCommand ?? virtualSubCommand;
 
     const resultCommand = useSubCommand || parentCommand;
 
     return config && resultCommand
         ? {
-              parent: parentCommand as Command,
+              parent: parentCommand,
               command: resultCommand,
               endPad: getPadEnd(padIdx),
           }

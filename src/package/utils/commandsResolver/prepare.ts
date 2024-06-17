@@ -1,5 +1,5 @@
-import { BaseCommand, type Client, Command, SubCommand, type UsingClient } from "seyfert";
-import { type InstantiableSubCommand, type YunaUsableCommand, keyShortcut } from "../../things";
+import { type Client, Command, SubCommand, type UsingClient } from "seyfert";
+import { type Instantiable, type YunaUsableCommand, keyShortcut } from "../../things";
 import { baseResolver } from "./base";
 import type { YunaCommandsResolverConfig } from "./resolver";
 
@@ -8,11 +8,12 @@ export const commandsConfigKey = Symbol("YunaCommands");
 export type UseYunaCommandsClient = UsingClient & {
     [commandsConfigKey]?: {
         shortcuts: (SubCommand | GroupLink)[];
+        commands: Command[];
         config?: YunaCommandsResolverConfig;
     };
 };
 
-export const LinkType = {
+export const ShortcutType = {
     Group: Symbol(),
 };
 
@@ -21,8 +22,8 @@ export interface GroupLink {
     parent: Command;
     aliases?: string[];
     description?: string[];
-    fallbackSubCommand?: InstantiableSubCommand | null;
-    type: typeof LinkType.Group;
+    fallbackSubCommand?: Instantiable<SubCommand> | null;
+    type: typeof ShortcutType.Group;
 }
 
 export function prepareCommands(client: Client | UsingClient) {
@@ -34,36 +35,17 @@ export function prepareCommands(client: Client | UsingClient) {
 
     self[commandsConfigKey] ??= {
         shortcuts: [],
+        commands: [],
     };
 
     const metadata = self[commandsConfigKey];
 
     metadata.shortcuts = [];
-
-    const defaultReload = BaseCommand.prototype.reload;
-
-    let commandsPrepareCooldown: NodeJS.Timeout | undefined;
-
-    /** @experimental */
-    const applyReload = (to: YunaUsableCommand) => {
-        if (!isFirst || to.reload !== BaseCommand.prototype.reload) return;
-        Object.defineProperty(to, "reload", {
-            async value(...args: Parameters<typeof defaultReload>) {
-                await defaultReload.apply(this, args);
-
-                clearTimeout(commandsPrepareCooldown);
-                commandsPrepareCooldown = setTimeout(() => {
-                    commandsPrepareCooldown = undefined;
-                    prepareCommands(client);
-                }, 1_500);
-
-                return;
-            },
-        });
-    };
+    metadata.commands = [];
 
     for (const command of client.commands?.values ?? []) {
         if (!(command instanceof Command)) continue;
+        metadata.commands.push(command);
 
         if (command.groups)
             for (const [name, group] of Object.entries(command.groups)) {
@@ -72,18 +54,15 @@ export function prepareCommands(client: Client | UsingClient) {
                     name,
                     parent: command,
                     aliases: group.aliases,
-                    type: LinkType.Group,
+                    type: ShortcutType.Group,
                     fallbackSubCommand: group.fallbackSubCommand,
                 });
             }
-
-        applyReload(command);
 
         for (const sub of command.options ?? []) {
             if (!(sub instanceof SubCommand)) continue;
             sub.parent = command;
             if ((sub as YunaUsableCommand)[keyShortcut] === true) metadata.shortcuts.push(sub);
-            applyReload(sub);
         }
     }
 
