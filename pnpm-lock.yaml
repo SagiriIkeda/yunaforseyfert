@@ -12,8 +12,8 @@ importers:
         specifier: ^0.37.77
         version: 0.37.88
       seyfert:
-        specifier: github:SagiriIkeda/seyfert
-        version: https://codeload.github.com/SagiriIkeda/seyfert/tar.gz/e352f07052805d4ee896b1f365494f0dd45a1121
+        specifier: github:SagiriIkeda/seyfert2#feat/2.0
+        version: https://codeload.github.com/SagiriIkeda/seyfert2/tar.gz/6ce86bb8730657db6b20a1643aaafe474429c294
     devDependencies:
       '@biomejs/biome':
         specifier: 1.8.0
@@ -453,6 +453,9 @@ packages:
   discord-api-types@0.37.88:
     resolution: {integrity: sha512-Yrj5S3JXzouPc6WLA8svgXCw3Q7IkNdW/Y/IfkJF+CsgUBsgECQ8qVoOaseJJ8Atj2TEvabut4rGmzq6PRi1/Q==}
 
+  discord-api-types@0.37.89:
+    resolution: {integrity: sha512-+hiYDULKma/0B7Zd9/IYK0XnYlYhWSsPYKNahUk33QEy6yuHdGwlglIfbiTBn683cmJ44IFnFYZa8UX1Ka+kDg==}
+
   emoji-regex@10.3.0:
     resolution: {integrity: sha512-QpLs9D9v9kArv4lfDEgg1X/gN5XLnf/A6l9cs8SPZLRZR3ZkY9+kwIQTxm+fsSej5UMYGE8fdoaZVIBlqG0XTw==}
 
@@ -688,8 +691,8 @@ packages:
     engines: {node: '>=18.0.0', npm: '>=8.0.0'}
     hasBin: true
 
-  seyfert@https://codeload.github.com/SagiriIkeda/seyfert/tar.gz/e352f07052805d4ee896b1f365494f0dd45a1121:
-    resolution: {tarball: https://codeload.github.com/SagiriIkeda/seyfert/tar.gz/e352f07052805d4ee896b1f365494f0dd45a1121}
+  seyfert@https://codeload.github.com/SagiriIkeda/seyfert2/tar.gz/6ce86bb8730657db6b20a1643aaafe474429c294:
+    resolution: {tarball: https://codeload.github.com/SagiriIkeda/seyfert2/tar.gz/6ce86bb8730657db6b20a1643aaafe474429c294}
     version: 1.5.0
 
   shebang-command@2.0.0:
@@ -1177,6 +1180,8 @@ snapshots:
 
   discord-api-types@0.37.88: {}
 
+  discord-api-types@0.37.89: {}
+
   emoji-regex@10.3.0: {}
 
   esbuild@0.20.2:
@@ -1453,10 +1458,10 @@ snapshots:
       '@rollup/rollup-win32-x64-msvc': 4.18.0
       fsevents: 2.3.3
 
-  seyfert@https://codeload.github.com/SagiriIkeda/seyfert/tar.gz/e352f07052805d4ee896b1f365494f0dd45a1121:
+  seyfert@https://codeload.github.com/SagiriIkeda/seyfert2/tar.gz/6ce86bb8730657db6b20a1643aaafe474429c294:
     dependencies:
       chokidar: 3.6.0
-      discord-api-types: 0.37.88
+      discord-api-types: 0.37.89
       magic-bytes.js: 1.10.0
       ts-mixer: 6.0.4
       ws: 8.17.0

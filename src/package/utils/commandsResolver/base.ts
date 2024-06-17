@@ -68,20 +68,20 @@ export function baseResolver(
 
     const parentMetadata = parentCommand?.[keySubCommands];
 
-    const groupKeyName = sub && group;
-
     let padIdx = 0;
 
     const groupName =
         "groups" in parentCommand
-            ? parentCommand.groupsAliases?.[groupKeyName] || (groupKeyName in (parentCommand.groups ?? {}) ? groupKeyName : undefined)
+            ? parentCommand.groupsAliases?.[group] || (group in (parentCommand.groups ?? {}) ? group : undefined)
             : undefined;
 
-    if (!isGroupShortcut) groupName && padIdx++;
+    if (!isGroupShortcut && groupName) padIdx++;
 
-    const subName = sub ?? group;
+    const groupData = groupName && (parentCommand as Command).groups?.[groupName];
 
-    const virtualInstance = isGroupShortcut ? shortcut.fallbackSubCommand : parentMetadata?.default;
+    const subName = groupName ? sub : group;
+
+    const virtualInstance = groupData ? groupData.fallbackSubCommand : parentMetadata?.default;
 
     let virtualSubCommand: SubCommand | undefined;
     let firstGroupSubCommand: SubCommand | undefined;

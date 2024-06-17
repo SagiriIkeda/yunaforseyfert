@@ -1,4 +1,5 @@
 import type { Command, Message, UsingClient } from "seyfert";
+import type { HandleCommand } from "seyfert/lib/commands/handle";
 import { fullNameOf, once } from "../../lib/utils";
 import { baseResolver } from "./base";
 import { type UseYunaCommandsClient, commandsConfigKey, prepareCommands } from "./prepare";
@@ -11,7 +12,7 @@ export interface YunaCommandsResolverConfig {
     useFallbackSubCommand?: boolean;
 }
 
-export const YunaCommandsResolver = ({ useFallbackSubCommand = true }: YunaCommandsResolverConfig = {}) => {
+export function YunaCommandsResolver({ useFallbackSubCommand = true }: YunaCommandsResolverConfig = {}) {
     const config = {
         useFallbackSubCommand,
     };
@@ -22,7 +23,9 @@ export const YunaCommandsResolver = ({ useFallbackSubCommand = true }: YunaComma
         if (metadata) metadata.config = config;
     });
 
-    return (client: UsingClient, prefix: string, content: string, message: Message) => {
+    return function (this: HandleCommand, content: string, prefix: string, message: Message) {
+        const { client } = this;
+
         init(client);
 
         message.prefix = prefix;
@@ -38,4 +41,4 @@ export const YunaCommandsResolver = ({ useFallbackSubCommand = true }: YunaComma
             argsContent,
         };
     };
-};
+}

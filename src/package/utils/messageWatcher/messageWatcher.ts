@@ -141,13 +141,12 @@ export class MessageWatcherCollector<const O extends OptionsRecord = any> {
 
         const client = this.message.client as Client | WorkerClient;
 
-        const { resolver, argsParser, optionsParser } = client.options.commands ?? {};
+        const { resolveCommandFromContent, argsParser, argsOptionsParser } = client.handleCommand;
 
-        if (!(resolver && argsParser && optionsParser)) return;
-
-        const { argsContent, command, parent } = resolver(client as UsingClient, prefix, c.slice(prefix.length), this.message);
+        const { argsContent, command, parent } = resolveCommandFromContent(c.slice(prefix.length), prefix, this.message);
 
         if (command !== this.command) return usageError("CommandChanged");
+        if (!argsContent) return;
 
         const args = argsParser(argsContent, command, this.message);
 
@@ -181,7 +180,7 @@ export class MessageWatcherCollector<const O extends OptionsRecord = any> {
             author: this.user,
         };
 
-        const { options: resolverOptions, errors } = await optionsParser(client as UsingClient, command, fakeAPIMessage, args, resolved);
+        const { options: resolverOptions, errors } = await argsOptionsParser(command, fakeAPIMessage, args, resolved);
 
         const optionsError = (descriptor: OnOptionsReturnObject) => {
             abortAll("OptionsError");
@@ -213,7 +212,7 @@ export class MessageWatcherCollector<const O extends OptionsRecord = any> {
         );
 
         const ctx = new CommandContext<O>(client as UsingClient, this.message, optionsResolver, this.shardId, command);
-        /** @ts-expect-error */
+        //@ts-expect-error
         const [erroredOptions] = await command.__runOptions(ctx, optionsResolver);
 
         if (erroredOptions) return optionsError(erroredOptions);
