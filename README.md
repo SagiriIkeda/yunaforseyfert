@@ -17,15 +17,15 @@ pnpm add yunaforseyfert
 
 <details style="padding: 10px">
 
-<summary>
-<h3 style="display: inline">YunaParser</h3>
-<br/>
-
-<blockquote style="padding-left:10px;margin-top:10px">
-<i>
-an <strong>args parser for text commands</strong>, which adds various syntax for more convenient use of said commands, to the standard one provided.</i>
-<blockquote>
-</summary>
+  <summary>
+    <h2 style="display: inline">YunaParser</h2>
+    <br/>
+    <blockquote style="padding-left:10px;margin-top:10px">
+    <i> an <strong>args parser for text commands</strong>,
+    which adds various syntax for more convenient use of said commands,
+    to the standard one provided.</i>
+    <blockquote>
+  </summary>
 
 ### Installation
 
@@ -301,9 +301,48 @@ This will enable **disableLongTextTagsInLastOption** and **breakSearchOnConsumeA
 
 </details>
 
-<br/>
+<details style="padding: 10px">
+
+  <summary>
+  <H2 style="display: inline">YunaCommandsResolver</H2>
+  <br/>
+
+  <blockquote style="padding-left:10px;margin-top:10px">
+  <i>
+  a resolver, which provides some extra functions.
+  <blockquote>
+  </summary>
+
+</details>
+
+<details style="padding: 10px">
+
+  <summary>
+  <H2 style="display: inline">MessageWatcher</H2>
+  <br/>
+
+  <blockquote style="padding-left:10px;margin-top:10px">
+  <i>
+  A simple solution to be able to manage when a message is edited and update the command options.
+  <blockquote>
+  </summary>
+
+</details>
 
 ¡And more **features** coming soon! ***(not so soon)*** 🐧
+
+
+### FAQ
+<details style="padding: 10px">
+
+  <summary>
+  <H2 style="display: inline">Migrating from Seyfert v1</H2>
+  </summary>
+
+</details>
+
+<br/>
+
 
 ```
     Thanks for read and using yunaforseyfert!
