@@ -1,4 +1,5 @@
 import type { Command, SubCommand } from "seyfert";
+import type { HandleCommand } from "seyfert/lib/commands/handle";
 import { YunaParserOptionsChoicesResolver } from "./choicesResolver";
 import {
     RemoveFromCheckNextChar,
@@ -59,7 +60,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
     const globalRegexes = createRegexes(config);
 
     // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: omitting this rule the life is better
-    return (content: string, command: Command | SubCommand): Record<string, string> => {
+    return function (this: HandleCommand, content: string, command: Command | SubCommand): Record<string, string> {
         const { options, config: commandConfig, regexes: commandRegexes, choicesOptions } = getYunaMetaDataFromCommand(config, command);
 
         const realConfig = commandConfig ?? config;
@@ -346,7 +347,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             YunaParserOptionsChoicesResolver(command, choicesOptions.names, result, realConfig);
         }
 
-        realConfig.logResult && console.log(result);
+        realConfig.logResult && this.client.logger.debug(result);
 
         return result;
     };
