@@ -1,4 +1,4 @@
-import type { Command, SubCommand } from "seyfert";
+import type { Command, SubCommand, Logger } from "seyfert";
 import { YunaParserOptionsChoicesResolver } from "./choicesResolver";
 import {
     RemoveFromCheckNextChar,
@@ -346,7 +346,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             YunaParserOptionsChoicesResolver(command, choicesOptions.names, result, realConfig);
         }
 
-        realConfig.logResult && console.log(result);
+        realConfig.logResult && new Logger({ name: "YunaParser" }).debug(result);
 
         return result;
     };
