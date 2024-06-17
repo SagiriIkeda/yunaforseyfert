@@ -140,15 +140,14 @@ export class MessageWatcherCollector<const O extends OptionsRecord = any> {
         if (!c.startsWith(prefix)) return usageError("PrefixChanged");
 
         const client = this.message.client as Client | WorkerClient;
+        const { handleCommand } = client;
 
-        const { resolveCommandFromContent, argsParser, argsOptionsParser } = client.handleCommand;
-
-        const { argsContent, command, parent } = resolveCommandFromContent(c.slice(prefix.length), prefix, this.message);
+        const { argsContent, command, parent } = handleCommand.resolveCommandFromContent(c.slice(prefix.length), prefix, this.message);
 
         if (command !== this.command) return usageError("CommandChanged");
         if (!argsContent) return;
 
-        const args = argsParser(argsContent, command, this.message);
+        const args = handleCommand.argsParser(argsContent, command, this.message);
 
         /**
          * THIS IS BASED ON
@@ -180,7 +179,7 @@ export class MessageWatcherCollector<const O extends OptionsRecord = any> {
             author: this.user,
         };
 
-        const { options: resolverOptions, errors } = await argsOptionsParser(command, fakeAPIMessage, args, resolved);
+        const { options: resolverOptions, errors } = await handleCommand.argsOptionsParser(command, fakeAPIMessage, args, resolved);
 
         const optionsError = (descriptor: OnOptionsReturnObject) => {
             abortAll("OptionsError");

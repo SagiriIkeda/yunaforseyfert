@@ -1,9 +1,10 @@
 import { ApplicationCommandOptionType } from "discord-api-types/v10";
-import type { CommandOption, SeyfertNumberOption, SeyfertStringOption } from "seyfert";
-import { type YunaUsableCommand, keyConfig, keyMetadata } from "../../things";
+import type { Command, CommandOption, SeyfertBooleanOption, SeyfertNumberOption, SeyfertStringOption, SubCommand } from "seyfert";
+import { type Instantiable, type YunaUsableCommand, keyConfig, keyMetadata } from "../../things";
 
 type ValidLongTextTags = "'" | '"' | "`";
 type ValidNamedOptionSyntax = "-" | "--" | ":";
+export type TypedCommandOption = CommandOption & { type: ApplicationCommandOptionType };
 
 export interface YunaParserCreateOptions {
     /**
@@ -69,6 +70,15 @@ export interface YunaParserCreateOptions {
          * @default {true}
          */
         canUseDirectlyValue?: boolean;
+    } | null;
+
+    /** If the first or last option is of the `User` type,
+     *  they can be taken as the user from whom the message is replying.
+     *  @default {null} (not enabled)
+     */
+    useRepliedUserAsAnOption?: {
+        /** need to have the mention enabled (@PING) */
+        requirePing: boolean;
     } | null;
 }
 
@@ -213,6 +223,13 @@ export const createConfig = (config: YunaParserCreateOptions, isFull = true) => 
                 : {
                       canUseDirectlyValue: !(config.resolveCommandOptionsChoices?.canUseDirectlyValue === false),
                   };
+    if (isFull || "useRepliedUserAsAnOption" in config)
+        newConfig.useRepliedUserAsAnOption =
+            config.useRepliedUserAsAnOption === null
+                ? null
+                : {
+                      requirePing: config.useRepliedUserAsAnOption?.requirePing === true,
+                  };
 
     return newConfig;
 };
@@ -225,6 +242,8 @@ export interface CommandYunaMetaDataConfig {
         names: string[];
         decored?: Record<string, [rawName: string, /** in lowercase */ name: string, value: string | number][]>;
     };
+    booleanOptions?: Set<string>;
+    base: Instantiable<Command | SubCommand>;
 }
 
 export const ParserRecommendedConfig = {
@@ -274,12 +293,14 @@ const InvalidOptionType = new Set([
 
 export const getYunaMetaDataFromCommand = (config: YunaParserCreateOptions, command: YunaUsableCommand) => {
     const InCache = command[keyMetadata];
-    if (InCache) return InCache;
+    const base = Object.getPrototypeOf(command);
+    if (InCache && InCache?.base === base) return InCache;
 
     const metadata: CommandYunaMetaDataConfig = {
         options: command.options?.filter((option) => "type" in option && !InvalidOptionType.has(option.type)) as
             | CommandOption[]
             | undefined,
+        base,
     };
 
     const commandConfig = command[keyConfig];
@@ -293,12 +314,22 @@ export const getYunaMetaDataFromCommand = (config: YunaParserCreateOptions, comm
 
     if (metadata.options?.length) {
         const namesOfOptionsWithChoices: string[] = [];
+        const boolOptions = new Set<string>();
 
-        for (const option of metadata.options as ((SeyfertStringOption | SeyfertNumberOption) & CommandOption)[]) {
-            if (!option.choices?.length) continue;
+        type OptionType = (SeyfertStringOption | SeyfertNumberOption | SeyfertBooleanOption) & TypedCommandOption;
+
+        for (const option of metadata.options as OptionType[]) {
+            if (option.type === ApplicationCommandOptionType.Boolean) {
+                boolOptions.add(option.name);
+                continue;
+            }
+
+            if (!(option as Exclude<OptionType, SeyfertBooleanOption>).choices?.length) continue;
 
             namesOfOptionsWithChoices.push(option.name);
         }
+
+        if (boolOptions.size) metadata.booleanOptions = boolOptions;
 
         metadata.choicesOptions = {
             names: namesOfOptionsWithChoices,

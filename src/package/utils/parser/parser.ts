@@ -1,10 +1,13 @@
-import type { Command, SubCommand } from "seyfert";
+import { ApplicationCommandOptionType } from "discord-api-types/v10";
+import type { Command, Message, SubCommand } from "seyfert";
 import type { HandleCommand } from "seyfert/lib/commands/handle";
+import { once } from "../../lib/utils";
 import { YunaParserOptionsChoicesResolver } from "./choicesResolver";
 import {
     RemoveFromCheckNextChar,
     RemoveLongCharEscapeMode,
     RemoveNamedEscapeMode,
+    type TypedCommandOption,
     type YunaParserCreateOptions,
     createConfig,
     createRegexs as createRegexes,
@@ -60,8 +63,14 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
     const globalRegexes = createRegexes(config);
 
     // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: omitting this rule the life is better
-    return function (this: HandleCommand, content: string, command: Command | SubCommand): Record<string, string> {
-        const { options, config: commandConfig, regexes: commandRegexes, choicesOptions } = getYunaMetaDataFromCommand(config, command);
+    return function (this: HandleCommand, content: string, command: Command | SubCommand, message?: Message): Record<string, string> {
+        const {
+            options,
+            config: commandConfig,
+            regexes: commandRegexes,
+            choicesOptions,
+            booleanOptions,
+        } = getYunaMetaDataFromCommand(config, command);
 
         const realConfig = commandConfig ?? config;
 
@@ -73,7 +82,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
         const { breakSearchOnConsumeAllOptions, useUniqueNamedSyntaxAtSameTime, disableLongTextTagsInLastOption } = realConfig;
 
-        if (!options) return {};
+        if (!options?.length) return {};
 
         const localEscapeModes = { ...__realEscapeModes };
 
@@ -81,7 +90,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
         let tagOpenWith: '"' | "'" | "`" | "-" | null = null;
         let tagOpenPosition: number | null = null;
-        let actualOptionIdx: number = 0;
+        let actualOptionIdx = 0;
         let isEscapingNext = false;
         let unindexedRightText = "";
 
@@ -130,6 +139,25 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
             return lastOptionNameAdded;
         };
+
+        const addUserFromMessageReference = once(() => {
+            const reference = message?.referencedMessage;
+            if (
+                !reference ||
+                (reference.author.id !== message.author.id &&
+                    realConfig.useRepliedUserAsAnOption?.requirePing &&
+                    message?.mentions.users[0].id !== reference.author.id)
+            )
+                return true;
+            const option = options[actualOptionIdx] as TypedCommandOption | undefined;
+            if (option?.type !== ApplicationCommandOptionType.User) return false;
+
+            result[option.name] = reference.author.id;
+            actualOptionIdx++;
+            return true;
+        });
+
+        addUserFromMessageReference();
 
         const aggregateLastestLongWord = (end: number = content.length, postText = "") => {
             if (!lastestLongWord) return;
@@ -211,7 +239,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
             if (result[name] === undefined) actualOptionIdx++;
 
-            result[name] = value;
+            result[name] = dotted ? value : value.trimStart() ? value : booleanOptions?.has(result.name) ? "true" : value;
 
             lastOptionNameAdded = name;
             return name;
@@ -347,7 +375,12 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             YunaParserOptionsChoicesResolver(command, choicesOptions.names, result, realConfig);
         }
 
-        realConfig.logResult && this.client.logger.debug(result);
+        addUserFromMessageReference();
+
+        realConfig.logResult &&
+            this.client.logger.debug({
+                argsResult: result,
+            });
 
         return result;
     };

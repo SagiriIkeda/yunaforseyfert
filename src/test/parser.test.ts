@@ -1,3 +1,4 @@
+import { Client } from "seyfert";
 import { describe, expect, test } from "vitest";
 import ChoicesNumberTestCommand, { ChoicesTestCommand } from "../bot-test/commands/choicesTest";
 import TestCommand from "../bot-test/commands/test";
@@ -8,6 +9,7 @@ import type { YunaParserCreateOptions } from "../package/utils/parser/createConf
 const testCommand = new TestCommand();
 const choicesCommand = new ChoicesTestCommand();
 const choicesNumberCommand = new ChoicesNumberTestCommand();
+const client = new Client();
 
 const testParser = (
     text: string,
@@ -15,7 +17,7 @@ const testParser = (
     config?: YunaParserCreateOptions,
     command: YunaUsableCommand = testCommand,
 ) => {
-    return expect(YunaParser(config)(text, command)).toEqual(equalTo);
+    return expect(YunaParser(config).call(client.handleCommand, text, command)).toEqual(equalTo);
 };
 
 describe("words", () => {

@@ -14,6 +14,9 @@ class YunaCommandHandle<HR extends HandleResolver = HandleResolver> extends Hand
 
     argsParser = YunaParser({
         logResult: true,
+        useRepliedUserAsAnOption: {
+            requirePing: false,
+        },
         //disableLongTextTagsInLastOption: true,
     });
 }

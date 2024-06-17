@@ -5,8 +5,9 @@ export const once = <F extends (...args: any[]) => any>(callback: F) => {
 
     return (...args: Parameters<F>) => {
         if (isCalled) return;
-        isCalled = true;
-        return callback(...args);
+        const result = callback(...args);
+        isCalled = typeof result === "boolean" ? result : true;
+        return isCalled;
     };
 };
 /**
