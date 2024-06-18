@@ -1,12 +1,12 @@
 import type { CommandOption, SeyfertNumberOption, SeyfertStringOption } from "seyfert";
 import { type YunaUsableCommand, keyMetadata } from "../../things";
-import type { CommandYunaMetaDataConfig, YunaParserCreateOptions } from "./createConfig";
+import type { BaseYunaParserCommandMetaData, YunaParserCreateOptions } from "./createConfig";
 
-const getChoicesOptions = (commandMetadata: CommandYunaMetaDataConfig) => {
+const getChoicesOptions = (commandMetadata: BaseYunaParserCommandMetaData) => {
     const inCache = commandMetadata.choicesOptions?.decored;
     if (inCache) return inCache;
 
-    const decored: NonNullable<CommandYunaMetaDataConfig["choicesOptions"]>["decored"] = {};
+    const decored: NonNullable<BaseYunaParserCommandMetaData["choicesOptions"]>["decored"] = {};
 
     for (const option of commandMetadata.options as ((SeyfertStringOption | SeyfertNumberOption) & CommandOption)[]) {
         if (!option.choices?.length) continue;

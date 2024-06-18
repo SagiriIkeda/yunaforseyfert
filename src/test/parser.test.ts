@@ -50,7 +50,7 @@ describe("long text tags", () => {
             "\"penguin\" 'beautiful sentence'",
             { first: '"penguin"', second: "beautiful sentence" },
             {
-                enabled: {
+                syntax: {
                     longTextTags: ["`", "'"],
                 },
             },
@@ -65,7 +65,7 @@ describe("named options", () => {
             "-first test --second take this",
             { first: "test -", second: "take this" },
             {
-                enabled: {
+                syntax: {
                     namedOptions: ["-"],
                 },
             },
@@ -75,7 +75,7 @@ describe("named options", () => {
             "--first penguin life second: test --second take this",
             { first: "penguin life second: test", second: "take this" },
             {
-                enabled: {
+                syntax: {
                     namedOptions: ["-", "--"],
                 },
             },

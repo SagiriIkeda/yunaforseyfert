@@ -10,7 +10,7 @@ import {
     type TypedCommandOption,
     type YunaParserCreateOptions,
     createConfig,
-    createRegexs as createRegexes,
+    createRegexes,
     getYunaMetaDataFromCommand,
 } from "./createConfig";
 
@@ -43,20 +43,6 @@ const sanitizeBackescapes = (text: string, regx: RegExp | undefined, regexToChec
 
 const spacesRegex = /[\s\x7F\n]/;
 
-/**
- * 🐧 
- * @example
- * ```js
- * import { YunaParser } from "yunaforseyfert"
- * 
- * new Client({ 
-       commands: {
-           argsParser: YunaParser()
-       }
-   });
- * ```
- */
-
 export const YunaParser = (config: YunaParserCreateOptions = {}) => {
     config = createConfig(config);
 
@@ -64,21 +50,19 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
     // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: omitting this rule the life is better
     return function (this: HandleCommand, content: string, command: Command | SubCommand, message?: Message): Record<string, string> {
-        const {
-            options,
-            config: commandConfig,
-            regexes: commandRegexes,
-            choicesOptions,
-            booleanOptions,
-        } = getYunaMetaDataFromCommand(config, command);
+        const commandMetadata = getYunaMetaDataFromCommand(command, config);
 
-        const realConfig = commandConfig ?? config;
+        const { options, choicesOptions, booleanOptions } = commandMetadata;
 
-        const regexes = commandRegexes ?? globalRegexes;
+        const realConfig = commandMetadata.getConfig();
+
+        const regexes = commandMetadata.regexes ?? globalRegexes;
+
         const { elementsRegex, escapeModes: __realEscapeModes } = regexes;
+
         let { checkNextChar } = regexes;
 
-        const validNamedOptionSyntaxes = Object.fromEntries(realConfig.enabled?.namedOptions?.map((t) => [t, true]) ?? []);
+        const validNamedOptionSyntaxes = Object.fromEntries(realConfig.syntax?.namedOptions?.map((t) => [t, true]) ?? []);
 
         const { breakSearchOnConsumeAllOptions, useUniqueNamedSyntaxAtSameTime, disableLongTextTagsInLastOption } = realConfig;
 

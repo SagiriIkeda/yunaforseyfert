@@ -12,14 +12,16 @@ export interface YunaParserCreateOptions {
      * @defaulst false */
     logResult?: boolean;
 
-    enabled?: {
+    /** syntaxes enabled */
+
+    syntax?: {
         /** especify what longText tags you want
          *
          * ` " ` => `"penguin life"`
          *
          * ` ' ` => `'beautiful sentence'`
          *
-         * **&#96;** => **\`LiSA『Shouted Serenade』 is a good song\`**
+         * **&#96;** => **\`Eve『Insomnia』 is a good song\`**
          *
          * @default 🐧 all enabled
          */
@@ -113,7 +115,7 @@ export const RemoveLongCharEscapeMode = (EscapeMode: EscapeModeType) => {
     return EscapeMode;
 };
 
-export const createRegexs = ({ enabled }: YunaParserCreateOptions) => {
+export const createRegexes = ({ syntax: enabled }: YunaParserCreateOptions) => {
     const hasAnyLongTextTag = (enabled?.longTextTags?.length ?? 0) >= 1;
     const hasAnyNamedSyntax = (enabled?.namedOptions?.length ?? 0) >= 1;
 
@@ -200,13 +202,13 @@ const removeDuplicates = <A>(arr: A extends Array<infer R> ? R[] : never[]): A =
 export const createConfig = (config: YunaParserCreateOptions, isFull = true) => {
     const newConfig: YunaParserCreateOptions = {};
 
-    if (isFull || (config.enabled && (config.enabled.longTextTags || config.enabled.namedOptions))) {
-        newConfig.enabled ??= {};
+    if (isFull || (config.syntax && (config.syntax.longTextTags || config.syntax.namedOptions))) {
+        newConfig.syntax ??= {};
 
-        if (isFull || config?.enabled?.longTextTags)
-            newConfig.enabled.longTextTags = removeDuplicates(config?.enabled?.longTextTags ?? ['"', "'", "`"]);
-        if (isFull || config?.enabled?.namedOptions)
-            newConfig.enabled.namedOptions = removeDuplicates(config?.enabled?.namedOptions ?? ["-", "--", ":"]);
+        if (isFull || config?.syntax?.longTextTags)
+            newConfig.syntax.longTextTags = removeDuplicates(config?.syntax?.longTextTags ?? ['"', "'", "`"]);
+        if (isFull || config?.syntax?.namedOptions)
+            newConfig.syntax.namedOptions = removeDuplicates(config?.syntax?.namedOptions ?? ["-", "--", ":"]);
     }
 
     if (isFull || "breakSearchOnConsumeAllOptions" in config)
@@ -234,16 +236,66 @@ export const createConfig = (config: YunaParserCreateOptions, isFull = true) => 
     return newConfig;
 };
 
-export interface CommandYunaMetaDataConfig {
+export class YunaParserCommandMetaData {
+    command: YunaUsableCommand;
     options?: CommandOption[];
-    config?: YunaParserCreateOptions;
-    regexes?: ReturnType<typeof createRegexs>;
+    regexes?: ReturnType<typeof createRegexes>;
     choicesOptions?: {
         names: string[];
-        decored?: Record<string, [rawName: string, /** in lowercase */ name: string, value: string | number][]>;
+        decored?: Record<string, [rawName: string, name: string, value: string | number][]>;
     };
     booleanOptions?: Set<string>;
+
+    config?: YunaParserCreateOptions;
+
+    globalConfig: YunaParserCreateOptions;
+
     base: Instantiable<Command | SubCommand>;
+
+    constructor(command: YunaUsableCommand, globalConfig: YunaParserCreateOptions) {
+        this.command = command;
+        this.globalConfig = globalConfig;
+        this.config = this.command[keyConfig];
+
+        this.base = Object.getPrototypeOf(command);
+
+        this.options = command.options?.filter((option) => "type" in option && !InvalidOptionType.has(option.type));
+
+        if (this.options?.length) {
+            const namesOfOptionsWithChoices: string[] = [];
+            const boolOptions = new Set<string>();
+
+            type OptionType = (SeyfertStringOption | SeyfertNumberOption | SeyfertBooleanOption) & TypedCommandOption;
+
+            for (const option of this.options as OptionType[]) {
+                if (option.type === ApplicationCommandOptionType.Boolean) {
+                    boolOptions.add(option.name);
+                    continue;
+                }
+
+                if (!(option as Exclude<OptionType, SeyfertBooleanOption>).choices?.length) continue;
+
+                namesOfOptionsWithChoices.push(option.name);
+            }
+
+            if (boolOptions.size) this.booleanOptions = boolOptions;
+
+            this.choicesOptions = {
+                names: namesOfOptionsWithChoices,
+            };
+        }
+
+        if (this.config) {
+            this.regexes = createRegexes(this.getConfig());
+        }
+    }
+    /** */
+    getConfig() {
+        const { config } = this;
+        if (!config) return this.globalConfig;
+
+        return mergeConfig(this.globalConfig, config);
+    }
 }
 
 export const ParserRecommendedConfig = {
@@ -264,25 +316,25 @@ export function DeclareParserConfig(config: YunaParserCreateOptions = {}) {
     };
 }
 
-type Object = Record<string | number | symbol, any>;
+const mergeConfig = (c1: YunaParserCreateOptions, c2: YunaParserCreateOptions) => {
+    const result: YunaParserCreateOptions = { ...c1, ...c2 };
 
-const isObject = (obj: unknown): obj is Object => typeof obj === "object" && obj !== null && !Array.isArray(obj);
-
-const mergeObjects = <A, B>(obj: A, obj2: B): (A & B) | B => {
-    if (!(isObject(obj) && isObject(obj2))) return obj2;
-
-    const merged = { ...obj };
-
-    if (!isObject(obj)) return obj2;
-
-    for (const key of Object.keys(obj2)) {
-        const oldValue = merged[key];
-        const value = obj2[key];
-
-        merged[key as keyof A & B] = mergeObjects(oldValue, value);
+    if (c2.syntax) {
+        result.syntax = { ...(c1.syntax ?? {}), ...c2.syntax };
+    }
+    if (c2.resolveCommandOptionsChoices !== undefined) {
+        result.resolveCommandOptionsChoices =
+            c2.resolveCommandOptionsChoices === null
+                ? null
+                : { ...(c1.resolveCommandOptionsChoices ?? {}), ...c2.resolveCommandOptionsChoices };
     }
 
-    return merged as A & B;
+    if (c2.useRepliedUserAsAnOption !== undefined) {
+        result.useRepliedUserAsAnOption =
+            c2.useRepliedUserAsAnOption === null ? null : { ...(c1.useRepliedUserAsAnOption ?? {}), ...c2.useRepliedUserAsAnOption };
+    }
+
+    return result;
 };
 
 const InvalidOptionType = new Set([
@@ -291,50 +343,14 @@ const InvalidOptionType = new Set([
     ApplicationCommandOptionType.SubcommandGroup,
 ]);
 
-export const getYunaMetaDataFromCommand = (config: YunaParserCreateOptions, command: YunaUsableCommand) => {
-    const InCache = command[keyMetadata];
+export const getYunaMetaDataFromCommand = (command: YunaUsableCommand, config: YunaParserCreateOptions) => {
+    const InCommandMetadata = command[keyMetadata];
+
     const base = Object.getPrototypeOf(command);
-    if (InCache && InCache?.base === base) return InCache;
 
-    const metadata: CommandYunaMetaDataConfig = {
-        options: command.options?.filter((option) => "type" in option && !InvalidOptionType.has(option.type)) as
-            | CommandOption[]
-            | undefined,
-        base,
-    };
+    if (InCommandMetadata && InCommandMetadata?.base === base) return InCommandMetadata;
 
-    const commandConfig = command[keyConfig];
-
-    if (commandConfig) {
-        const realConfig = mergeObjects(config, commandConfig);
-
-        metadata.config = realConfig;
-        metadata.regexes = createRegexs(realConfig);
-    }
-
-    if (metadata.options?.length) {
-        const namesOfOptionsWithChoices: string[] = [];
-        const boolOptions = new Set<string>();
-
-        type OptionType = (SeyfertStringOption | SeyfertNumberOption | SeyfertBooleanOption) & TypedCommandOption;
-
-        for (const option of metadata.options as OptionType[]) {
-            if (option.type === ApplicationCommandOptionType.Boolean) {
-                boolOptions.add(option.name);
-                continue;
-            }
-
-            if (!(option as Exclude<OptionType, SeyfertBooleanOption>).choices?.length) continue;
-
-            namesOfOptionsWithChoices.push(option.name);
-        }
-
-        if (boolOptions.size) metadata.booleanOptions = boolOptions;
-
-        metadata.choicesOptions = {
-            names: namesOfOptionsWithChoices,
-        };
-    }
+    const metadata = new YunaParserCommandMetaData(command, config);
 
     command[keyMetadata] = metadata;
 
