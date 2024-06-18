@@ -83,7 +83,7 @@ export class MessageWatcherCollector<const O extends OptionsRecord = any> {
         this.refresh();
 
         this.fakeUser = this.instances[0]?.fakeUser ?? createFakeAPIUser(this.message.author);
-        this.fakeMessage = this.instances[0].fakeMessage ?? this.createFakeAPIMessage();
+        this.fakeMessage = this.instances[0]?.fakeMessage ?? this.createFakeAPIMessage();
     }
 
     refresh(all = false) {
@@ -131,6 +131,10 @@ export class MessageWatcherCollector<const O extends OptionsRecord = any> {
         return this.invoker.collectors.get(this.id) ?? [];
     }
 
+    #oldContent?: string;
+
+    #prefixes?: string[];
+
     async update(message: GatewayMessageUpdateDispatchData) {
         if (!message.content) return;
 
@@ -162,20 +166,20 @@ export class MessageWatcherCollector<const O extends OptionsRecord = any> {
 
         const { handleCommand } = client;
 
-        const prefixes = [
+        this.#prefixes ??= [
             ...(await handleCommand.getPrefix(Transformers.Message(self, fakeAPIMessage))),
             ...(client.options.commands?.defaultPrefix ?? []),
         ];
 
-        const prefix = prefixes.find((prefix) => content.startsWith(prefix));
+        const prefix = this.#prefixes.find((prefix) => content.startsWith(prefix));
 
         if (!prefix) return runForAll("onUsageErrorEvent", "UnspecifiedPrefix");
 
-        const { argsContent, command, parent } = handleCommand.resolveCommandFromContent(
-            content.slice(prefix.length),
-            prefix,
-            fakeAPIMessage,
-        );
+        const slicedContent = content.slice(prefix.length);
+
+        if (slicedContent === this.#oldContent) return;
+
+        const { argsContent, command, parent } = handleCommand.resolveCommandFromContent(slicedContent, prefix, fakeAPIMessage);
 
         if (command !== this.command) return runForAll("onUsageErrorEvent", "CommandChanged");
 
@@ -193,7 +197,7 @@ export class MessageWatcherCollector<const O extends OptionsRecord = any> {
 
         const { options: resolverOptions, errors } = await handleCommand.argsOptionsParser(command, fakeAPIMessage, args, resolved);
 
-        if (errors) {
+        if (errors.length) {
             const errorsObject: OnOptionsReturnObject = Object.fromEntries(
                 errors.map((x) => {
                     return [
@@ -210,20 +214,15 @@ export class MessageWatcherCollector<const O extends OptionsRecord = any> {
             return;
         }
 
-        const optionsResolver = new OptionResolver(
-            client as UsingClient,
-            resolverOptions,
-            parent as Command,
-            this.message.guildId,
-            resolved,
-        );
+        const optionsResolver = new OptionResolver(self, resolverOptions, parent as Command, this.message.guildId, resolved);
 
-        const ctx = new CommandContext<O>(client as UsingClient, this.message, optionsResolver, this.shardId, command);
+        const ctx = new CommandContext<O>(self, this.message, optionsResolver, this.shardId, command);
         //@ts-expect-error
         const [erroredOptions] = await command.__runOptions(ctx, optionsResolver);
 
         if (erroredOptions) return runForAll("onOptionsErrorEvent", erroredOptions);
 
+        this.#oldContent = slicedContent;
         runForAll("onChangeEvent", ctx.options, message as RawMessageUpdated);
     }
 

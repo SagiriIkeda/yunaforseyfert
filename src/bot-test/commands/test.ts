@@ -43,11 +43,14 @@ export default class TestCommand extends Command {
 
         if (!msg) return;
 
-        const watcher = createWatcher(ctx, { idle: 10_000 });
+        const watcher = createWatcher(ctx, { idle: 100_000 });
 
         watcher.onChange((options, rawMsg) => {
+            console.log("cambio");
             msg.edit({ embeds: [createEmbed(options, rawMsg)] });
         });
+
+        watcher.onOptionsError((error) => console.log({ error }));
 
         watcher.onStop((reason) => {
             ctx.write({ content: `watcher muerto, "${reason}"` });
