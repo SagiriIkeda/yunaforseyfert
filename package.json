@@ -2,17 +2,29 @@
   "name": "yunaforseyfert",
   "version": "0.11.0",
   "description": "Yunathings for seyfert",
-  "main": "build/index.js",
+  "main": "./build/index.js",
   "type": "commonjs",
   "types": "./types/package/index.d.ts",
   "scripts": {
     "idx": "tsc && cd src/bot-test/ && node --env-file=.env ../../dist/bot-test/index.js",
-    "build": "tsc && esbuild --bundle src/package/index.ts --minify --outdir=build --platform=node --packages=external",
+
+    "prepare:publish": "test && mkdir -p .npm && npm run build && node dist/package/lib/prepublish.js && cp -r build .npm/build && cp -r types .npm/types",
+    "postpublish": "rm -rf .npm",
+
+    "publish": "npm run prepare:publish && cd .npm && npm publish",
+    "pack": "npm run prepare:publish && cd .npm && npm pack",
+
+    "prepare": "npm run build:esbuild && npx husky",
+
+    "build:esbuild": "npx esbuild --bundle src/package/index.ts --minify --outdir=build --platform=node --packages=external",
+    "build": "tsc && npm run build:esbuild",
+
     "tsc": "tsc",
+
     "lint": "biome lint --write ./src",
     "format": "biome check --write ./src",
-    "test": "vitest",
-    "prepare": "husky"
+
+    "test": "vitest"
   },
   "keywords": [
     "parser",
@@ -22,7 +34,7 @@
   "license": "ISC",
   "dependencies": {
     "discord-api-types": "^0.37.77",
-    "seyfert": "github:SagiriIkeda/seyfert2#feat/2.0"
+    "seyfert": "github:socram03/seyfert#feat/2.0"
   },
   "homepage": "https://github.com/SagiriIkeda/yunaforseyfert#readme",
   "repository": {
@@ -37,7 +49,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "1.8.0",
-    "@types/node": "^20.11.30",
+    "@types/node": "^20.14.2",
     "esbuild": "^0.20.2",
     "husky": "^9.0.11",
     "lint-staged": "^15.2.7",

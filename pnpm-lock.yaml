@@ -12,14 +12,14 @@ importers:
         specifier: ^0.37.77
         version: 0.37.88
       seyfert:
-        specifier: github:SagiriIkeda/seyfert2#feat/2.0
-        version: https://codeload.github.com/SagiriIkeda/seyfert2/tar.gz/6ce86bb8730657db6b20a1643aaafe474429c294
+        specifier: github:socram03/seyfert#feat/2.0
+        version: https://codeload.github.com/socram03/seyfert/tar.gz/b866da20fea11af53f754e5b126df715e89311b9
     devDependencies:
       '@biomejs/biome':
         specifier: 1.8.0
         version: 1.8.0
       '@types/node':
-        specifier: ^20.11.30
+        specifier: ^20.14.2
         version: 20.14.2
       esbuild:
         specifier: ^0.20.2
@@ -691,8 +691,8 @@ packages:
     engines: {node: '>=18.0.0', npm: '>=8.0.0'}
     hasBin: true
 
-  seyfert@https://codeload.github.com/SagiriIkeda/seyfert2/tar.gz/6ce86bb8730657db6b20a1643aaafe474429c294:
-    resolution: {tarball: https://codeload.github.com/SagiriIkeda/seyfert2/tar.gz/6ce86bb8730657db6b20a1643aaafe474429c294}
+  seyfert@https://codeload.github.com/socram03/seyfert/tar.gz/b866da20fea11af53f754e5b126df715e89311b9:
+    resolution: {tarball: https://codeload.github.com/socram03/seyfert/tar.gz/b866da20fea11af53f754e5b126df715e89311b9}
     version: 1.5.0
 
   shebang-command@2.0.0:
@@ -1458,7 +1458,7 @@ snapshots:
       '@rollup/rollup-win32-x64-msvc': 4.18.0
       fsevents: 2.3.3
 
-  seyfert@https://codeload.github.com/SagiriIkeda/seyfert2/tar.gz/6ce86bb8730657db6b20a1643aaafe474429c294:
+  seyfert@https://codeload.github.com/socram03/seyfert/tar.gz/b866da20fea11af53f754e5b126df715e89311b9:
     dependencies:
       chokidar: 3.6.0
       discord-api-types: 0.37.89
