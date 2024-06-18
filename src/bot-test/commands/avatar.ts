@@ -3,7 +3,7 @@ import { Command, type CommandContext, Declare, Embed, Options, createUserOption
 const options = {
     user: createUserOption({
         description: "user",
-        required: true,
+        required: false,
     }),
 };
 @Declare({
@@ -14,6 +14,8 @@ const options = {
 export default class AvatarCommand extends Command {
     async run(ctx: CommandContext<typeof options>) {
         const { user } = ctx.options;
+
+        if (!user) return;
 
         await ctx.write({
             embeds: [new Embed().setImage(user.avatarURL({ size: 1024, extension: "png" }))],

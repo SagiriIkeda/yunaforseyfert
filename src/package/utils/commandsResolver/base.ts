@@ -35,10 +35,13 @@ export function baseResolver(
     let [parent, group, sub] = queryArray;
 
     const searchFn = (command: Command | ContextMenuCommand | SubCommand | GroupLink) =>
-        (command.type === ApplicationCommandType.ChatInput || command.type === ShortcutType.Group) &&
-        (command.name === parent || ("aliases" in command && command.aliases?.includes(parent)));
+        command.name === parent || (command as Command).aliases?.includes(parent);
 
-    let parentCommand = (metadata?.commands ?? client.commands.values).find(searchFn) as Exclude<YunaUsableCommand, SubCommand> | undefined;
+    let parentCommand = (
+        metadata?.commands
+            ? metadata.commands.find(searchFn)
+            : client.commands.values.find((command) => command.type === ApplicationCommandType.ChatInput && searchFn(command))
+    ) as Exclude<YunaUsableCommand, SubCommand> | undefined;
 
     const shortcut = parentCommand ? undefined : metadata?.shortcuts.find(searchFn);
     const isGroupShortcut = shortcut?.type === ShortcutType.Group;
@@ -49,22 +52,24 @@ export function baseResolver(
         return matchs && matchs[id]?.index + matchs[id]?.[0]?.length;
     };
 
+    const parentMetadata = parentCommand?.[keySubCommands];
+
     if (isGroupShortcut) {
         parentCommand = shortcut.parent;
         [parent, group, sub] = [shortcut.parent.name, parent, group];
-    } else if (shortcut) {
-        const subCommand = shortcut as SubCommand;
+    } else if (shortcut || (parentCommand && parentMetadata === null)) {
+        const useCommand = (shortcut as SubCommand | undefined) || parentCommand;
 
-        return {
-            parent: subCommand.parent,
-            command: subCommand,
-            endPad: getPadEnd(0),
-        };
+        return (
+            useCommand && {
+                parent: (useCommand as SubCommand).parent,
+                command: useCommand,
+                endPad: getPadEnd(0),
+            }
+        );
     }
 
     if (!parentCommand) return;
-
-    const parentMetadata = parentCommand?.[keySubCommands];
 
     let padIdx = 0;
 

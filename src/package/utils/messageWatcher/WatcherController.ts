@@ -1,6 +1,17 @@
 import { GatewayDispatchEvents } from "discord-api-types/v10";
-import type { BaseMessage, Command, CommandContext, LimitedCollection, Message, OptionsRecord, SubCommand, UsingClient } from "seyfert";
-import { MessageWatcherCollector, type MessageWatcherCollectorOptions } from "./messageWatcher";
+import type {
+    BaseMessage,
+    Command,
+    CommandContext,
+    LimitedCollection,
+    Message,
+    OptionsRecord,
+    SubCommand,
+    UsingClient,
+    WorkerClient,
+} from "seyfert";
+import type { Client } from "seyfert";
+import { MessageWatcherCollector, type MessageWatcherCollectorOptions } from "./WatcherCollector";
 
 export function createId(message: string, channelId: string): string;
 export function createId(message: BaseMessage): string;
@@ -113,23 +124,28 @@ export class YunaMessageWatcherController {
         ctx: C,
         options?: MessageWatcherCollectorOptions,
     ) {
-        const { message, command } = ctx;
-        if (!message) throw Error("CommandContext doesn't have a message");
-        const { prefix } = message;
-        if (prefix === undefined) throw Error("Prefix isn't provided");
-        if (!ctx.command.options?.length) throw Error("Prefix isn't provided");
+        const { message, command, client } = ctx;
+        if (!message) throw Error("CommandContext does not have a message");
+        if (!command.options?.length) throw Error("The command has no options to watch");
 
         const id = createId(message);
 
-        const inCache = this.collectors.get(id);
+        const instancesList = this.collectors.get(id);
 
         this.init();
 
         type OptionsType = O extends undefined ? (C extends CommandContext<infer R> ? R : {}) : O;
 
-        const watcher = new MessageWatcherCollector<OptionsType>(this, message, prefix, command, ctx.shardId, options);
+        const watcher = new MessageWatcherCollector<OptionsType>(
+            this,
+            client as Client | WorkerClient,
+            message,
+            command,
+            ctx.shardId,
+            options,
+        );
 
-        if (!inCache) this.collectors.set(id, []);
+        if (!instancesList) this.collectors.set(id, []);
 
         this.collectors.get(id)?.push(watcher);
 

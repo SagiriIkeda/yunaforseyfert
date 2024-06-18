@@ -1,23 +1,21 @@
 import { Client, type Message } from "seyfert";
-import { HandleCommand, type HandleResolver } from "seyfert/lib/commands/handle";
-import { YunaCommandsResolver } from "../package/utils/commandsResolver/resolver";
-import { YunaParser } from "../package/utils/parser/parser";
+import { HandleCommand } from "seyfert/lib/commands/handle";
+import { Yuna } from "../package";
 
 const client = new Client({ commands: { defaultPrefix: ["yuna", "y"] } });
 
-class YunaCommandHandle<HR extends HandleResolver = HandleResolver> extends HandleCommand<HR> {
+class YunaCommandHandle extends HandleCommand {
     getPrefix(message: Message) {
         return ["yuna", "y", `<@${message.client.botId}>`];
     }
 
-    resolveCommandFromContent = YunaCommandsResolver();
+    resolveCommandFromContent = Yuna.resolver();
 
-    argsParser = YunaParser({
+    argsParser = Yuna.parser({
         logResult: true,
         useRepliedUserAsAnOption: {
             requirePing: false,
         },
-        //disableLongTextTagsInLastOption: true,
     });
 }
 

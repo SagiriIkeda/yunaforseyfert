@@ -1,4 +1,5 @@
 import type { APIUser, GatewayMessageCreateDispatchData, GatewayMessageUpdateDispatchData } from "discord-api-types/v10";
+
 import {
     type Client,
     type Command,
@@ -14,13 +15,13 @@ import {
     type UsingClient,
     type WorkerClient,
 } from "seyfert";
+import { Transformers } from "seyfert/lib/client/transformers";
 import { type MakeRequired, toSnakeCase } from "seyfert/lib/common";
-import { type YunaMessageWatcherController, createId } from "./watcherController";
+import { type YunaMessageWatcherController, createId } from "./WatcherController";
 
 export type MessageWatcherCollectorOptions = {
     idle?: number;
     time?: number;
-    abortOnUsageError?: boolean;
 };
 
 type RawMessageUpdated = MakeRequired<GatewayMessageUpdateDispatchData, "content">;
@@ -29,7 +30,7 @@ type OnChangeEvent<O extends OptionsRecord = any> = (result: ContextOptions<O>, 
 type OnStopEvent = (reason: string) => any;
 type OnOptionsErrorEvent = (metadata: OnOptionsReturnObject) => any;
 
-type OnUsageErrorEvent = (reason: "PrefixChanged" | "CommandChanged") => any;
+type OnUsageErrorEvent = (reason: "UnspecifiedPrefix" | "CommandChanged") => any;
 
 const createFakeAPIUser = (user: User) => {
     const created: Record<string, any> = {};
@@ -54,23 +55,25 @@ export class MessageWatcherCollector<const O extends OptionsRecord = any> {
 
     invoker: YunaMessageWatcherController;
 
-    protected user: APIUser;
+    /** @internal */
+    fakeUser: APIUser;
 
-    prefix: string;
+    client: Client | WorkerClient;
+
     command: Command | SubCommand;
     shardId: number;
 
     constructor(
         invoker: YunaMessageWatcherController,
+        client: Client | WorkerClient,
         message: Message,
-        prefix: string,
         command: Command | SubCommand,
         shardId?: number,
         options?: MessageWatcherCollectorOptions,
     ) {
+        this.client = client;
         this.shardId = shardId ?? 1;
         this.invoker = invoker;
-        this.prefix = prefix;
         this.command = command;
 
         this.options = options ?? {};
@@ -79,13 +82,8 @@ export class MessageWatcherCollector<const O extends OptionsRecord = any> {
         this.id = createId(message);
         this.refresh();
 
-        this.user = this.instances[0]?.user ?? createFakeAPIUser(this.message.author);
-
-        if (options?.abortOnUsageError) {
-            for (const instance of this.instances) {
-                instance.options.abortOnUsageError = true;
-            }
-        }
+        this.fakeUser = this.instances[0]?.fakeUser ?? createFakeAPIUser(this.message.author);
+        this.fakeMessage = this.instances[0].fakeMessage ?? this.createFakeAPIMessage();
     }
 
     refresh(all = false) {
@@ -103,6 +101,28 @@ export class MessageWatcherCollector<const O extends OptionsRecord = any> {
         this.#idle = setTimeout(() => this.stop("idle"), idle);
     }
 
+    /** @internal */
+    fakeMessage: ReturnType<MessageWatcherCollector["createFakeAPIMessage"]>;
+    /** @internal */
+    createFakeAPIMessage(): Omit<GatewayMessageCreateDispatchData, "mentions" | `mention_${string}`> {
+        const { message } = this;
+
+        return {
+            id: message.id,
+            content: message.content,
+            channel_id: message.channelId,
+            guild_id: message.guildId,
+            timestamp: message.timestamp?.toString() ?? "",
+            edited_timestamp: message.editedTimestamp!,
+            tts: message.tts,
+            embeds: message.embeds.map((embed) => embed.toJSON()),
+            pinned: message.pinned,
+            type: this.message.type,
+            attachments: this.message.attachments.map(toSnakeCase),
+            author: this.fakeUser,
+        };
+    }
+
     resetTimers() {
         return this.refresh(true);
     }
@@ -113,10 +133,13 @@ export class MessageWatcherCollector<const O extends OptionsRecord = any> {
 
     async update(message: GatewayMessageUpdateDispatchData) {
         if (!message.content) return;
-        if (this.options.idle) this.refresh();
 
-        const prefix = this.message.prefix!;
-        const c = message.content.trimStart();
+        /**
+         * THIS IS BASED ON
+         * https://github.com/tiramisulabs/seyfert/blob/main/src/commands/handle.ts
+         */
+
+        const content = message.content.trimStart();
 
         type EventKeys = Extract<keyof MessageWatcherCollector<O>, `on${string}Event`>;
         type EventParams<E extends EventKeys> = Parameters<NonNullable<MessageWatcherCollector<O>[E]>>;
@@ -126,33 +149,39 @@ export class MessageWatcherCollector<const O extends OptionsRecord = any> {
             for (const instance of this.instances) instance[event]?.(...parameters);
         };
 
-        const abortAll = (reason: string) => {
-            if (this.options.abortOnUsageError) {
-                this.stopAll(reason);
-            }
-        };
+        const fakeAPIMessage = { ...this.fakeMessage, ...message } as GatewayMessageCreateDispatchData;
 
-        const usageError = (error: EventParams<"onUsageErrorEvent">[0]) => {
-            abortAll(error);
-            return runForAll("onUsageErrorEvent", error);
-        };
+        fakeAPIMessage.author = this.fakeUser;
+        fakeAPIMessage.mention_everyone = message.mention_everyone ?? this.message.mentionEveryone;
+        fakeAPIMessage.mention_roles = message.mention_roles ?? this.message.mentionRoles;
+        fakeAPIMessage.mention_channels = message.mention_channels ?? this.message.mentionChannels?.map(toSnakeCase) ?? [];
 
-        if (!c.startsWith(prefix)) return usageError("PrefixChanged");
+        const { client } = this;
 
-        const client = this.message.client as Client | WorkerClient;
+        const self = client as UsingClient;
+
         const { handleCommand } = client;
 
-        const { argsContent, command, parent } = handleCommand.resolveCommandFromContent(c.slice(prefix.length), prefix, this.message);
+        const prefixes = [
+            ...(await handleCommand.getPrefix(Transformers.Message(self, fakeAPIMessage))),
+            ...(client.options.commands?.defaultPrefix ?? []),
+        ];
 
-        if (command !== this.command) return usageError("CommandChanged");
-        if (!argsContent) return;
+        const prefix = prefixes.find((prefix) => content.startsWith(prefix));
+
+        if (!prefix) return runForAll("onUsageErrorEvent", "UnspecifiedPrefix");
+
+        const { argsContent, command, parent } = handleCommand.resolveCommandFromContent(
+            content.slice(prefix.length),
+            prefix,
+            fakeAPIMessage,
+        );
+
+        if (command !== this.command) return runForAll("onUsageErrorEvent", "CommandChanged");
+
+        if (argsContent === undefined) return;
 
         const args = handleCommand.argsParser(argsContent, command, this.message);
-
-        /**
-         * THIS IS BASED ON
-         * https://github.com/tiramisulabs/seyfert/blob/main/src/client/onmessagecreate.ts
-         */
 
         const resolved: MakeRequired<ContextOptionsResolved> = {
             channels: {},
@@ -162,32 +191,10 @@ export class MessageWatcherCollector<const O extends OptionsRecord = any> {
             attachments: {},
         };
 
-        /** i hate need to do this. */
-        const fakeAPIMessage: GatewayMessageCreateDispatchData = {
-            ...message,
-            content: (message.content ?? this.message.content)!,
-            timestamp: message.timestamp!,
-            edited_timestamp: message.edited_timestamp!,
-            tts: message.tts ?? this.message.tts,
-            mention_everyone: message.mention_everyone ?? this.message.mentionEveryone,
-            mention_roles: message.mention_roles ?? this.message.mentionRoles,
-            mention_channels: message.mention_channels ?? this.message.mentionChannels?.map(toSnakeCase) ?? [],
-            embeds: message.embeds ?? this.message.embeds.map((embed) => embed.toJSON()),
-            pinned: message.pinned ?? this.message.pinned,
-            type: this.message.type,
-            attachments: message.attachments ?? this.message.attachments.map(toSnakeCase),
-            author: this.user,
-        };
-
         const { options: resolverOptions, errors } = await handleCommand.argsOptionsParser(command, fakeAPIMessage, args, resolved);
 
-        const optionsError = (descriptor: OnOptionsReturnObject) => {
-            abortAll("OptionsError");
-            runForAll("onOptionsErrorEvent", descriptor);
-        };
-
         if (errors) {
-            const descriptor: OnOptionsReturnObject = Object.fromEntries(
+            const errorsObject: OnOptionsReturnObject = Object.fromEntries(
                 errors.map((x) => {
                     return [
                         x.name,
@@ -199,7 +206,8 @@ export class MessageWatcherCollector<const O extends OptionsRecord = any> {
                     ];
                 }),
             );
-            optionsError(descriptor);
+            runForAll("onOptionsErrorEvent", errorsObject);
+            return;
         }
 
         const optionsResolver = new OptionResolver(
@@ -214,7 +222,7 @@ export class MessageWatcherCollector<const O extends OptionsRecord = any> {
         //@ts-expect-error
         const [erroredOptions] = await command.__runOptions(ctx, optionsResolver);
 
-        if (erroredOptions) return optionsError(erroredOptions);
+        if (erroredOptions) return runForAll("onOptionsErrorEvent", erroredOptions);
 
         runForAll("onChangeEvent", ctx.options, message as RawMessageUpdated);
     }

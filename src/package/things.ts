@@ -11,6 +11,6 @@ export type Instantiable<C> = { new (...args: any[]): C };
 export type YunaUsableCommand = (Command | SubCommand) & {
     [keyMetadata]?: YunaParserCommandMetaData;
     [keyConfig]?: YunaParserCreateOptions;
-    [keySubCommands]?: { default?: Instantiable<SubCommand> | null };
+    [keySubCommands]?: { default?: Instantiable<SubCommand> | null } | null;
     [keyShortcut]?: boolean;
 };

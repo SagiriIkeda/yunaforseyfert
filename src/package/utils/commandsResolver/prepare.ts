@@ -1,5 +1,5 @@
 import { type Client, Command, SubCommand, type UsingClient } from "seyfert";
-import { type Instantiable, type YunaUsableCommand, keyShortcut } from "../../things";
+import { type Instantiable, type YunaUsableCommand, keyShortcut, keySubCommands } from "../../things";
 import { baseResolver } from "./base";
 import type { YunaCommandsResolverConfig } from "./resolver";
 
@@ -28,7 +28,7 @@ export interface GroupLink {
 
 export function prepareCommands(client: Client | UsingClient) {
     if (!client.commands?.values.length)
-        return client.logger.warn("UseYuna.commands.prepare The commands have not been loaded yet or there are none at all.");
+        return client.logger.warn("[Yuna.commands.prepare] The commands have not been loaded yet or there are none at all.");
 
     const self = client as UseYunaCommandsClient;
     const isFirst = !self[commandsConfigKey];
@@ -59,11 +59,16 @@ export function prepareCommands(client: Client | UsingClient) {
                 });
             }
 
+        let hasSubCommands = false;
+
         for (const sub of command.options ?? []) {
             if (!(sub instanceof SubCommand)) continue;
+            hasSubCommands = true;
             sub.parent = command;
             if ((sub as YunaUsableCommand)[keyShortcut] === true) metadata.shortcuts.push(sub);
         }
+
+        if (!hasSubCommands) (command as YunaUsableCommand)[keySubCommands] = null;
     }
 
     if (!isFirst) return;

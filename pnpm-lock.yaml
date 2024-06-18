@@ -9,11 +9,11 @@ importers:
   .:
     dependencies:
       discord-api-types:
-        specifier: ^0.37.77
-        version: 0.37.88
+        specifier: ^0.37.90
+        version: 0.37.90
       seyfert:
         specifier: github:socram03/seyfert#feat/2.0
-        version: https://codeload.github.com/socram03/seyfert/tar.gz/b866da20fea11af53f754e5b126df715e89311b9
+        version: https://codeload.github.com/socram03/seyfert/tar.gz/ab9b52c1607af99c3f7ba2ccbf1c6c1245ed0df4
     devDependencies:
       '@biomejs/biome':
         specifier: 1.8.0
@@ -450,11 +450,8 @@ packages:
     resolution: {integrity: sha512-EjePK1srD3P08o2j4f0ExnylqRs5B9tJjcp9t1krH2qRi8CCdsYfwe9JgSLurFBWwq4uOlipzfk5fHNvwFKr8Q==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
 
-  discord-api-types@0.37.88:
-    resolution: {integrity: sha512-Yrj5S3JXzouPc6WLA8svgXCw3Q7IkNdW/Y/IfkJF+CsgUBsgECQ8qVoOaseJJ8Atj2TEvabut4rGmzq6PRi1/Q==}
-
-  discord-api-types@0.37.89:
-    resolution: {integrity: sha512-+hiYDULKma/0B7Zd9/IYK0XnYlYhWSsPYKNahUk33QEy6yuHdGwlglIfbiTBn683cmJ44IFnFYZa8UX1Ka+kDg==}
+  discord-api-types@0.37.90:
+    resolution: {integrity: sha512-lpOJSGrqHuXoM4FV/2HtjoaJpCClGFHpRNIdZEW8zPINlsCHNSfIwA2EQ8dxeE6k1QhhTuM9ZlOGVYXoU7FLgA==}
 
   emoji-regex@10.3.0:
     resolution: {integrity: sha512-QpLs9D9v9kArv4lfDEgg1X/gN5XLnf/A6l9cs8SPZLRZR3ZkY9+kwIQTxm+fsSej5UMYGE8fdoaZVIBlqG0XTw==}
@@ -691,8 +688,8 @@ packages:
     engines: {node: '>=18.0.0', npm: '>=8.0.0'}
     hasBin: true
 
-  seyfert@https://codeload.github.com/socram03/seyfert/tar.gz/b866da20fea11af53f754e5b126df715e89311b9:
-    resolution: {tarball: https://codeload.github.com/socram03/seyfert/tar.gz/b866da20fea11af53f754e5b126df715e89311b9}
+  seyfert@https://codeload.github.com/socram03/seyfert/tar.gz/ab9b52c1607af99c3f7ba2ccbf1c6c1245ed0df4:
+    resolution: {tarball: https://codeload.github.com/socram03/seyfert/tar.gz/ab9b52c1607af99c3f7ba2ccbf1c6c1245ed0df4}
     version: 1.5.0
 
   shebang-command@2.0.0:
@@ -865,8 +862,8 @@ packages:
     resolution: {integrity: sha512-G8ura3S+3Z2G+mkgNRq8dqaFZAuxfsxpBB8OCTGRTCtp+l/v9nbFNmCUP1BZMts3G1142MsZfn6eeUKrr4PD1Q==}
     engines: {node: '>=18'}
 
-  ws@8.17.0:
-    resolution: {integrity: sha512-uJq6108EgZMAl20KagGkzCKfMEjxmKvZHG7Tlq0Z6nOky7YF7aq4mOx6xK8TJ/i1LeK4Qus7INktacctDgY8Ow==}
+  ws@8.17.1:
+    resolution: {integrity: sha512-6XQFvXTkbfUOZOKKILFG1PDK2NDQs4azKQl26T0YS5CxqWLgXajbPZ+h4gZekJyRqFU8pvnbAbbs/3TgRPy+GQ==}
     engines: {node: '>=10.0.0'}
     peerDependencies:
       bufferutil: ^4.0.1
@@ -1178,9 +1175,7 @@ snapshots:
 
   diff-sequences@29.6.3: {}
 
-  discord-api-types@0.37.88: {}
-
-  discord-api-types@0.37.89: {}
+  discord-api-types@0.37.90: {}
 
   emoji-regex@10.3.0: {}
 
@@ -1458,13 +1453,13 @@ snapshots:
       '@rollup/rollup-win32-x64-msvc': 4.18.0
       fsevents: 2.3.3
 
-  seyfert@https://codeload.github.com/socram03/seyfert/tar.gz/b866da20fea11af53f754e5b126df715e89311b9:
+  seyfert@https://codeload.github.com/socram03/seyfert/tar.gz/ab9b52c1607af99c3f7ba2ccbf1c6c1245ed0df4:
     dependencies:
       chokidar: 3.6.0
-      discord-api-types: 0.37.89
+      discord-api-types: 0.37.90
       magic-bytes.js: 1.10.0
       ts-mixer: 6.0.4
-      ws: 8.17.0
+      ws: 8.17.1
     optionalDependencies:
       ioredis: 5.4.1
       tweetnacl: 1.0.3
@@ -1623,7 +1618,7 @@ snapshots:
       string-width: 7.1.0
       strip-ansi: 7.1.0
 
-  ws@8.17.0: {}
+  ws@8.17.1: {}
 
   yaml@2.4.5: {}
 
