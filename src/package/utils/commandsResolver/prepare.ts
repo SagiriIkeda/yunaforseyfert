@@ -26,7 +26,7 @@ export interface GroupLink {
     type: typeof ShortcutType.Group;
 }
 
-const addEvents = (client: AvailableClients) => {
+export const addCommandsEvents = (client: AvailableClients) => {
     for (const event of ["load", "reloadAll"]) {
         const def = client.commands?.[event as "load"];
         if (!def) continue;
@@ -34,33 +34,31 @@ const addEvents = (client: AvailableClients) => {
         Object.defineProperty(client.commands, event, {
             async value(...args: Parameters<typeof def>) {
                 const val = await def.apply(this, args);
-                prepareCommands(false, client);
+                prepareCommands(client);
                 return val;
             },
         });
     }
 };
 
-export function prepareCommands(showWarn: boolean, client: AvailableClients) {
+export const getCommandsMetadata = (client: AvailableClients) => {
     const self = client as UseYunaCommandsClient;
-    const isFirst = !self[commandsConfigKey];
 
-    self[commandsConfigKey] ??= {
+    // biome-ignore lint/suspicious/noAssignInExpressions: penguin
+    return (self[commandsConfigKey] ??= {
         shortcuts: [],
         commands: [],
-    };
+    });
+};
 
-    const metadata = self[commandsConfigKey];
+export function prepareCommands(client: AvailableClients) {
+    const metadata = getCommandsMetadata(client);
 
     metadata.shortcuts = [];
     metadata.commands = [];
 
-    if (isFirst) addEvents(client);
-
-    if (!client.commands?.values.length) {
-        showWarn && client.logger.warn("[Yuna.commands.prepare] The commands have not been loaded yet or there are none at all.");
-        return;
-    }
+    if (!client.commands?.values.length)
+        return client.logger.warn("[Yuna.commands.prepare] The commands have not been loaded yet or there are none at all.");
 
     for (const command of client.commands?.values ?? []) {
         if (!(command instanceof Command)) continue;
@@ -89,6 +87,8 @@ export function prepareCommands(showWarn: boolean, client: AvailableClients) {
 
         if (!hasSubCommands) (command as YunaUsableCommand)[keySubCommands] = null;
     }
+
+    metadata.config?.afterPrepare?.(metadata);
 }
 
 export const resolve = (
@@ -96,6 +96,6 @@ export const resolve = (
     query: string | string[],
     config?: YunaCommandsResolverConfig,
 ): Command | SubCommand | undefined => {
-    const gConfig = (client as UseYunaCommandsClient)[commandsConfigKey]?.config ?? {};
+    const gConfig = getCommandsMetadata(client).config ?? {};
     return baseResolver(client, query, { ...gConfig, ...config })?.command;
 };

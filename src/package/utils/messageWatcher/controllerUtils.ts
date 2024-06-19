@@ -8,16 +8,10 @@ type YunaMessageWatcherClient = UsingClient & {
     [controllerKey]?: YunaMessageWatcherController;
 };
 
-export const prepareWatchers = ({ client, cache }: YunaMessageWatcherControllerConfig) => {
+export const createController = ({ client, cache }: YunaMessageWatcherControllerConfig) => {
     const self = client as YunaMessageWatcherClient;
-    const inCache = self[controllerKey];
-    if (inCache) return inCache;
-
-    const controller = new YunaMessageWatcherController({ client, cache });
-
-    self[controllerKey] = controller;
-
-    return controller;
+    // biome-ignore lint/suspicious/noAssignInExpressions: penguin
+    return (self[controllerKey] ??= new YunaMessageWatcherController({ client, cache }));
 };
 
 export const getController = (client: UsingClient) => {
@@ -28,5 +22,5 @@ export const createWatcher = <const O extends OptionsRecord | undefined = undefi
     ctx: C,
     options?: MessageWatcherCollectorOptions,
 ) => {
-    return prepareWatchers({ client: ctx.client }).create<O, C>(ctx, options);
+    return createController({ client: ctx.client }).create<O, C>(ctx, options);
 };

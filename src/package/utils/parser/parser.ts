@@ -1,7 +1,6 @@
 import { ApplicationCommandOptionType } from "discord-api-types/v10";
 import type { Command, Message, SubCommand } from "seyfert";
 import type { HandleCommand } from "seyfert/lib/commands/handle";
-import { once } from "../../lib/utils";
 import type { ArgsResult } from "../../things";
 import { YunaParserOptionsChoicesResolver } from "./choicesResolver";
 import {
@@ -124,8 +123,8 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
             return lastOptionNameAdded;
         };
-
-        const aggregateUserFromMessageReference = once(() => {
+        // aggregateUserFromMessageReference
+        (() => {
             const reference = message?.referencedMessage;
             if (
                 !reference ||
@@ -133,16 +132,13 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                     realConfig.useRepliedUserAsAnOption?.requirePing &&
                     message?.mentions.users[0].id !== reference.author.id)
             )
-                return true;
+                return;
             const option = iterableOptions[actualOptionIdx] as CommandOptionWithType | undefined;
-            if (option?.type !== ApplicationCommandOptionType.User) return false;
+            if (option?.type !== ApplicationCommandOptionType.User) return;
 
             argsResult[option.name] = reference.author.id;
             actualOptionIdx++;
-            return true;
-        });
-
-        aggregateUserFromMessageReference();
+        })();
 
         const aggregateLastestLongWord = (end: number = content.length, postText = "") => {
             if (!lastestLongWord) return;
@@ -366,11 +362,9 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             YunaParserOptionsChoicesResolver(commandMetadata, argsResult, realConfig);
         }
 
-        aggregateUserFromMessageReference();
-
         realConfig.logResult &&
-            this.client.logger.debug({
-                argsResult: argsResult,
+            this.client.logger.debug("[Yuna.parser]", {
+                argsResult,
             });
 
         return argsResult;

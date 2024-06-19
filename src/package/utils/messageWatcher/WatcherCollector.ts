@@ -26,7 +26,7 @@ export type MessageWatcherCollectorOptions = {
 
 type RawMessageUpdated = MakeRequired<GatewayMessageUpdateDispatchData, "content">;
 
-type OnChangeEvent<O extends OptionsRecord = any> = (result: ContextOptions<O>, rawMessage: RawMessageUpdated) => any;
+type OnChangeEvent<O extends OptionsRecord> = (result: ContextOptions<O>, rawMessage: RawMessageUpdated) => any;
 type OnStopEvent = (reason: string) => any;
 type OnOptionsErrorEvent = (metadata: OnOptionsReturnObject) => any;
 
@@ -43,7 +43,7 @@ const createFakeAPIUser = (user: User) => {
     return created as APIUser;
 };
 
-export class MessageWatcherCollector<const O extends OptionsRecord = any> {
+export class MessageWatcherCollector<const O extends OptionsRecord> {
     readonly options: MessageWatcherCollectorOptions;
 
     message: Message;
@@ -102,7 +102,7 @@ export class MessageWatcherCollector<const O extends OptionsRecord = any> {
     }
 
     /** @internal */
-    fakeMessage: ReturnType<MessageWatcherCollector["createFakeAPIMessage"]>;
+    fakeMessage: ReturnType<MessageWatcherCollector<O>["createFakeAPIMessage"]>;
     /** @internal */
     createFakeAPIMessage(): Omit<GatewayMessageCreateDispatchData, "mentions" | `mention_${string}`> {
         const { message } = this;

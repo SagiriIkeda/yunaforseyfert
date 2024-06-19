@@ -15,7 +15,7 @@ pnpm add yunaforseyfert
 
 # Features
 
-<details style="padding: 10px">
+<details>
 
   <summary>
     <h2 style="display: inline">YunaParser</h2>
@@ -301,10 +301,10 @@ This will enable **disableLongTextTagsInLastOption** and **breakSearchOnConsumeA
 
 </details>
 
-<details style="padding: 10px">
+<details>
 
   <summary>
-  <H2 style="display: inline">YunaCommandsResolver</H2>
+  <h2 style="display: inline">YunaCommandsResolver</h2>
   <br/>
 
   <blockquote style="padding-left:10px;margin-top:10px">
@@ -315,10 +315,10 @@ This will enable **disableLongTextTagsInLastOption** and **breakSearchOnConsumeA
 
 </details>
 
-<details style="padding: 10px">
+<details>
 
   <summary>
-  <H2 style="display: inline">MessageWatcher</H2>
+  <h2 style="display: inline">MessageWatcher</h2>
   <br/>
 
   <blockquote style="padding-left:10px;margin-top:10px">
@@ -329,14 +329,17 @@ This will enable **disableLongTextTagsInLastOption** and **breakSearchOnConsumeA
 
 </details>
 
+<br/>
+
 ¡And more **features** coming soon! ***(not so soon)*** 🐧
 
 
-### FAQ
-<details style="padding: 10px">
+# FAQ
+
+<details>
 
   <summary>
-  <H2 style="display: inline">Migrating from Seyfert v1</H2>
+  <h2 style="display: inline">Migrate from &lt;v0.10 to v1.0 (and Seyfert v1 to v2)</h2>
   </summary>
 
 </details>

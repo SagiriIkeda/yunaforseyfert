@@ -1,3 +1,4 @@
+import type { LocaleString } from "discord-api-types/v10";
 import type { Command } from "seyfert";
 import type { InstantiableSubCommand } from "./src/package/things";
 
@@ -5,11 +6,6 @@ declare module "seyfert" {
     export interface SubCommand {
         /** This property is part of YunaCommandsResolver, without using it, it may not be available. */
         parent?: Command;
-    }
-
-    export interface Message {
-        /** This property is necessary for Yuna's MessageWatcher to work.  */
-        prefix?: string;
     }
 
     export function Groups(
@@ -37,8 +33,9 @@ declare module "seyfert" {
                 /**
                  * Allows you to set a subcommand that will be used when one is not found.
                  * if not set the first subcommand of this group will be used.
-                 * @requires  YunaCommandsResolver setting `useFallbackSubCommand` be `true` (by default).
-                 * use `null` to disable this option for this command group.
+                 *
+                 * use `null` to disable this option for this group.
+                 * @requires  YunaCommandsResolver to work.
                  */
                 fallbackSubCommand?: InstantiableSubCommand | null;
             }

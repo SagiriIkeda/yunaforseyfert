@@ -3,7 +3,7 @@ import type { HandleCommand } from "seyfert/lib/commands/handle";
 import { fullNameOf } from "../../lib/utils";
 import type { AvailableClients } from "../../things";
 import { baseResolver } from "./base";
-import { type UseYunaCommandsClient, commandsConfigKey, prepareCommands } from "./prepare";
+import { addCommandsEvents, getCommandsMetadata } from "./prepare";
 
 export interface YunaCommandsResolverConfig {
     /**
@@ -11,17 +11,22 @@ export interface YunaCommandsResolverConfig {
      * use a specified default one or the first one you have.
      */
     useFallbackSubCommand?: boolean;
+
+    afterPrepare?(metadata: ReturnType<typeof getCommandsMetadata>): any;
 }
 
-export function YunaCommandsResolver({ client, useFallbackSubCommand = true }: YunaCommandsResolverConfig & { client: AvailableClients }) {
+export function YunaCommandsResolver({
+    client,
+    useFallbackSubCommand = true,
+    afterPrepare,
+}: YunaCommandsResolverConfig & { client: AvailableClients }) {
     const config = {
         useFallbackSubCommand,
+        afterPrepare,
     };
 
-    prepareCommands(false, client);
-
-    const metadata = (client as UseYunaCommandsClient)[commandsConfigKey];
-    if (metadata) metadata.config = config;
+    addCommandsEvents(client);
+    getCommandsMetadata(client).config = config;
 
     return function (this: HandleCommand, content: string) {
         const { endPad = 0, command, parent } = baseResolver(client, content, config) ?? {};

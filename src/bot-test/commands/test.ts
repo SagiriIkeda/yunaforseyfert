@@ -1,6 +1,6 @@
 import { inspect } from "node:util";
 import { Command, type CommandContext, Declare, Embed, type Message, Options, createStringOption } from "seyfert";
-import { createWatcher } from "../../package/utils/messageWatcher/prepare";
+import { createWatcher } from "../../package/utils/messageWatcher/controllerUtils";
 
 const options = {
     first: createStringOption({
