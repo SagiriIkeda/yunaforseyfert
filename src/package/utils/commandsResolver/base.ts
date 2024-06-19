@@ -1,6 +1,6 @@
-import { ApplicationCommandType } from "discord-api-types/v10";
-import { type Command, type ContextMenuCommand, SubCommand, type UsingClient } from "seyfert";
-import { type YunaUsableCommand, keySubCommands } from "../../things";
+import { ApplicationCommandOptionType, ApplicationCommandType } from "discord-api-types/v10";
+import type { Command, ContextMenuCommand, SubCommand } from "seyfert";
+import { type AvailableClients, type YunaUsableCommand, keySubCommands } from "../../things";
 import { type GroupLink, ShortcutType, type UseYunaCommandsClient, commandsConfigKey } from "./prepare";
 import type { YunaCommandsResolverConfig } from "./resolver";
 
@@ -13,14 +13,14 @@ interface YunaCommandsResolverData {
 }
 
 export function baseResolver(
-    client: UsingClient,
+    client: AvailableClients,
     query: string | string[],
     config: YunaCommandsResolverConfig,
 ): YunaCommandsResolverData | undefined;
-export function baseResolver(client: UsingClient, query: string | string[], config?: undefined): UsableCommand | undefined;
+export function baseResolver(client: AvailableClients, query: string | string[], config?: undefined): UsableCommand | undefined;
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: 🐧
 export function baseResolver(
-    client: UsingClient,
+    client: AvailableClients,
     query: string | string[],
     config?: YunaCommandsResolverConfig,
 ): UsableCommand | YunaCommandsResolverData | undefined {
@@ -87,14 +87,17 @@ export function baseResolver(
     let firstGroupSubCommand: SubCommand | undefined;
 
     const subCommand = parentCommand.options?.find((s) => {
-        if (!(s instanceof SubCommand && s.group === groupName)) return false;
-        firstGroupSubCommand ??= s;
+        const sub = s as SubCommand;
 
-        if (virtualInstance && s.constructor === virtualInstance) {
-            virtualSubCommand = s;
+        if (!(sub.type === ApplicationCommandOptionType.Subcommand && sub.group === groupName)) return false;
+
+        firstGroupSubCommand ??= sub;
+
+        if (virtualInstance && sub.constructor === virtualInstance) {
+            virtualSubCommand = sub;
         }
 
-        return s.name === subName || s.aliases?.includes(subName);
+        return sub.name === subName || sub.aliases?.includes(subName);
     }) as SubCommand | undefined;
 
     if (
@@ -108,7 +111,7 @@ export function baseResolver(
 
     const useSubCommand = subCommand ?? virtualSubCommand;
 
-    const resultCommand = useSubCommand || parentCommand;
+    const resultCommand = useSubCommand ?? parentCommand;
 
     return config && resultCommand
         ? {

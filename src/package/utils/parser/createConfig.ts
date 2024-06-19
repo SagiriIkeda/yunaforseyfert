@@ -1,10 +1,11 @@
-import { ApplicationCommandOptionType } from "discord-api-types/v10";
-import type { Command, CommandOption, SeyfertBooleanOption, SeyfertNumberOption, SeyfertStringOption, SubCommand } from "seyfert";
-import { type Instantiable, type YunaUsableCommand, keyConfig, keyMetadata } from "../../things";
+import type { ApplicationCommandOptionType } from "discord-api-types/v10";
+import type { CommandOption } from "seyfert";
+import { type YunaUsableCommand, keyConfig, keyMetadata } from "../../things";
+import { YunaParserCommandMetaData } from "./CommandMetaData";
 
 type ValidLongTextTags = "'" | '"' | "`";
 type ValidNamedOptionSyntax = "-" | "--" | ":";
-export type TypedCommandOption = CommandOption & { type: ApplicationCommandOptionType };
+export type CommandOptionWithType = CommandOption & { type: ApplicationCommandOptionType };
 
 export interface YunaParserCreateOptions {
     /**
@@ -199,6 +200,15 @@ const removeDuplicates = <A>(arr: A extends Array<infer R> ? R[] : never[]): A =
     return [...new Set(arr)] as A;
 };
 
+export function DeclareParserConfig(config: YunaParserCreateOptions = {}) {
+    return <T extends { new (...args: any[]): {} }>(target: T) => {
+        if (!Object.keys(config).length) return target;
+        return class extends target {
+            [keyConfig] = createConfig(config, false);
+        };
+    };
+}
+
 export const createConfig = (config: YunaParserCreateOptions, isFull = true) => {
     const newConfig: YunaParserCreateOptions = {};
 
@@ -236,87 +246,7 @@ export const createConfig = (config: YunaParserCreateOptions, isFull = true) => 
     return newConfig;
 };
 
-export class YunaParserCommandMetaData {
-    command: YunaUsableCommand;
-    options?: CommandOption[];
-    regexes?: ReturnType<typeof createRegexes>;
-    choicesOptions?: {
-        names: string[];
-        decored?: Record<string, [rawName: string, name: string, value: string | number][]>;
-    };
-    booleanOptions?: Set<string>;
-
-    config?: YunaParserCreateOptions;
-
-    globalConfig: YunaParserCreateOptions;
-
-    base: Instantiable<Command | SubCommand>;
-
-    constructor(command: YunaUsableCommand, globalConfig: YunaParserCreateOptions) {
-        this.command = command;
-        this.globalConfig = globalConfig;
-        this.config = this.command[keyConfig];
-
-        this.base = Object.getPrototypeOf(command);
-
-        this.options = command.options?.filter((option) => "type" in option && !InvalidOptionType.has(option.type));
-
-        if (this.options?.length) {
-            const namesOfOptionsWithChoices: string[] = [];
-            const boolOptions = new Set<string>();
-
-            type OptionType = (SeyfertStringOption | SeyfertNumberOption | SeyfertBooleanOption) & TypedCommandOption;
-
-            for (const option of this.options as OptionType[]) {
-                if (option.type === ApplicationCommandOptionType.Boolean) {
-                    boolOptions.add(option.name);
-                    continue;
-                }
-
-                if (!(option as Exclude<OptionType, SeyfertBooleanOption>).choices?.length) continue;
-
-                namesOfOptionsWithChoices.push(option.name);
-            }
-
-            if (boolOptions.size) this.booleanOptions = boolOptions;
-
-            this.choicesOptions = {
-                names: namesOfOptionsWithChoices,
-            };
-        }
-
-        if (this.config) {
-            this.regexes = createRegexes(this.getConfig());
-        }
-    }
-    /** */
-    getConfig() {
-        const { config } = this;
-        if (!config) return this.globalConfig;
-
-        return mergeConfig(this.globalConfig, config);
-    }
-}
-
-export const ParserRecommendedConfig = {
-    /** things that I consider necessary in an Eval command. */
-    Eval: {
-        breakSearchOnConsumeAllOptions: true,
-        disableLongTextTagsInLastOption: true,
-    },
-} satisfies Record<string, YunaParserCreateOptions>;
-
-export function DeclareParserConfig(config: YunaParserCreateOptions = {}) {
-    return <T extends { new (...args: any[]): {} }>(target: T) => {
-        if (!Object.keys(config).length) return target;
-
-        return class extends target {
-            [keyConfig] = createConfig(config, false);
-        };
-    };
-}
-
-const mergeConfig = (c1: YunaParserCreateOptions, c2: YunaParserCreateOptions) => {
+export const mergeConfig = (c1: YunaParserCreateOptions, c2: YunaParserCreateOptions) => {
     const result: YunaParserCreateOptions = { ...c1, ...c2 };
 
     if (c2.syntax) {
@@ -336,12 +266,6 @@ const mergeConfig = (c1: YunaParserCreateOptions, c2: YunaParserCreateOptions) =
 
     return result;
 };
-
-const InvalidOptionType = new Set([
-    ApplicationCommandOptionType.Attachment,
-    ApplicationCommandOptionType.Subcommand,
-    ApplicationCommandOptionType.SubcommandGroup,
-]);
 
 export const getYunaMetaDataFromCommand = (command: YunaUsableCommand, config: YunaParserCreateOptions) => {
     const InCommandMetadata = command[keyMetadata];

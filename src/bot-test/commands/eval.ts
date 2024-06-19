@@ -5,7 +5,8 @@
 import { inspect } from "node:util";
 import { Command, type CommandContext, Declare, Embed, Options, createStringOption } from "seyfert";
 import { EmbedColors } from "seyfert/lib/common/index.js";
-import { DeclareParserConfig, ParserRecommendedConfig } from "../../package/utils/parser/createConfig";
+import { ParserRecommendedConfig } from "../../package";
+import { DeclareParserConfig } from "../../package/utils/parser/createConfig";
 
 export const codeBlock = (language: string, code: string) => `\`\`\`${language}\n${code}\n\`\`\``;
 export const getDepth = (error: any): string => inspect(error, { depth: 0 });

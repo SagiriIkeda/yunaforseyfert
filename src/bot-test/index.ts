@@ -9,7 +9,7 @@ class YunaCommandHandle extends HandleCommand {
         return ["yuna", "y", `<@${message.client.botId}>`];
     }
 
-    resolveCommandFromContent = Yuna.resolver();
+    resolveCommandFromContent = Yuna.resolver({ client });
 
     argsParser = Yuna.parser({
         logResult: true,

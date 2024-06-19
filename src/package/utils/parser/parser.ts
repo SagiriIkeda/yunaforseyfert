@@ -2,12 +2,13 @@ import { ApplicationCommandOptionType } from "discord-api-types/v10";
 import type { Command, Message, SubCommand } from "seyfert";
 import type { HandleCommand } from "seyfert/lib/commands/handle";
 import { once } from "../../lib/utils";
+import type { ArgsResult } from "../../things";
 import { YunaParserOptionsChoicesResolver } from "./choicesResolver";
 import {
+    type CommandOptionWithType,
     RemoveFromCheckNextChar,
     RemoveLongCharEscapeMode,
     RemoveNamedEscapeMode,
-    type TypedCommandOption,
     type YunaParserCreateOptions,
     createConfig,
     createRegexes,
@@ -52,7 +53,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
     return function (this: HandleCommand, content: string, command: Command | SubCommand, message?: Message): Record<string, string> {
         const commandMetadata = getYunaMetaDataFromCommand(command, config);
 
-        const { options, choicesOptions, booleanOptions } = commandMetadata;
+        const { iterableOptions, options, choices } = commandMetadata;
 
         const realConfig = commandMetadata.getConfig();
 
@@ -66,7 +67,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
         const { breakSearchOnConsumeAllOptions, useUniqueNamedSyntaxAtSameTime, disableLongTextTagsInLastOption } = realConfig;
 
-        if (!options?.length) return {};
+        if (!iterableOptions?.length) return {};
 
         const localEscapeModes = { ...__realEscapeModes };
 
@@ -91,7 +92,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
         let lastOptionNameAdded: string | undefined;
         let isRecentlyClosedAnyTag = false;
 
-        const result: Record<string, string> = {};
+        const argsResult: ArgsResult = {};
 
         const aggregateNextOption = (value: string, start: number | null) => {
             if (start === null && unindexedRightText) {
@@ -100,11 +101,11 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                 aggregateNextOption(savedUnindexedText, null);
             }
 
-            const optionAtIndexName = options[actualOptionIdx]?.name;
+            const optionAtIndexName = iterableOptions[actualOptionIdx]?.name;
 
             if (!optionAtIndexName) return;
 
-            const isLastOption = actualOptionIdx === options.length - 1;
+            const isLastOption = actualOptionIdx === iterableOptions.length - 1;
 
             if (isLastOption && start !== null) {
                 lastestLongWord = {
@@ -114,7 +115,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                 };
             }
 
-            result[optionAtIndexName] = unindexedRightText + value;
+            argsResult[optionAtIndexName] = unindexedRightText + value;
             unindexedRightText = "";
 
             actualOptionIdx++;
@@ -124,7 +125,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             return lastOptionNameAdded;
         };
 
-        const addUserFromMessageReference = once(() => {
+        const aggregateUserFromMessageReference = once(() => {
             const reference = message?.referencedMessage;
             if (
                 !reference ||
@@ -133,15 +134,15 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                     message?.mentions.users[0].id !== reference.author.id)
             )
                 return true;
-            const option = options[actualOptionIdx] as TypedCommandOption | undefined;
+            const option = iterableOptions[actualOptionIdx] as CommandOptionWithType | undefined;
             if (option?.type !== ApplicationCommandOptionType.User) return false;
 
-            result[option.name] = reference.author.id;
+            argsResult[option.name] = reference.author.id;
             actualOptionIdx++;
             return true;
         });
 
-        addUserFromMessageReference();
+        aggregateUserFromMessageReference();
 
         const aggregateLastestLongWord = (end: number = content.length, postText = "") => {
             if (!lastestLongWord) return;
@@ -158,7 +159,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
             const slicedContent = content.slice(start, end);
 
-            result[name] = (
+            argsResult[name] = (
                 unindexedRightText +
                 (canUseAsLiterally ? slicedContent : sanitizeBackescapes(slicedContent, localEscapeModes.All, checkNextChar) + postText)
             ).trim();
@@ -188,7 +189,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                 backChar &&
                 !spacesRegex.test(backChar) /* placeIsForLeft */
             ) {
-                result[lastOptionNameAdded] += text;
+                argsResult[lastOptionNameAdded] += text;
                 return;
             }
 
@@ -221,16 +222,22 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
             namedOptionInitialized = null;
 
-            if (result[name] === undefined) actualOptionIdx++;
+            if (argsResult[name] === undefined) actualOptionIdx++;
 
-            result[name] = dotted ? value : value.trimStart() ? value : booleanOptions?.has(result.name) ? "true" : value;
+            argsResult[name] = dotted
+                ? value
+                : value.trimStart()
+                  ? value
+                  : options.get(name)?.type === ApplicationCommandOptionType.Boolean
+                    ? "true"
+                    : value;
 
             lastOptionNameAdded = name;
             return name;
         };
 
         for (const match of matches) {
-            if (actualOptionIdx >= options.length && breakSearchOnConsumeAllOptions) break;
+            if (actualOptionIdx >= iterableOptions.length && breakSearchOnConsumeAllOptions) break;
 
             const _isRecentlyCosedAnyTag = isRecentlyClosedAnyTag;
             isRecentlyClosedAnyTag = false;
@@ -294,7 +301,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             if (lastestLongWord || namedOptionInitialized) continue;
 
             if (backescape) {
-                const isDisabledLongTextTagsInLastOption = disableLongTextTagsInLastOption && actualOptionIdx >= options.length - 1;
+                const isDisabledLongTextTagsInLastOption = disableLongTextTagsInLastOption && actualOptionIdx >= iterableOptions.length - 1;
 
                 const { length } = backescape;
 
@@ -314,7 +321,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             }
 
             if (tag) {
-                const isDisabledLongTextTagsInLastOption = disableLongTextTagsInLastOption && actualOptionIdx >= options.length - 1;
+                const isDisabledLongTextTagsInLastOption = disableLongTextTagsInLastOption && actualOptionIdx >= iterableOptions.length - 1;
                 const isInvalidTag = InvalidTagsToBeLong.has(tag);
 
                 if (isEscapingNext) {
@@ -339,7 +346,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                 const placeIsForLeft = !(_isRecentlyCosedAnyTag || unindexedRightText || spacesRegex.test(content[index - 1]));
 
                 if (placeIsForLeft && lastOptionNameAdded) {
-                    result[lastOptionNameAdded] += value;
+                    argsResult[lastOptionNameAdded] += value;
                     continue;
                 }
 
@@ -355,17 +362,17 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             aggregateNextNamedOption(content.length);
         } else if (tagOpenPosition && tagOpenWith) aggregateTagLongText(tagOpenWith, tagOpenPosition);
 
-        if (choicesOptions?.names?.length && realConfig.resolveCommandOptionsChoices !== null) {
-            YunaParserOptionsChoicesResolver(command, choicesOptions.names, result, realConfig);
+        if (choices && realConfig.resolveCommandOptionsChoices !== null) {
+            YunaParserOptionsChoicesResolver(commandMetadata, argsResult, realConfig);
         }
 
-        addUserFromMessageReference();
+        aggregateUserFromMessageReference();
 
         realConfig.logResult &&
             this.client.logger.debug({
-                argsResult: result,
+                argsResult: argsResult,
             });
 
-        return result;
+        return argsResult;
     };
 };

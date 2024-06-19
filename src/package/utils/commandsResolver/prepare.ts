@@ -1,5 +1,5 @@
-import { type Client, Command, SubCommand, type UsingClient } from "seyfert";
-import { type Instantiable, type YunaUsableCommand, keyShortcut, keySubCommands } from "../../things";
+import { Command, SubCommand, type UsingClient } from "seyfert";
+import { type AvailableClients, type Instantiable, type YunaUsableCommand, keyShortcut, keySubCommands } from "../../things";
 import { baseResolver } from "./base";
 import type { YunaCommandsResolverConfig } from "./resolver";
 
@@ -26,10 +26,22 @@ export interface GroupLink {
     type: typeof ShortcutType.Group;
 }
 
-export function prepareCommands(client: Client | UsingClient) {
-    if (!client.commands?.values.length)
-        return client.logger.warn("[Yuna.commands.prepare] The commands have not been loaded yet or there are none at all.");
+const addEvents = (client: AvailableClients) => {
+    for (const event of ["load", "reloadAll"]) {
+        const def = client.commands?.[event as "load"];
+        if (!def) continue;
 
+        Object.defineProperty(client.commands, event, {
+            async value(...args: Parameters<typeof def>) {
+                const val = await def.apply(this, args);
+                prepareCommands(false, client);
+                return val;
+            },
+        });
+    }
+};
+
+export function prepareCommands(showWarn: boolean, client: AvailableClients) {
     const self = client as UseYunaCommandsClient;
     const isFirst = !self[commandsConfigKey];
 
@@ -42,6 +54,13 @@ export function prepareCommands(client: Client | UsingClient) {
 
     metadata.shortcuts = [];
     metadata.commands = [];
+
+    if (isFirst) addEvents(client);
+
+    if (!client.commands?.values.length) {
+        showWarn && client.logger.warn("[Yuna.commands.prepare] The commands have not been loaded yet or there are none at all.");
+        return;
+    }
 
     for (const command of client.commands?.values ?? []) {
         if (!(command instanceof Command)) continue;
@@ -69,20 +88,6 @@ export function prepareCommands(client: Client | UsingClient) {
         }
 
         if (!hasSubCommands) (command as YunaUsableCommand)[keySubCommands] = null;
-    }
-
-    if (!isFirst) return;
-
-    for (const event of ["load", "reloadAll"]) {
-        const def = client.commands[event as "load"];
-
-        Object.defineProperty(client.commands, event, {
-            async value(...args: Parameters<typeof def>) {
-                const val = await def.apply(this, args);
-                prepareCommands(client);
-                return val;
-            },
-        });
     }
 }
 

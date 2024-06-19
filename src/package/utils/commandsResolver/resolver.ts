@@ -1,6 +1,7 @@
-import type { Command, UsingClient } from "seyfert";
+import type { Command } from "seyfert";
 import type { HandleCommand } from "seyfert/lib/commands/handle";
-import { fullNameOf, once } from "../../lib/utils";
+import { fullNameOf } from "../../lib/utils";
+import type { AvailableClients } from "../../things";
 import { baseResolver } from "./base";
 import { type UseYunaCommandsClient, commandsConfigKey, prepareCommands } from "./prepare";
 
@@ -12,22 +13,17 @@ export interface YunaCommandsResolverConfig {
     useFallbackSubCommand?: boolean;
 }
 
-export function YunaCommandsResolver({ useFallbackSubCommand = true }: YunaCommandsResolverConfig = {}) {
+export function YunaCommandsResolver({ client, useFallbackSubCommand = true }: YunaCommandsResolverConfig & { client: AvailableClients }) {
     const config = {
         useFallbackSubCommand,
     };
 
-    const init = once((client: UsingClient) => {
-        prepareCommands(client);
-        const metadata = (client as UseYunaCommandsClient)[commandsConfigKey];
-        if (metadata) metadata.config = config;
-    });
+    prepareCommands(false, client);
+
+    const metadata = (client as UseYunaCommandsClient)[commandsConfigKey];
+    if (metadata) metadata.config = config;
 
     return function (this: HandleCommand, content: string) {
-        const { client } = this;
-
-        init(client);
-
         const { endPad = 0, command, parent } = baseResolver(client, content, config) ?? {};
 
         const argsContent = content.slice(endPad);
