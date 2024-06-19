@@ -29,21 +29,26 @@ pnpm add yunaforseyfert
 
 ### Installation
 
-After you install `yunaforseyfert` you need to import `YunaParser` like this
+After you install `yunaforseyfert` you need to import `Yuna` like this
 
 ```js
-import { YunaParser } from "yunaforseyfert"
+import { Yuna } from "yunaforseyfert"
 ```
 
 Then, you need to add it as seyfert's default argsParser, as follows
 
 ```js
+import { HandleCommand } from "seyfert/lib/commands/handle";
+import { Yuna } from "yunaforseyfert";
+
+class YourHandleCommand extends HandleCommand {
+    argsParser = Yuna.parser(); // Here are the settings, but that will be explained below
+}
 // your bot's client
-new Client({ 
-    commands: {
-        argsParser: YunaParser() // Here are the settings, but that will be explained below
-    }
+client.setServices({
+    handleCommand: YourHandleCommand,
 });
+
 ```
 
 And now, the magic will begin!
@@ -173,23 +178,23 @@ also this works with
 `/` *(in urls, like https://)*
 
 ### Config
-The configurations allow changing the behavior of the parser; this is done when using `YunaParser` The allowed ones are as follows:
+The configurations allow changing the behavior of the parser; this is done when using `Yuna.parser` The allowed ones are as follows:
 
 ```ts
-YunaParser({
+Yuna.parser({
     /**
      * this only show console.log with the options parsed.
      * @default false */
     logResult: false,
-
-    enabled: {
+    /** syntaxes enabled */
+    syntax: {
         /** especify what longText tags you want
          *
          * " => "penguin life"
          *
          * ' => 'beautiful sentence'
          *
-         * ` => `LiSA『Shouted Serenade』 is a good song`
+         * ` => `Eve『Insomnia』 is a good song`
          *
          * @default 🐧 all enabled
          */
@@ -241,6 +246,15 @@ YunaParser({
          */
         canUseDirectlyValue: true;
     };
+
+    /** If the first option is of the 'User' type,
+     *  it can be taken as the user to whom the message is replying.
+     *  @default {null} (not enabled)
+     */
+    useRepliedUserAsAnOption?: {
+        /** need to have the mention enabled (@PING) */
+        requirePing: boolean;
+    } | null;
 })
 ```
 
@@ -296,6 +310,16 @@ import { DeclareParserConfig, ParserRecommendedConfig } from "yunaforseyfert";
 This will enable **disableLongTextTagsInLastOption** and **breakSearchOnConsumeAll**. Things that I consider necessary in an eval.
 
 
+**useRepliedUserAsAnOption**
+Suppose we have a command with two options, `user` and `message`. As long as we have the `useRepliedUserAsAnOption` option set, the `user` option will be taken as the user to whom the message is replying, and the other options (if any) will be used normally in the message. In case you are not replying to any message `user` will have to be specified in the message, as it is normally. Example:
+
+**replying**
+<img src="https://i.imgur.com/XeP4y9a.png" width="100%" />
+
+**not replying**
+<img src="https://i.imgur.com/llpFwE9.png" width="100%" />
+
+
 ### "Demostration" thanks to @justo
 <img src="https://i.imgur.com/cRrLoG2.gif" width="100%" />
 
@@ -339,8 +363,48 @@ This will enable **disableLongTextTagsInLastOption** and **breakSearchOnConsumeA
 <details>
 
   <summary>
-  <h2 style="display: inline">Migrate from &lt;v0.10 to v1.0 (and Seyfert v1 to v2)</h2>
+  <h2 style="display: inline">Migrate from v&lt;0.10 to v1.0 (and Seyfert v1 to v2)</h2>
   </summary>
+
+The way to set the `argsParser` has changed in `seyfert v2`, it has also changed its name
+now it should be done as follows:
+
+  ```diff
+- import { YunaParser } from "yunaforseyfert"
+- 
+- // your bot's client
+- new Client({ 
+-     commands: {
+-         argsParser: YunaParser() // Here are the settings
+-     }
+- });
++ import { HandleCommand } from "seyfert/lib/commands/handle";
++ import { Yuna } from "yunaforseyfert";
++ 
++ const client = new Client();
++ 
++ class YourHandleCommand extends HandleCommand {
++     argsParser = Yuna.parser(); // Here are the settings
++ }
++ 
++ client.setServices({
++     handleCommand: YourHandleCommand,
++ });
+  ```
+
+Also the `enabled` configuration of the `Yuna.parser` has been renamed to `syntax`.
+```diff
+- YunaParser({
+-   enabled: {
+-     // ...
+-   }
+- })
++ Yuna.parser({
++   syntax: {
++     // ...
++   }
++ })
+```
 
 </details>
 

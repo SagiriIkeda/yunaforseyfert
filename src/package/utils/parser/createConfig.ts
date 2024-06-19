@@ -75,8 +75,8 @@ export interface YunaParserCreateOptions {
         canUseDirectlyValue?: boolean;
     } | null;
 
-    /** If the first or last option is of the `User` type,
-     *  they can be taken as the user from whom the message is replying.
+    /** If the first option is of the 'User' type,
+     *  it can be taken as the user to whom the message is replying.
      *  @default {null} (not enabled)
      */
     useRepliedUserAsAnOption?: {
