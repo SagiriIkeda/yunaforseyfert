@@ -24,7 +24,7 @@ pnpm add yunaforseyfert
     <i> an <strong>args parser for text commands</strong>,
     which adds various syntax for more convenient use of said commands,
     to the standard one provided.</i>
-    <blockquote>
+    </blockquote>
   </summary>
 
 ### Installation
@@ -134,7 +134,7 @@ it will return
     "second": "your beatiful sentence"
 }
 ```
-Another case is that the option is the last or only one, in this case it will not be necessary to use "" and all the remaining content will be taken as the option, Example:
+Another case is that the option is the last or only one, in this case it will not be necessary to use "" and all the remaining content will be taken as the option. Example:
 
 <img src="https://i.imgur.com/MayfQbj.png" width="100%" />
 
@@ -153,6 +153,18 @@ you can use the following syntaxes
 Like this.
 
 <img src="https://i.imgur.com/6olfDEu.png" width="100%" />
+
+Also, if an option is of type `Boolean` , when used with only the `-option` or `--option` syntax with nothing else following it, it will return true. Example:
+
+<img src="https://i.imgur.com/T8JwCdY.png" width="100%" />
+
+```json
+{
+  "first": "hello",
+  "devmode": "true" // will later be converted to true.
+}
+```
+
 
 
 #### Escaping characters
@@ -273,6 +285,21 @@ Yuna.parser({
 
 <img src="https://i.imgur.com/2BNIBIx.png" width="100%" />
 
+
+**useRepliedUserAsAnOption**
+
+> Suppose we have a command with two options, `user` and `message`. As long as we have the `useRepliedUserAsAnOption` option set, the `user` option will be taken as the user to whom the message is replying, and the other options (if any) will be used normally in the message. In case you are not replying to any message `user` will have to be specified in the message, as it is normally. Example:
+
+**replying example**
+
+
+<img src="https://i.imgur.com/7aujz0w.png" width="100%" />
+
+**not replying example**
+
+
+<img src="https://i.imgur.com/llpFwE9.png" width="100%" />
+
 Also, if necessary, each command can use a specific configuration. For this, you can use the `@DeclareParserConfig` decorator
 
 ```js
@@ -310,16 +337,6 @@ import { DeclareParserConfig, ParserRecommendedConfig } from "yunaforseyfert";
 This will enable **disableLongTextTagsInLastOption** and **breakSearchOnConsumeAll**. Things that I consider necessary in an eval.
 
 
-**useRepliedUserAsAnOption**
-Suppose we have a command with two options, `user` and `message`. As long as we have the `useRepliedUserAsAnOption` option set, the `user` option will be taken as the user to whom the message is replying, and the other options (if any) will be used normally in the message. In case you are not replying to any message `user` will have to be specified in the message, as it is normally. Example:
-
-**replying**
-<img src="https://i.imgur.com/XeP4y9a.png" width="100%" />
-
-**not replying**
-<img src="https://i.imgur.com/llpFwE9.png" width="100%" />
-
-
 ### "Demostration" thanks to @justo
 <img src="https://i.imgur.com/cRrLoG2.gif" width="100%" />
 
@@ -332,9 +349,8 @@ Suppose we have a command with two options, `user` and `message`. As long as we 
   <br/>
 
   <blockquote style="padding-left:10px;margin-top:10px">
-  <i>
-  a resolver, which provides some extra functions.
-  <blockquote>
+  <i>a resolver, which provides some extra functions. </i>
+  </blockquote>
   </summary>
 
 </details>
@@ -344,11 +360,9 @@ Suppose we have a command with two options, `user` and `message`. As long as we 
   <summary>
   <h2 style="display: inline">MessageWatcher</h2>
   <br/>
-
   <blockquote style="padding-left:10px;margin-top:10px">
-  <i>
-  A simple solution to be able to manage when a message is edited and update the command options.
-  <blockquote>
+  <i>A simple solution to be able to manage when a message is edited and update the command options. </i>
+  </blockquote>
   </summary>
 
 </details>
@@ -363,7 +377,7 @@ Suppose we have a command with two options, `user` and `message`. As long as we 
 <details>
 
   <summary>
-  <h2 style="display: inline">Migrate from v&lt;0.10 to v1.0 (and Seyfert v1 to v2)</h2>
+  <h2 style="display: inline">Migrate from &lt;v0.10 to v1.0 (and Seyfert v1 to v2)</h2>
   </summary>
 
 The way to set the `argsParser` has changed in `seyfert v2`, it has also changed its name
