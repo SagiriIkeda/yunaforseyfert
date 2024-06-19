@@ -122,7 +122,7 @@ But, if i want to use more than one word?
 
 You can use the following syntax
 
-`"your words"` `'yout beutiful sentence'` **\`penguin world\`**
+`"your words"` `'your beutiful sentence'` **\`penguin world\`**
 
 <img src="https://i.imgur.com/Us2zi3V.png" width="100%" />
 
@@ -369,7 +369,7 @@ This will enable **disableLongTextTagsInLastOption** and **breakSearchOnConsumeA
 
 <br/>
 
-¡And more **features** coming soon! ***(not so soon)*** 🐧
+And more **features** coming soon! ***(not so soon)*** 🐧
 
 
 # FAQ
