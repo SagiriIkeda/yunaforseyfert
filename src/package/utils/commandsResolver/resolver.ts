@@ -1,4 +1,3 @@
-import type { Command } from "seyfert";
 import type { HandleCommand } from "seyfert/lib/commands/handle";
 import { fullNameOf } from "../../lib/utils";
 import type { AvailableClients } from "../../things";
@@ -28,14 +27,16 @@ export function YunaCommandsResolver({
     addCommandsEvents(client);
     getCommandsMetadata(client).config = config;
 
+    const baseResolverConfig = { ...config, inMessage: true };
+
     return function (this: HandleCommand, content: string) {
-        const { endPad = 0, command, parent } = baseResolver(client, content, config) ?? {};
+        const { endPad = 0, command, parent } = baseResolver(client, content, baseResolverConfig) ?? {};
 
         const argsContent = content.slice(endPad);
 
         return {
             parent: parent,
-            command: command as Command,
+            command: command,
             fullCommandName: (command && fullNameOf(command)) ?? "",
             argsContent,
         };

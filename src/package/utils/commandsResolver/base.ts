@@ -1,5 +1,6 @@
 import { ApplicationCommandOptionType, ApplicationCommandType } from "discord-api-types/v10";
 import type { Command, ContextMenuCommand, SubCommand } from "seyfert";
+import { IgnoreCommand } from "seyfert";
 import { type AvailableClients, type YunaUsableCommand, keySubCommands } from "../../things";
 import { type GroupLink, ShortcutType, type UseYunaCommandsClient, commandsConfigKey } from "./prepare";
 import type { YunaCommandsResolverConfig } from "./resolver";
@@ -12,17 +13,15 @@ interface YunaCommandsResolverData {
     endPad?: number;
 }
 
-export function baseResolver(
-    client: AvailableClients,
-    query: string | string[],
-    config: YunaCommandsResolverConfig,
-): YunaCommandsResolverData | undefined;
+type Config = YunaCommandsResolverConfig & { inMessage?: boolean };
+
+export function baseResolver(client: AvailableClients, query: string | string[], config: Config): YunaCommandsResolverData | undefined;
 export function baseResolver(client: AvailableClients, query: string | string[], config?: undefined): UsableCommand | undefined;
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: 🐧
 export function baseResolver(
     client: AvailableClients,
     query: string | string[],
-    config?: YunaCommandsResolverConfig,
+    config?: Config,
 ): UsableCommand | YunaCommandsResolverData | undefined {
     const metadata = (client as UseYunaCommandsClient)[commandsConfigKey];
     const matchs = typeof query === "string" ? Array.from(query.matchAll(/[^\s\x7F\n]+/g)).slice(0, 3) : undefined;
@@ -52,24 +51,31 @@ export function baseResolver(
         return matchs && matchs[id]?.index + matchs[id]?.[0]?.length;
     };
 
-    const parentMetadata = parentCommand?.[keySubCommands];
+    const parentSubCommandsMetadata = parentCommand?.[keySubCommands];
+
+    const availableInMessage = (command: YunaUsableCommand) =>
+        config?.inMessage === true ? command.ignore !== IgnoreCommand.Message : true;
 
     if (isGroupShortcut) {
         parentCommand = shortcut.parent;
         [parent, group, sub] = [shortcut.parent.name, parent, group];
-    } else if (shortcut || (parentCommand && parentMetadata === null)) {
-        const useCommand = (shortcut as SubCommand | undefined) || parentCommand;
+    } else if (shortcut || (parentCommand && parentSubCommandsMetadata === null)) {
+        const Shortcut = shortcut as SubCommand | undefined;
+        const useCommand = Shortcut || parentCommand;
 
-        return (
-            useCommand && {
-                parent: (useCommand as SubCommand).parent,
-                command: useCommand,
-                endPad: getPadEnd(0),
-            }
-        );
+        if (parentCommand && !availableInMessage(parentCommand)) return;
+        if (Shortcut && !availableInMessage(Shortcut)) return;
+
+        return config
+            ? useCommand && {
+                  parent: (useCommand as SubCommand).parent,
+                  command: useCommand,
+                  endPad: getPadEnd(0),
+              }
+            : useCommand;
     }
 
-    if (!parentCommand) return;
+    if (!(parentCommand && availableInMessage(parentCommand))) return;
 
     let padIdx = 0;
 
@@ -81,7 +87,7 @@ export function baseResolver(
 
     const subName = groupName ? sub : group;
 
-    const virtualInstance = groupData ? groupData.fallbackSubCommand : parentMetadata?.default;
+    const virtualInstance = groupData ? groupData.fallbackSubCommand : parentSubCommandsMetadata?.default;
 
     let virtualSubCommand: SubCommand | undefined;
     let firstGroupSubCommand: SubCommand | undefined;
@@ -101,7 +107,7 @@ export function baseResolver(
     }) as SubCommand | undefined;
 
     if (
-        (!virtualSubCommand && (groupData?.fallbackSubCommand !== null || parentMetadata?.default !== null)) ||
+        (!virtualSubCommand && (groupData?.fallbackSubCommand !== null || parentSubCommandsMetadata?.default !== null)) ||
         config?.useFallbackSubCommand === true
     ) {
         virtualSubCommand ??= firstGroupSubCommand;
@@ -112,6 +118,8 @@ export function baseResolver(
     const useSubCommand = subCommand ?? virtualSubCommand;
 
     const resultCommand = useSubCommand ?? parentCommand;
+
+    if (useSubCommand && !availableInMessage(useSubCommand)) return;
 
     return config && resultCommand
         ? {
