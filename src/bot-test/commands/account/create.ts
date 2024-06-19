@@ -1,4 +1,4 @@
-import { type CommandContext, Declare, Group, Options, SubCommand, createStringOption } from "seyfert";
+import { type CommandContext, Declare, Group, LimitedCollection, Options, SubCommand, createStringOption } from "seyfert";
 import { Shortcut } from "../../../package/utils/commandsResolver/decorators";
 
 const options = {
@@ -18,7 +18,7 @@ const options = {
 export default class CreateCommand extends SubCommand {
     run(ctx: CommandContext<typeof options>) {
         // some logic there
-
+        LimitedCollection;
         ctx.write({
             content: `create command executed ${ctx.options.pengu}`,
         });

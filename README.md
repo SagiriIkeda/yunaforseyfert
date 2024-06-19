@@ -32,7 +32,7 @@ pnpm add yunaforseyfert
 After you install `yunaforseyfert` you need to import `Yuna` like this
 
 ```js
-import { Yuna } from "yunaforseyfert"
+import { Yuna } from "yunaforseyfert";
 ```
 
 Then, you need to add it as seyfert's default argsParser, as follows
@@ -122,7 +122,7 @@ But, if i want to use more than one word?
 
 You can use the following syntax
 
-`"your words"` `'yout beutiful sentence'` **\`penguin world\`**
+`"your words"` `'your beutiful sentence'` **\`penguin world\`**
 
 <img src="https://i.imgur.com/Us2zi3V.png" width="100%" />
 
@@ -158,7 +158,8 @@ Also, if an option is of type `Boolean` , when used with only the `-option` or `
 
 <img src="https://i.imgur.com/T8JwCdY.png" width="100%" />
 
-```json
+
+```jsonc
 {
   "first": "hello",
   "devmode": "true" // will later be converted to true.
@@ -263,10 +264,12 @@ Yuna.parser({
      *  it can be taken as the user to whom the message is replying.
      *  @default {null} (not enabled)
      */
-    useRepliedUserAsAnOption?: {
-        /** need to have the mention enabled (@PING) */
-        requirePing: boolean;
-    } | null;
+    useRepliedUserAsAnOption: {
+        /** need to have the mention enabled (@PING)
+         * @default {false}
+         */
+        requirePing: false;
+    };
 })
 ```
 
@@ -353,6 +356,151 @@ This will enable **disableLongTextTagsInLastOption** and **breakSearchOnConsumeA
   </blockquote>
   </summary>
 
+### Installation
+
+Set `Yuna.resolve` as the default `resolveCommandFromContent` of seyfert, as follows:
+
+```js
+
+import { HandleCommand } from "seyfert/lib/commands/handle";
+import { Yuna } from "yunaforseyfert";
+
+class YourHandleCommand extends HandleCommand {
+
+  resolveCommandFromContent = Yuna.resolver({
+      /**
+       * You need to pass the client in order to prepare the commands that the resolver will use.
+      */
+      client: yourBotClient,
+      /**
+       * Event to be emitted each time the commands are prepared.
+      */
+      afterPrepare: (metadata) => {
+          this.client.logger.debug(`Ready to use ${metadata.commands.length} commands !`);
+      },
+  });
+
+}
+
+yourBotClient.setServices({
+  handleCommand: YourHandleCommand,
+});
+```
+
+After this, you are ready to enjoy the following advantages!
+
+### Case insensitive
+
+> use your commands regardless of case , it will sound stupid in some cases
+> 
+> but I have seen users try to use them with capital letters. 🐧
+
+### Shortcuts 
+
+Accesses a subcommand or group, without the need to place the parent command. For example, you would normally access it as `music play`, now you can access it directly as `play`.
+
+To configure it in your subcommands, you must use the `@Shortcut` decorator.
+
+```ts
+import { Shortcut } from "yunaforseyfert";
+
+@Declare({
+    name: "example",
+    description: "example subCommand",
+})
+@Group("penguin")
+@Shortcut()
+export default class ExampleSubCommand extends SubCommand {
+    // ...
+}
+
+```
+And now it can be accessed directly as `example` without the parent command.
+
+In groups the configuration is as follows, you must add the `shortcut` property as `true` in your group. Example:
+
+```ts
+/** ... */
+@Groups({
+  penguin: {
+      defaultDescription: "penguin group",
+      shortcut: true,
+  }
+})
+export default class ParentCommand extends Command {}
+```
+
+And now the subCommand shown above can also be accessed as `penguin example` without the parent.
+
+### fallbackSubCommand
+
+Used to access a default subcommand, in case one is not found.
+
+Suppose you have the following command structure:
+
+```
+- parent
+    - sub1
+    - group
+        - sub
+    - sub2
+    - sub3
+ ```
+
+And the user has tried to use `parent sub4`
+
+since that subcommand does not exist, `sub1` (or another specified one, but by default it will be the first one, from the parent or group) will be used.
+
+It is also useful to use a subcommand without placing its name.
+
+To enable this feature globally, when using `Yuna.resolve`, add the `useFallbackSubCommand` property as `true`. Example:
+
+```ts
+Yuna.resolver({
+  //...
+  useFallbackSubCommand: true,
+})
+```
+
+### Note
+
+For the correct functioning of the resolver the commands must be prepared, this is done by default after they are all loaded or reloaded. But if you reload a specific Command/SubCommand it is recommended that you reprepare the commands manually, this can be done by:
+
+```ts 
+import { Yuna } from "yunaforseyfert"
+
+Yuna.commands.prepare(client /* your bot's client */)
+```
+
+It can also be enabled/disabled on a specific parent command using the `@DeclareFallbackSubCommand` decorator as follows:
+
+```ts
+import { DeclareFallbackSubCommand } from "yunaforseyfert";
+import PrimarySubCommand from "./primary.js"
+
+@Options([PrimarySubCommand, /* ...*/])
+@DeclareFallbackSubCommand(PrimarySubCommand) // You must pass the class of the subCommand that will be taken by default, or null to disable this feature.
+export default class ParentCommand extends Command {}
+```
+
+In a group it is established as follows: 
+
+```ts
+import PrimaryGroupSubCommand from "./penguin/primary.js"
+
+/** ... */
+@Groups({
+  penguin: {
+      defaultDescription: "penguin group",
+      fallbackSubCommand: PrimaryGroupSubCommand,
+  }
+})
+export default class ParentCommand extends Command {}
+```
+
+
+
+
 </details>
 
 <details>
@@ -365,11 +513,88 @@ This will enable **disableLongTextTagsInLastOption** and **breakSearchOnConsumeA
   </blockquote>
   </summary>
 
+### Implementation and Usage
+
+begins by importing the following function
+
+```ts
+import { createWatcher } from "yunaforseyfert";
+
+// and now use it in your commands in the following way
+
+/** ... */
+@Options(options)
+export default class TestCommand extends Command {
+  // example
+  async run(ctx: CommandContext<typeof>) {
+
+    const msg = await ctx.editOrReply({ content: ctx.options.text });
+
+    // checks that there is a message to be observed
+    if(!msg || !ctx.message) return;
+
+
+    const watcher = createWatcher(ctx, {
+      // how long will the watcher last
+      time: 100_000,
+      // you also have the idle property
+    });
+
+    // Find out when the message has changed and get the new options.
+    watcher.onChange((options) => {
+      msg.edit({ content: options.text });
+    });
+    // others optionally events
+    watcher.onStop((reason) => {
+      ctx.write({ content: `watcher stopped by reason: ${reason}` });
+    })
+
+    // when there was an error when parsing options
+    watcher.onOptionsError((error) => console.log({ error }))
+
+    /** 
+     * when the user has removed or used an unrecognized prefix, or changed the command he was using.
+     * reason can be: "UnspecifiedPrefix" | "CommandChanged"
+     */
+    watcher.onUsageError((reason) => console.log({ reason }))
+
+    // to stop a watcher use
+    watcher.stop("reason")
+
+  }
+}
+
+
+```
+
+if necessary you can also create a watcher as follows
+
+```ts
+createWatcher<typeof options>({
+  client, // your client
+  command, // used command
+  message, // msg
+}, { 
+  /* options...*/ 
+})
+```
+
+Also, by default all watchers are stored in a `Map`, but if you wanted to you could use a `LimitedCollection` as follows:
+
+```ts
+import { LimitedCollection } from "seyfert";
+import { Yuna } from "yunaforseyfert";
+
+Yuna.watchers.createController({
+  client, // your bot's client
+  cache: new LimitedCollection( /** your settings */)
+})
+```
 </details>
 
 <br/>
 
-¡And more **features** coming soon! ***(not so soon)*** 🐧
+And more **features** coming soon! ***(not so soon)*** 🐧
 
 
 # FAQ
@@ -384,7 +609,7 @@ The way to set the `argsParser` has changed in `seyfert v2`, it has also changed
 now it should be done as follows:
 
   ```diff
-- import { YunaParser } from "yunaforseyfert"
+- import { YunaParser } from "yunaforseyfert";
 - 
 - // your bot's client
 - new Client({ 

@@ -37,7 +37,7 @@ export default class TestCommand extends Command {
             });
         };
 
-        const msg = await ctx.write({
+        const msg = await ctx.editOrReply({
             embeds: [createEmbed(ctx.options, ctx.message!)],
         });
 
@@ -46,7 +46,6 @@ export default class TestCommand extends Command {
         const watcher = createWatcher(ctx, { idle: 100_000 });
 
         watcher.onChange((options, rawMsg) => {
-            console.log("cambio");
             msg.edit({ embeds: [createEmbed(options, rawMsg)] });
         });
 
@@ -55,6 +54,10 @@ export default class TestCommand extends Command {
         watcher.onStop((reason) => {
             ctx.write({ content: `watcher muerto, "${reason}"` });
         });
+
+        watcher.onOptionsError((error) => console.log({ error }));
+
+        watcher.onUsageError((error) => console.log({ error }));
     }
 
     async onOptionsError(context: CommandContext<typeof options>) {
