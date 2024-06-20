@@ -14,11 +14,12 @@ type DecoredChoice = [rawName: string, name: string, value: string | number];
 export class YunaParserCommandMetaData {
     command: YunaUsableCommand;
     iterableOptions?: CommandOption[];
+
     regexes?: ReturnType<typeof createRegexes>;
 
     config?: YunaParserCreateOptions;
 
-    globalConfig: YunaParserCreateOptions;
+    globalConfig?: YunaParserCreateOptions;
 
     choices?: [optionName: string, choices: DecoredChoice[]][];
 
@@ -28,7 +29,6 @@ export class YunaParserCommandMetaData {
 
     constructor(command: YunaUsableCommand, globalConfig: YunaParserCreateOptions) {
         this.command = command;
-        this.globalConfig = globalConfig;
         this.config = this.command[keyConfig];
 
         this.base = Object.getPrototypeOf(command);
@@ -54,13 +54,18 @@ export class YunaParserCommandMetaData {
             if (choices.length) this.choices = choices;
         }
 
-        if (this.config) this.regexes = createRegexes(this.getConfig());
+        this.getConfig(globalConfig);
     }
 
-    getConfig() {
-        const { config } = this;
-        if (!config) return this.globalConfig;
+    getConfig(globalConfig: YunaParserCreateOptions) {
+        const config = this.config ? mergeConfig(globalConfig, this.config) : globalConfig;
 
-        return mergeConfig(this.globalConfig, config);
+        if (this.globalConfig === globalConfig || !this.config) return config;
+
+        this.globalConfig = globalConfig;
+
+        this.regexes = createRegexes(config);
+
+        return config;
     }
 }

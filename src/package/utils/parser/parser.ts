@@ -44,17 +44,18 @@ const sanitizeBackescapes = (text: string, regx: RegExp | undefined, regexToChec
 const spacesRegex = /[\s\x7F\n]/;
 
 export const YunaParser = (config: YunaParserCreateOptions = {}) => {
-    config = createConfig(config);
-
-    const globalRegexes = createRegexes(config);
+    const globalConfig = createConfig(config);
+    const globalRegexes = createRegexes(globalConfig);
 
     // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: omitting this rule the life is better
     return function (this: HandleCommand, content: string, command: Command | SubCommand, message?: Message): Record<string, string> {
-        const commandMetadata = getYunaMetaDataFromCommand(command, config);
+        const commandMetadata = getYunaMetaDataFromCommand(command, globalConfig);
 
         const { iterableOptions, options, choices } = commandMetadata;
 
-        const realConfig = commandMetadata.getConfig();
+        if (!iterableOptions?.length) return {};
+
+        const config = commandMetadata.getConfig(globalConfig);
 
         const regexes = commandMetadata.regexes ?? globalRegexes;
 
@@ -62,11 +63,9 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
         let { checkNextChar } = regexes;
 
-        const validNamedOptionSyntaxes = Object.fromEntries(realConfig.syntax?.namedOptions?.map((t) => [t, true]) ?? []);
+        const validNamedOptionSyntaxes = Object.fromEntries(config.syntax?.namedOptions?.map((t) => [t, true]) ?? []);
 
-        const { breakSearchOnConsumeAllOptions, useUniqueNamedSyntaxAtSameTime, disableLongTextTagsInLastOption } = realConfig;
-
-        if (!iterableOptions?.length) return {};
+        const { breakSearchOnConsumeAllOptions, useUniqueNamedSyntaxAtSameTime, disableLongTextTagsInLastOption } = config;
 
         const localEscapeModes = { ...__realEscapeModes };
 
@@ -129,8 +128,8 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             if (
                 !reference ||
                 (reference.author.id !== message.author.id &&
-                    realConfig.useRepliedUserAsAnOption?.requirePing &&
-                    message?.mentions.users[0].id !== reference.author.id)
+                    config.useRepliedUserAsAnOption?.requirePing &&
+                    message?.mentions.users[0]?.id !== reference.author.id)
             )
                 return;
             const option = iterableOptions[actualOptionIdx] as CommandOptionWithType | undefined;
@@ -253,7 +252,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
                 const isValidTag = validNamedOptionSyntaxes[hyphens ?? dots] === true;
 
-                if (isValidTag && !namedOptionTagUsed && realConfig.useUniqueNamedSyntaxAtSameTime) {
+                if (isValidTag && !namedOptionTagUsed && config.useUniqueNamedSyntaxAtSameTime) {
                     namedOptionTagUsed = zeroTagUsed;
                     const tagToDisable = zeroTagUsed === "-" ? ":" : "\\-";
                     if (checkNextChar) checkNextChar = RemoveFromCheckNextChar(checkNextChar, tagToDisable);
@@ -358,11 +357,11 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             aggregateNextNamedOption(content.length);
         } else if (tagOpenPosition && tagOpenWith) aggregateTagLongText(tagOpenWith, tagOpenPosition);
 
-        if (choices && realConfig.resolveCommandOptionsChoices !== null) {
-            YunaParserOptionsChoicesResolver(commandMetadata, argsResult, realConfig);
+        if (choices && config.resolveCommandOptionsChoices !== null) {
+            YunaParserOptionsChoicesResolver(commandMetadata, argsResult, config);
         }
 
-        realConfig.logResult &&
+        config.logResult &&
             this.client.logger.debug("[Yuna.parser]", {
                 argsResult,
             });

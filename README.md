@@ -5,7 +5,7 @@
 > ` yunaforseyfert ` it's a package that tries to bring the features of my bot, but for seyfert, at a really slow pace. 
 > *This really is for me and my friends. **(my first enemies)***
 
-# installation 
+# Installation 
 
 you can do it using `npm` or another packager manager, i prefer use  `pnpm`
 
