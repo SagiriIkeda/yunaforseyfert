@@ -28,9 +28,14 @@ type RawMessageUpdated = MakeRequired<GatewayMessageUpdateDispatchData, "content
 
 type OnChangeEvent<O extends OptionsRecord> = (result: ContextOptions<O>, rawMessage: RawMessageUpdated) => any;
 type OnStopEvent = (reason: string) => any;
-type OnOptionsErrorEvent = (metadata: OnOptionsReturnObject) => any;
+type OnOptionsErrorEvent = (data: OnOptionsReturnObject) => any;
 
-type OnUsageErrorEvent = (reason: "UnspecifiedPrefix" | "CommandChanged") => any;
+interface UsageErrorEvents {
+    UnspecifiedPrefix: [];
+    CommandChanged: [newCommand: Command | SubCommand | undefined];
+}
+
+type OnUsageErrorEvent = <E extends keyof UsageErrorEvents>(reason: E, ...params: UsageErrorEvents[E]) => any;
 
 const createFakeAPIUser = (user: User) => {
     const created: Record<string, any> = {};
@@ -80,10 +85,12 @@ export class MessageWatcherCollector<const O extends OptionsRecord> {
         this.message = message;
 
         this.id = createId(message);
-        this.refresh();
 
         this.fakeUser = this.instances[0]?.fakeUser ?? createFakeAPIUser(this.message.author);
         this.fakeMessage = this.instances[0]?.fakeMessage ?? this.createFakeAPIMessage();
+        this.prefixes = this.instances[0]?.prefixes;
+
+        this.refresh();
     }
 
     refresh(all = false) {
@@ -132,8 +139,8 @@ export class MessageWatcherCollector<const O extends OptionsRecord> {
     }
 
     #oldContent?: string;
-
-    #prefixes?: string[];
+    /** @internal */
+    prefixes?: string[];
 
     async update(message: GatewayMessageUpdateDispatchData) {
         if (!message.content) return;
@@ -153,25 +160,26 @@ export class MessageWatcherCollector<const O extends OptionsRecord> {
             for (const instance of this.instances) instance[event]?.(...parameters);
         };
 
-        const fakeAPIMessage = { ...this.fakeMessage, ...message } as GatewayMessageCreateDispatchData;
-
-        fakeAPIMessage.author = this.fakeUser;
-        fakeAPIMessage.mention_everyone = message.mention_everyone ?? this.message.mentionEveryone;
-        fakeAPIMessage.mention_roles = message.mention_roles ?? this.message.mentionRoles;
-        fakeAPIMessage.mention_channels = message.mention_channels ?? this.message.mentionChannels?.map(toSnakeCase) ?? [];
-
         const { client } = this;
 
         const self = client as UsingClient;
 
+        const fakeAPIMessage: GatewayMessageCreateDispatchData = {
+            ...this.fakeMessage,
+            ...message,
+            author: this.fakeUser,
+            mention_everyone: message.mention_everyone ?? this.message.mentionEveryone,
+            mention_roles: message.mention_roles ?? this.message.mentionRoles,
+            mention_channels: message.mention_channels ?? this.message.mentionChannels?.map(toSnakeCase) ?? [],
+        };
+
+        const newMessage = Transformers.Message(self, fakeAPIMessage);
+
         const { handleCommand } = client;
 
-        this.#prefixes ??= [
-            ...(await handleCommand.getPrefix(Transformers.Message(self, fakeAPIMessage))),
-            ...(client.options.commands?.defaultPrefix ?? []),
-        ];
+        this.prefixes ??= [...(await handleCommand.getPrefix(newMessage)), ...(client.options.commands?.defaultPrefix ?? [])];
 
-        const prefix = this.#prefixes.find((prefix) => content.startsWith(prefix));
+        const prefix = this.prefixes.find((prefix) => content.startsWith(prefix));
 
         if (!prefix) return runForAll("onUsageErrorEvent", "UnspecifiedPrefix");
 
@@ -181,7 +189,7 @@ export class MessageWatcherCollector<const O extends OptionsRecord> {
 
         const { argsContent, command, parent } = handleCommand.resolveCommandFromContent(slicedContent, prefix, fakeAPIMessage);
 
-        if (command !== this.command) return runForAll("onUsageErrorEvent", "CommandChanged");
+        if (command !== this.command) return runForAll("onUsageErrorEvent", "CommandChanged", command);
 
         if (argsContent === undefined) return;
 
@@ -223,6 +231,7 @@ export class MessageWatcherCollector<const O extends OptionsRecord> {
         if (erroredOptions) return runForAll("onOptionsErrorEvent", erroredOptions);
 
         this.#oldContent = slicedContent;
+
         runForAll("onChangeEvent", ctx.options, message as RawMessageUpdated);
     }
 
