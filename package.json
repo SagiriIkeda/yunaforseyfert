@@ -7,10 +7,10 @@
   "types": "./types/package/index.d.ts",
   "scripts": {
     "idx": "tsc && cd src/bot-test/ && node --env-file=.env ../../dist/bot-test/index.js",
-    "prepare:publish": "test && mkdir -p .npm && npm run build && node dist/package/lib/prepublish.js && cp -r build .npm/build && cp -r types .npm/types",
+    "pre:publish": "mkdir -p .npm && npm run build && node dist/package/lib/prepublish.js && cp -r build .npm/build && cp -r types .npm/types",
     "postpublish": "rm -rf .npm",
-    "publish": "npm run prepare:publish && cd .npm && npm publish",
-    "pack": "npm run prepare:publish && cd .npm && npm pack",
+    "publish": "npm run pre:publish && cd .npm && npm publish",
+    "pack": "npm run pre:publish && cd .npm && npm pack",
     "prepare": "npm run build:esbuild && npx husky",
     "build:esbuild": "npx esbuild --bundle src/package/index.ts --minify --outdir=build --platform=node --packages=external",
     "build": "tsc && npm run build:esbuild",
@@ -27,7 +27,7 @@
   "license": "ISC",
   "dependencies": {
     "discord-api-types": "^0.37.90",
-    "seyfert": "github:socram03/seyfert#feat/2.0"
+    "seyfert": "github:tiramisulabs/seyfert"
   },
   "homepage": "https://github.com/SagiriIkeda/yunaforseyfert#readme",
   "repository": {

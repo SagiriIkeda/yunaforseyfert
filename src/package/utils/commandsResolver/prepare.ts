@@ -26,9 +26,17 @@ export interface GroupLink {
     type: typeof ShortcutType.Group;
 }
 
+const AlreadyModdedEvents = Symbol("YunaCommandsResolverLoaded");
+
 export const addCommandsEvents = (client: AvailableClients) => {
+    const self = client as AvailableClients & {
+        commands: AvailableClients["commands"] & { [AlreadyModdedEvents]?: true };
+    };
+    if (!client.commands) return client.logger.warn("[Yuna.resolver] Client.commands is undefined");
+    if (self.commands[AlreadyModdedEvents] === true) return;
+
     for (const event of ["load", "reloadAll"]) {
-        const def = client.commands?.[event as "load"];
+        const def = client.commands[event as "load"];
         if (!def) continue;
 
         Object.defineProperty(client.commands, event, {
@@ -39,6 +47,8 @@ export const addCommandsEvents = (client: AvailableClients) => {
             },
         });
     }
+
+    self.commands[AlreadyModdedEvents] = true;
 };
 
 export const getCommandsMetadata = (client: AvailableClients) => {

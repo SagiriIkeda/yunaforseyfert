@@ -4,7 +4,6 @@ import {
     type Client,
     type Command,
     CommandContext,
-    type ContextOptions,
     type ContextOptionsResolved,
     type Message,
     type OnOptionsReturnObject,
@@ -26,16 +25,16 @@ export type MessageWatcherCollectorOptions = {
 
 type RawMessageUpdated = MakeRequired<GatewayMessageUpdateDispatchData, "content">;
 
-type OnChangeEvent<O extends OptionsRecord> = (result: ContextOptions<O>, rawMessage: RawMessageUpdated) => any;
-type OnStopEvent = (reason: string) => any;
-type OnOptionsErrorEvent = (data: OnOptionsReturnObject) => any;
+export type OnChangeEvent<O extends OptionsRecord> = (ctx: CommandContext<O>, rawMessage: RawMessageUpdated) => any;
+export type OnStopEvent = (reason: string) => any;
+export type OnOptionsErrorEvent = (data: OnOptionsReturnObject) => any;
 
 interface UsageErrorEvents {
     UnspecifiedPrefix: [];
     CommandChanged: [newCommand: Command | SubCommand | undefined];
 }
 
-type OnUsageErrorEvent = <E extends keyof UsageErrorEvents>(reason: E, ...params: UsageErrorEvents[E]) => any;
+export type OnUsageErrorEvent = <E extends keyof UsageErrorEvents>(reason: E, ...params: UsageErrorEvents[E]) => any;
 
 const createFakeAPIUser = (user: User) => {
     const created: Record<string, any> = {};
@@ -68,6 +67,9 @@ export class MessageWatcherCollector<const O extends OptionsRecord> {
     command: Command | SubCommand;
     shardId: number;
 
+    originCtx?: CommandContext<O>;
+    ctx?: CommandContext<O>;
+
     constructor(
         invoker: YunaMessageWatcherController,
         client: Client | WorkerClient,
@@ -75,7 +77,11 @@ export class MessageWatcherCollector<const O extends OptionsRecord> {
         command: Command | SubCommand,
         shardId?: number,
         options?: MessageWatcherCollectorOptions,
+        ctx?: CommandContext<O>,
     ) {
+        this.originCtx = ctx;
+        this.ctx = ctx;
+
         this.client = client;
         this.shardId = shardId ?? 1;
         this.invoker = invoker;
@@ -177,9 +183,9 @@ export class MessageWatcherCollector<const O extends OptionsRecord> {
 
         const { handleCommand } = client;
 
-        this.prefixes ??= [...(await handleCommand.getPrefix(newMessage)), ...(client.options.commands?.defaultPrefix ?? [])];
+        this.prefixes ??= await client.options.commands?.prefix?.(newMessage);
 
-        const prefix = this.prefixes.find((prefix) => content.startsWith(prefix));
+        const prefix = this.prefixes?.find((prefix) => content.startsWith(prefix));
 
         if (!prefix) return runForAll("onUsageErrorEvent", "UnspecifiedPrefix");
 
@@ -224,7 +230,7 @@ export class MessageWatcherCollector<const O extends OptionsRecord> {
 
         const optionsResolver = new OptionResolver(self, resolverOptions, parent as Command, this.message.guildId, resolved);
 
-        const ctx = new CommandContext<O>(self, this.message, optionsResolver, this.shardId, command);
+        const ctx = new CommandContext<O>(self, newMessage, optionsResolver, this.shardId, command);
         //@ts-expect-error
         const [erroredOptions] = await command.__runOptions(ctx, optionsResolver);
 
@@ -232,7 +238,13 @@ export class MessageWatcherCollector<const O extends OptionsRecord> {
 
         this.#oldContent = slicedContent;
 
-        runForAll("onChangeEvent", ctx.options, message as RawMessageUpdated);
+        ctx.messageResponse = this.originCtx?.messageResponse;
+
+        Object.assign(ctx, client.options.context?.(newMessage));
+
+        this.ctx = ctx;
+
+        runForAll("onChangeEvent", ctx, message as RawMessageUpdated);
     }
 
     /** @internal */

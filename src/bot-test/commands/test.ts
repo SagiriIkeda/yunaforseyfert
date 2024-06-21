@@ -1,6 +1,6 @@
 import { inspect } from "node:util";
-import { Command, type CommandContext, Declare, Embed, type Message, Options, createStringOption } from "seyfert";
-import { createWatcher } from "../../package/utils/messageWatcher/controllerUtils";
+import { Command, type CommandContext, Declare, Embed, Options, createStringOption } from "seyfert";
+import { Watch } from "../../package/utils/messageWatcher/decorator";
 
 const options = {
     first: createStringOption({
@@ -19,47 +19,26 @@ const options = {
 })
 @Options(options)
 export default class TestCommand extends Command {
+    @Watch({ idle: 100_000 })
     async run(ctx: CommandContext<typeof options>) {
-        const createEmbed = (options: typeof ctx.options, message: Pick<Message, "content">) => {
-            //code
-            return new Embed({
-                title: "Parsed!",
-                fields: [
-                    {
-                        name: "input",
-                        value: `\`\`\`js\n${message?.content}\`\`\``,
-                    },
-                    {
-                        name: "Output",
-                        value: `\`\`\`js\n${inspect(options)}\`\`\``,
-                    },
-                ],
-            });
-        };
-
-        const msg = await ctx.editOrReply({
-            embeds: [createEmbed(ctx.options, ctx.message!)],
+        const embed = new Embed({
+            title: "Parsed!",
+            fields: [
+                {
+                    name: "input",
+                    value: `\`\`\`js\n${ctx.message?.content}\`\`\``,
+                },
+                {
+                    name: "Output",
+                    value: `\`\`\`js\n${inspect(ctx.options)}\`\`\``,
+                },
+            ],
         });
 
-        if (!msg) return;
-
-        const watcher = createWatcher(ctx, { idle: 100_000 });
-
-        watcher.onChange((options, rawMsg) => {
-            msg.edit({ embeds: [createEmbed(options, rawMsg)] });
+        await ctx.editOrReply({
+            embeds: [embed],
         });
-
-        watcher.onOptionsError((error) => console.log({ error }));
-
-        watcher.onStop((reason) => {
-            ctx.write({ content: `watcher muerto, "${reason}"` });
-        });
-
-        watcher.onOptionsError((error) => console.log({ error }));
-
-        watcher.onUsageError((error) => console.log({ error }));
     }
-
     async onOptionsError(context: CommandContext<typeof options>) {
         await context.editOrReply({
             content: "You need to use two options",

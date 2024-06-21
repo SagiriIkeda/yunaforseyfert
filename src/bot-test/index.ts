@@ -1,14 +1,16 @@
-import { Client, type Message } from "seyfert";
+import { Client } from "seyfert";
 import { HandleCommand } from "seyfert/lib/commands/handle";
 import { Yuna } from "../package";
 
-const client = new Client({ commands: { defaultPrefix: ["yuna", "y"] } });
+const client = new Client({
+    commands: {
+        prefix(message) {
+            return ["yuna", "y", `<@${message.client.botId}>`];
+        },
+    },
+});
 
 class YunaCommandHandle extends HandleCommand {
-    getPrefix(message: Message) {
-        return ["yuna", "y", `<@${message.client.botId}>`];
-    }
-
     resolveCommandFromContent = Yuna.resolver({
         client,
         afterPrepare: () => {

@@ -1,14 +1,14 @@
 import { GatewayDispatchEvents } from "discord-api-types/v10";
-import type {
-    BaseMessage,
-    Command,
+import {
+    type BaseMessage,
+    type Command,
     CommandContext,
-    LimitedCollection,
-    Message,
-    OptionsRecord,
-    SubCommand,
-    UsingClient,
-    WorkerClient,
+    type LimitedCollection,
+    type Message,
+    type OptionsRecord,
+    type SubCommand,
+    type UsingClient,
+    type WorkerClient,
 } from "seyfert";
 import type { Client } from "seyfert";
 import { MessageWatcherCollector, type MessageWatcherCollectorOptions } from "./WatcherCollector";
@@ -143,6 +143,7 @@ export class YunaMessageWatcherController {
             command,
             ctx.shardId,
             options,
+            ctx instanceof CommandContext ? ctx : undefined,
         );
 
         if (!instancesList) this.collectors.set(id, []);

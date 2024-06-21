@@ -11,6 +11,7 @@ import {
     createStringOption,
     createUserOption,
 } from "seyfert";
+import { HandleCommand } from "seyfert/lib/commands/handle";
 import { describe, expect, test } from "vitest";
 import ChoicesNumberTestCommand, { ChoicesTestCommand } from "../bot-test/commands/choicesTest";
 import TestCommand from "../bot-test/commands/test";
@@ -33,6 +34,19 @@ const testParser = (
 ) => {
     return expect(Yuna.parser(config).call(client.handleCommand, text, command, message)).toEqual(equalTo);
 };
+
+const YunaParser = Yuna.parser();
+class YunaHandleCommand extends HandleCommand {
+    argsParser = YunaParser;
+}
+
+client.setServices({ handleCommand: YunaHandleCommand });
+
+describe("assignation to seyfert", () => {
+    test("assignation", () => {
+        expect(client.handleCommand.argsParser).toBe(YunaParser);
+    });
+});
 
 describe("words", () => {
     test("one words", () => testParser("penguin world", { first: "penguin", second: "world" }));

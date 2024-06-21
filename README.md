@@ -515,6 +515,55 @@ export default class ParentCommand extends Command {}
 
 ### Implementation and Usage
 
+You have two ways to use it, use whichever you prefer. they are practically the same.
+
+#### `@Watch` Decorator Way
+
+
+```ts
+import { Watch } from "yunaforseyfert";
+
+// and now use it in your commands in the following way
+
+/** ... */
+@Options(options)
+export default class TestCommand extends Command {
+  // example
+  @Watch({ time: 100_000, })
+  async run(ctx: CommandContext<typeof options>) {
+    ctx.editOrReply({ content: ctx.options.text });
+  }
+}
+```
+And now it will be updated every time the message is edited!
+
+`@Watch` options 
+
+```ts
+@Watch({
+  filter(ctx) { return true },
+  time: 100_000,
+  idle: 10_000, // Downtime until the watcher stops.
+
+  // others optionally events
+
+  /** 
+   * when the user has removed or used an unrecognized prefix, or changed the command he was using.
+    * reason can be: "UnspecifiedPrefix" | "CommandChanged"
+  */
+  onUsageError(error) { console.log({ error }) },
+  /** when there was an error when parsing options */
+  onOptionsError(error) { console.log({ error }) },
+
+  onStop(reason) { 
+    this.ctx.editOrReply({ content: `watcher stopped by reason: ${reason}` }) 
+  },
+})
+```
+
+
+#### `createWatcher` function Way
+
 begins by importing the following function
 
 ```ts
@@ -526,13 +575,12 @@ import { createWatcher } from "yunaforseyfert";
 @Options(options)
 export default class TestCommand extends Command {
   // example
-  async run(ctx: CommandContext<typeof>) {
+  async run(ctx: CommandContext<typeof options>) {
 
     const msg = await ctx.editOrReply({ content: ctx.options.text });
 
     // checks that there is a message to be observed
     if(!msg || !ctx.message) return;
-
 
     const watcher = createWatcher(ctx, {
       // how long will the watcher last
@@ -544,18 +592,14 @@ export default class TestCommand extends Command {
     watcher.onChange((options) => {
       msg.edit({ content: options.text });
     });
+
     // others optionally events
     watcher.onStop((reason) => {
       ctx.write({ content: `watcher stopped by reason: ${reason}` });
     })
 
-    // when there was an error when parsing options
     watcher.onOptionsError((error) => console.log({ error }))
 
-    /** 
-     * when the user has removed or used an unrecognized prefix, or changed the command he was using.
-     * reason can be: "UnspecifiedPrefix" | "CommandChanged"
-     */
     watcher.onUsageError((reason) => console.log({ reason }))
 
     // to stop a watcher use
