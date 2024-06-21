@@ -1,4 +1,5 @@
 import type { OptionsRecord, UsingClient } from "seyfert";
+import type { AvailableClients } from "../../things";
 import type { MessageWatcherCollectorOptions } from "./WatcherCollector";
 import { YunaMessageWatcherController, type YunaMessageWatcherControllerConfig, type watcherCreateData } from "./WatcherController";
 
@@ -14,7 +15,7 @@ export const createController = ({ client, cache }: YunaMessageWatcherController
     return (self[controllerKey] ??= new YunaMessageWatcherController({ client, cache }));
 };
 
-export const getController = (client: UsingClient) => {
+export const getController = (client: AvailableClients) => {
     return (client as YunaMessageWatcherClient)[controllerKey];
 };
 

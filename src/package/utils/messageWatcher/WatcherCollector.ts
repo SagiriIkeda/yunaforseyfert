@@ -242,7 +242,7 @@ export class MessageWatcherCollector<const O extends OptionsRecord> {
 
         Object.assign(ctx, client.options.context?.(newMessage));
 
-        this.ctx = ctx;
+        for (const instance of this.instances) instance.ctx = ctx;
 
         runForAll("onChangeEvent", ctx, message as RawMessageUpdated);
     }

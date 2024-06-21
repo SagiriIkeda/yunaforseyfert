@@ -1,4 +1,5 @@
 import type { CommandContext, OptionsRecord } from "seyfert";
+import type { Awaitable } from "seyfert/lib/common";
 import type { YunaUsableCommand } from "../../things";
 import type {
     MessageWatcherCollector,
@@ -15,7 +16,8 @@ type Event<E extends (...args: any[]) => any, O extends OptionsRecord> = (
     ...args: Parameters<E>
 ) => ReturnType<E>;
 
-interface WatchOptions<O extends OptionsRecord> extends MessageWatcherCollectorOptions {
+interface WatchOptions<C extends YunaUsableCommand, O extends OptionsRecord> extends MessageWatcherCollectorOptions {
+    beforeCreate?(this: C, ctx: CommandContext<O>): Awaitable<boolean> | void;
     filter?(...args: Parameters<OnChangeEvent<O>>): boolean;
     onStop?: Event<OnStopEvent, O>;
     onChange?: Event<OnChangeEvent<O>, O>;
@@ -26,7 +28,7 @@ interface WatchOptions<O extends OptionsRecord> extends MessageWatcherCollectorO
 export function Watch<
     const C extends YunaUsableCommand,
     O extends Parameters<NonNullable<C["run"]>>[0] extends CommandContext<infer O> ? O : never,
->(options: WatchOptions<O>) {
+>(options: WatchOptions<C, O>) {
     return (target: C, _propertyKey: "run", descriptor: PropertyDescriptor) => {
         const commandRun = target.run;
 
@@ -34,10 +36,12 @@ export function Watch<
 
         if (run !== commandRun) return run;
 
-        descriptor.value = (ctx: CommandContext<O>) => {
+        descriptor.value = async (ctx: CommandContext<O>) => {
             run.call(target, ctx);
 
             if (!(ctx.message && ctx.command.options?.length)) return;
+
+            if ((await options.beforeCreate?.call(ctx.command as C, ctx)) === false) return;
 
             const watcher = createWatcher(ctx, options);
 

@@ -35,6 +35,16 @@ export interface WatcherCreateData {
     shardId?: number;
 }
 
+export type FindWatcherQuery =
+    | {
+          messageId?: string;
+          channelId?: string;
+          guildId?: string;
+          userId?: string;
+          command?: Command | SubCommand;
+      }
+    | ((watcher: MessageWatcherCollector<any>) => boolean);
+
 export type watcherCreateData = WatcherCreateData | Pick<CommandContext, "client" | "command" | "message" | "shardId">;
 
 export class YunaMessageWatcherController {
@@ -65,7 +75,7 @@ export class YunaMessageWatcherController {
             const errorName = isChannel ? "channelDelete" : "guildDelete";
 
             for (const instancesData of [...cache.values()]) {
-                const instances = "value" in instancesData ? instancesData?.value : instancesData;
+                const instances = (instancesData as Exclude<typeof instancesData, MessageWatcherCollector<any>[]>).value ?? instancesData;
 
                 const [zero] = instances;
                 if (!zero || zero.message[key] !== id) continue;
@@ -151,5 +161,42 @@ export class YunaMessageWatcherController {
         this.collectors.get(id)?.push(watcher);
 
         return watcher;
+    }
+
+    getWatcherInstancesFromContext({ message }: Pick<CommandContext, "message">) {
+        if (!message) return;
+        const id = createId(message);
+        return this.collectors.get(id);
+    }
+
+    #baseSearch(query: Exclude<FindWatcherQuery, Function>, watcher: MessageWatcherCollector<any>) {
+        if (query.guildId && watcher.message.guildId !== query.guildId) return false;
+        if (query.channelId && watcher.message.channelId !== query.channelId) return false;
+        if (query.messageId && watcher.message.id !== query.messageId) return false;
+        if (query.userId && watcher.message.author.id !== query.userId) return false;
+        if (query.command && watcher.command !== query.command) return false;
+        return true;
+    }
+
+    *#getWatcherInstances(query: FindWatcherQuery) {
+        const searchFn = typeof query === "function" ? query : this.#baseSearch.bind(this, query);
+
+        for (const val of this.collectors.values()) {
+            const instances = (val as Exclude<typeof val, MessageWatcherCollector<any>[]>).value ?? val;
+
+            const [watcher] = instances;
+
+            if (watcher && searchFn(watcher) === true) {
+                yield { id: watcher.id, instances };
+            }
+        }
+    }
+
+    findWatcherInstances(query: FindWatcherQuery) {
+        return this.#getWatcherInstances(query).next().value;
+    }
+
+    getManyWatcherInstances(query: FindWatcherQuery) {
+        return Array.from(this.#getWatcherInstances(query));
     }
 }

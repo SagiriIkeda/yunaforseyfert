@@ -1,5 +1,6 @@
 import { inspect } from "node:util";
 import { Command, type CommandContext, Declare, Embed, Options, createStringOption } from "seyfert";
+import { Yuna } from "../../package";
 import { Watch } from "../../package/utils/messageWatcher/decorator";
 
 const options = {
@@ -22,7 +23,19 @@ export default class TestCommand extends Command {
     @Watch({
         idle: 10_000,
         onStop(reason) {
-            this.ctx?.editOrReply({ content: `watcher end '${reason}'` });
+            this.ctx?.editOrReply({ content: `watcher end '${reason}'`, embeds: [] });
+        },
+        beforeCreate(ctx) {
+            const userWatcher = Yuna.watchers.findInstances(ctx.client, {
+                userId: ctx.author.id,
+                command: this,
+            });
+
+            if (!userWatcher) return;
+
+            const [watcher] = userWatcher.instances;
+
+            watcher?.stopAll("AnotherInstanceCreated");
         },
     })
     async run(ctx: CommandContext<typeof options>) {
