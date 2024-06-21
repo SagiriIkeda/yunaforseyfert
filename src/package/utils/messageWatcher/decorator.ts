@@ -17,6 +17,10 @@ type Event<E extends (...args: any[]) => any, O extends OptionsRecord> = (
 ) => ReturnType<E>;
 
 interface WatchOptions<C extends YunaUsableCommand, O extends OptionsRecord> extends MessageWatcherCollectorOptions {
+    /**
+     * It will be emitted before creating the watcher,
+     * if you return `false` it will not be created.
+     */
     beforeCreate?(this: C, ctx: CommandContext<O>): Awaitable<boolean> | void;
     filter?(...args: Parameters<OnChangeEvent<O>>): boolean;
     onStop?: Event<OnStopEvent, O>;

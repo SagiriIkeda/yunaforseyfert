@@ -371,7 +371,7 @@ class YourHandleCommand extends HandleCommand {
       /**
        * You need to pass the client in order to prepare the commands that the resolver will use.
       */
-      client: yourBotClient,
+      client: this.client,
       /**
        * Event to be emitted each time the commands are prepared.
       */
@@ -545,6 +545,12 @@ And now it will be updated every time the message is edited!
 
   // others optionally events
 
+  /**
+   * It will be emitted before creating the watcher,
+   * if you return `false` it will not be created.
+   */
+  beforeCreate() {}
+
   /** 
    * when the user has removed or used an unrecognized prefix, or changed the command he was using.
     * reason can be: "UnspecifiedPrefix" | "CommandChanged"
@@ -619,17 +625,92 @@ createWatcher<typeof options>({
 })
 ```
 
-Also, by default all watchers are stored in a `Map`, but if you wanted to you could use a `LimitedCollection` as follows:
+#### `Yuna.watchers` utils
+
+- `Yuna.watchers.createController`
+
+By default all watchers are stored in a `Map`, but if you wanted to you could use a `LimitedCollection` as follows:
 
 ```ts
 import { LimitedCollection } from "seyfert";
-import { Yuna } from "yunaforseyfert";
 
 Yuna.watchers.createController({
   client, // your bot's client
   cache: new LimitedCollection( /** your settings */)
 })
 ```
+- `Yuna.watchers.getFromContext`
+
+Get the list of `watchers` (there may be more than one) associated to a `CommandContext`
+
+```ts
+Yuna.watchers.getFromContext(ctx)
+```
+- `Yuna.watchers.findInstances`
+Find watchers from a query.
+```ts
+Yuna.watchers.findInstances(client, {
+  /** query properties */
+
+  userId: ctx.author.id,
+  // messageId
+  // channelId
+  // guildId
+  // command: {Command | SubCommand}
+})
+
+// the query can also be a callback that returns a boolean
+Yuna.watchers.findInstances(client, (watcher) => watcher.message.author.id === ctx.author.id)
+
+/** 
+ * This method returns the key (id where it is stored) of the watcher, and its instances in an array. 
+ * @example 
+ * {
+ *  id: string,
+ *  instances: MessageWatcher[]
+ * }
+ * */
+```
+
+- `Yuna.watchers.getManyInstances`
+Similar to `findInstances` but this one will filter through all, it is used in the same way, but it will return all matches with the following type:
+```ts
+{
+ id: string,
+ instances: MessageWatcher[]
+}[]
+```
+
+- `Yuna.watchers.isWatching`
+Use it to know when a `CommandContext` is being observed.
+
+- Use example
+
+Suppose you want to limit that a user can only have one watcher at a time in your command.
+
+Using the `@Watch` decorator you would do it with the beforeCreate event, and with `createWatcher` before executing that function.  Example with `the beforeCreate`
+
+```ts
+@Watch({
+  idle: 10_000,
+  beforeCreate() {
+    // Get some watcher associated to the user in this command
+    const userWatcher = Yuna.watchers.findInstances(ctx.client, {
+        userId: ctx.author.id,
+        command: this, // this refers to the Command
+    });
+
+    // If not, we do not proceed.
+    if (!userWatcher) return;
+    //From there, get the first MessageWatcher of the previous message (the one we want to stop watching).
+    const [watcher] = userWatcher.instances;
+    // stop all instances of that message.
+    watcher?.stopAll("AnotherInstanceCreated");
+  }
+})
+```
+
+
 </details>
 
 <br/>

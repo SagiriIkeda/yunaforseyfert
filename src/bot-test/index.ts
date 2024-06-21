@@ -12,7 +12,7 @@ const client = new Client({
 
 class YunaCommandHandle extends HandleCommand {
     resolveCommandFromContent = Yuna.resolver({
-        client,
+        client: this.client,
         afterPrepare: () => {
             this.client.logger.debug("prepared commands");
         },
