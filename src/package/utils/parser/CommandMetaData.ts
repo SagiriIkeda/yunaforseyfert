@@ -1,6 +1,6 @@
 import { ApplicationCommandOptionType } from "discord-api-types/v10";
-import type { Command, CommandOption, SeyfertNumberOption, SeyfertStringOption, SubCommand } from "seyfert";
-import { type Instantiable, type YunaUsableCommand, keyConfig } from "../../things";
+import type { CommandOption, SeyfertNumberOption, SeyfertStringOption } from "seyfert";
+import { type YunaUsableCommand, keyConfig } from "../../things";
 import { type CommandOptionWithType, type YunaParserCreateOptions, createRegexes, mergeConfig } from "./createConfig";
 
 const InvalidOptionType = new Set([
@@ -13,7 +13,7 @@ type DecoredChoice = [rawName: string, name: string, value: string | number];
 
 export class YunaParserCommandMetaData {
     command: YunaUsableCommand;
-    iterableOptions?: CommandOption[];
+    iterableOptions: CommandOption[] = [];
 
     regexes?: ReturnType<typeof createRegexes>;
 
@@ -23,24 +23,24 @@ export class YunaParserCommandMetaData {
 
     choices?: [optionName: string, choices: DecoredChoice[]][];
 
-    base: Instantiable<Command | SubCommand>;
+    base: Function;
 
     options = new Map<string, CommandOptionWithType>();
 
-    constructor(command: YunaUsableCommand, globalConfig: YunaParserCreateOptions) {
+    constructor(command: YunaUsableCommand) {
         this.command = command;
         this.config = this.command[keyConfig];
 
-        this.base = Object.getPrototypeOf(command);
+        this.base = command.constructor;
 
-        this.iterableOptions = command.options?.filter((option) => "type" in option && !InvalidOptionType.has(option.type));
-
-        if (this.iterableOptions?.length) {
+        if (command.options?.length) {
             const choices: typeof this.choices = [];
-
             type OptionType = (SeyfertStringOption | SeyfertNumberOption) & CommandOptionWithType;
 
-            for (const option of this.iterableOptions as OptionType[]) {
+            for (const option of command.options as OptionType[]) {
+                if (InvalidOptionType.has(option.type)) continue;
+
+                this.iterableOptions.push(option);
                 this.options.set(option.name, option);
 
                 if (!option.choices?.length) continue;
@@ -53,8 +53,6 @@ export class YunaParserCommandMetaData {
 
             if (choices.length) this.choices = choices;
         }
-
-        this.getConfig(globalConfig);
     }
 
     getConfig(globalConfig: YunaParserCreateOptions) {
@@ -64,7 +62,7 @@ export class YunaParserCommandMetaData {
 
         this.globalConfig = globalConfig;
 
-        this.regexes = createRegexes(config);
+        this.regexes = this.config?.syntax && createRegexes(config);
 
         return config;
     }

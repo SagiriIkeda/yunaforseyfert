@@ -515,21 +515,18 @@ export default class ParentCommand extends Command {}
 
 ### Implementation and Usage
 
-You have two ways to use it, use whichever you prefer. they are practically the same.
+You have some ways to use it, use whichever you prefer. They are practically the same.
 
 #### `@Watch` Decorator Way
 
-
 ```ts
 import { Watch } from "yunaforseyfert";
-
-// and now use it in your commands in the following way
 
 /** ... */
 @Options(options)
 export default class TestCommand extends Command {
   // example
-  @Watch({ time: 100_000, })
+  @Watch({ time: 100_000  /** 100s */  })
   async run(ctx: CommandContext<typeof options>) {
     ctx.editOrReply({ content: ctx.options.text });
   }
@@ -537,13 +534,14 @@ export default class TestCommand extends Command {
 ```
 And now it will be updated every time the message is edited!
 
-`@Watch` options 
+##### `@Watch` options 
 
 ```ts
 @Watch({
   filter(ctx) { return true },
   time: 100_000,
-  idle: 10_000, // Downtime until the watcher stops.
+  /** Downtime until the watcher stops. */
+  idle: 10_000, 
 
   // others optionally events
 
@@ -563,8 +561,6 @@ And now it will be updated every time the message is edited!
 
 
 #### `createWatcher` function Way
-
-begins by importing the following function
 
 ```ts
 import { createWatcher } from "yunaforseyfert";

@@ -19,7 +19,12 @@ const options = {
 })
 @Options(options)
 export default class TestCommand extends Command {
-    @Watch({ idle: 100_000 })
+    @Watch({
+        idle: 10_000,
+        onStop(reason) {
+            this.ctx?.editOrReply({ content: `watcher end '${reason}'` });
+        },
+    })
     async run(ctx: CommandContext<typeof options>) {
         const embed = new Embed({
             title: "Parsed!",

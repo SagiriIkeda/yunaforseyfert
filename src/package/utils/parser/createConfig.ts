@@ -267,14 +267,14 @@ export const mergeConfig = (c1: YunaParserCreateOptions, c2: YunaParserCreateOpt
     return result;
 };
 
-export const getYunaMetaDataFromCommand = (command: YunaUsableCommand, config: YunaParserCreateOptions) => {
+export const getYunaMetaDataFromCommand = (command: YunaUsableCommand) => {
     const InCommandMetadata = command[keyMetadata];
 
-    const base = Object.getPrototypeOf(command);
+    const base = command.constructor;
 
     if (InCommandMetadata && InCommandMetadata?.base === base) return InCommandMetadata;
 
-    const metadata = new YunaParserCommandMetaData(command, config);
+    const metadata = new YunaParserCommandMetaData(command);
 
     command[keyMetadata] = metadata;
 

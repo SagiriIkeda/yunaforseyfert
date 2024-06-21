@@ -49,11 +49,11 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
     // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: omitting this rule the life is better
     return function (this: HandleCommand, content: string, command: Command | SubCommand, message?: Message): Record<string, string> {
-        const commandMetadata = getYunaMetaDataFromCommand(command, globalConfig);
+        const commandMetadata = getYunaMetaDataFromCommand(command);
 
         const { iterableOptions, options, choices } = commandMetadata;
 
-        if (!iterableOptions?.length) return {};
+        if (!iterableOptions.length) return {};
 
         const config = commandMetadata.getConfig(globalConfig);
 

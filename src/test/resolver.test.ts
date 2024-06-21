@@ -1,25 +1,18 @@
-import { Client, type UsingClient } from "seyfert";
+import { Client, type SubCommand, type UsingClient } from "seyfert";
 import { HandleCommand } from "seyfert/lib/commands/handle";
 import { describe, expect, test as vtest } from "vitest";
 import CreateCommand from "../bot-test/commands/account/create";
+import OtherCommand from "../bot-test/commands/account/other";
+import TestCommand from "../bot-test/commands/test";
 import { Yuna } from "../package";
 import type { Instantiable, YunaUsableCommand } from "../package/things";
 
 const client = new Client() as UsingClient;
 
-// const testParser = (
-//     text: string,
-//     equalTo: Record<string, string>,
-//     config?: YunaParserCreateOptions,
-//     command: YunaUsableCommand = testCommand,
-//     message?: Message,
-// ) => {
-//     return expect(Yuna.parser(config).call(client.handleCommand, text, command, message)).toEqual(equalTo);
-// };
-
 const YunaResolver = Yuna.resolver({
     client,
     afterPrepare() {
+        console.log(Yuna.commands.getMetadata(client));
         console.log("ready to use");
     },
 });
@@ -29,22 +22,21 @@ class YunaHandleCommand extends HandleCommand {
 client.setServices({ handleCommand: YunaHandleCommand });
 
 const loading = client.loadCommands(`${process.cwd()}/dist/bot-test/commands`).then(() => console.log("loaded"));
-
 const testResolver = (query: string) => {
     const resolved = Yuna.resolver({ client }).call(client.handleCommand, query);
 
     return {
-        command(command: Instantiable<YunaUsableCommand>) {
-            // console.log(command.prototype)
-            // console.log(Object.getPrototypeOf(resolved.command.prototype))
-            // const isInstance = Object.getPrototypeOf(resolved.command) === Object.getPrototypeOf(command);
+        isCommand(command: Instantiable<YunaUsableCommand> | undefined) {
+            const cmd = command && (new command() as SubCommand | undefined);
+            const res = resolved.command as SubCommand | undefined;
 
-            return expect(resolved.command?.constructor).toBeInstanceOf(command);
+            expect(res?.name === cmd?.name && res?.group === cmd?.group).toBe(true);
+            return () => {};
         },
-        name(name: string) {
+        isName(name: string) {
             return expect(resolved.fullCommandName).toBe(name);
         },
-        argsContent(args: string) {
+        argsContentToBe(args: string) {
             return expect(resolved.argsContent).toBe(args);
         },
     };
@@ -65,6 +57,12 @@ describe("assignation to seyfert", () => {
 
 describe("common", () => {
     test("simple", () => {
-        testResolver("account pengu create").command(CreateCommand);
+        testResolver("account pengu create").isCommand(CreateCommand);
+        testResolver("account others").isCommand(OtherCommand);
+        testResolver("t").isCommand(TestCommand);
+    });
+
+    test("shortcuts", () => {
+        testResolver("create").isCommand(CreateCommand);
     });
 });

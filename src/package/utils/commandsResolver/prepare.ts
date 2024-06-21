@@ -1,6 +1,14 @@
 import { Command, SubCommand, type UsingClient } from "seyfert";
-import { type AvailableClients, type Instantiable, type YunaUsableCommand, keyShortcut, keySubCommands } from "../../things";
+import {
+    type AvailableClients,
+    type Instantiable,
+    type YunaUsableCommand,
+    fallbackSubNameKey,
+    keyShortcut,
+    keySubCommands,
+} from "../../things";
 import { baseResolver } from "./base";
+import { getFallbackCommandName } from "./decorators";
 import type { YunaCommandsResolverConfig } from "./resolver";
 
 export const commandsConfigKey = Symbol("YunaCommands");
@@ -16,13 +24,17 @@ export type UseYunaCommandsClient = UsingClient & {
 export const ShortcutType = {
     Group: Symbol(),
 };
+export interface YunaGroup {
+    [fallbackSubNameKey]?: string;
+}
 
 export interface GroupLink {
     name: string;
     parent: Command;
     aliases?: string[];
     description?: string[];
-    fallbackSubCommand?: Instantiable<SubCommand> | null;
+    fallbackSubCommandName?: string;
+    fallbackSubCommand?: Instantiable<SubCommand> | null | string;
     type: typeof ShortcutType.Group;
 }
 
@@ -77,12 +89,19 @@ export function prepareCommands(client: AvailableClients) {
         if (command.groups)
             for (const [name, group] of Object.entries(command.groups)) {
                 if (!group.shortcut) continue;
+                const gr = group as YunaGroup;
+
+                const fallbackSubName = group.fallbackSubCommand ? getFallbackCommandName(group.fallbackSubCommand) : undefined;
+
+                gr[fallbackSubNameKey] = fallbackSubName;
+
                 metadata.shortcuts.push({
                     name,
                     parent: command,
                     aliases: group.aliases,
                     type: ShortcutType.Group,
                     fallbackSubCommand: group.fallbackSubCommand,
+                    fallbackSubCommandName: fallbackSubName,
                 });
             }
 
@@ -92,13 +111,17 @@ export function prepareCommands(client: AvailableClients) {
             if (!(sub instanceof SubCommand)) continue;
             hasSubCommands = true;
             sub.parent = command;
+
+            // console.log(sub);
+
+            // console.log(sub.name == "create" && sub[keyShortcut])
             if ((sub as YunaUsableCommand)[keyShortcut] === true) metadata.shortcuts.push(sub);
         }
 
         if (!hasSubCommands) (command as YunaUsableCommand)[keySubCommands] = null;
     }
 
-    metadata.config?.afterPrepare?.(metadata);
+    metadata.config?.afterPrepare?.call(client, metadata);
 }
 
 export const resolve = (

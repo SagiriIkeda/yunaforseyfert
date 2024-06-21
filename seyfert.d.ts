@@ -1,6 +1,6 @@
 import type { LocaleString } from "discord-api-types/v10";
 import type { Command } from "seyfert";
-import type { InstantiableSubCommand } from "./src/package/things";
+import type { Instantiable } from "./src/package/things";
 
 declare module "seyfert" {
     export interface SubCommand {
@@ -37,7 +37,7 @@ declare module "seyfert" {
                  * use `null` to disable this option for this group.
                  * @requires  YunaCommandsResolver to work.
                  */
-                fallbackSubCommand?: InstantiableSubCommand | null;
+                fallbackSubCommand?: Instantiable<SubCommand> | string | null;
             }
         >,
     ): ReturnType<typeof Groups>;

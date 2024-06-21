@@ -1,8 +1,8 @@
 import { ApplicationCommandOptionType, ApplicationCommandType } from "discord-api-types/v10";
 import type { Command, ContextMenuCommand, SubCommand } from "seyfert";
 import { IgnoreCommand } from "seyfert";
-import { type AvailableClients, type YunaUsableCommand, keySubCommands } from "../../things";
-import { type GroupLink, ShortcutType, type UseYunaCommandsClient, commandsConfigKey } from "./prepare";
+import { type AvailableClients, type YunaUsableCommand, fallbackSubNameKey, keySubCommands } from "../../things";
+import { type GroupLink, ShortcutType, type UseYunaCommandsClient, type YunaGroup, commandsConfigKey } from "./prepare";
 import type { YunaCommandsResolverConfig } from "./resolver";
 
 type UsableCommand = Command | SubCommand;
@@ -87,7 +87,7 @@ export function baseResolver(
 
     const subName = groupName ? sub : group;
 
-    const virtualInstance = groupData ? groupData.fallbackSubCommand : parentSubCommandsMetadata?.default;
+    const fallbackSubcomamndName = groupData ? (groupData as YunaGroup)[fallbackSubNameKey] : parentSubCommandsMetadata?.defaultName;
 
     let virtualSubCommand: SubCommand | undefined;
     let firstGroupSubCommand: SubCommand | undefined;
@@ -99,7 +99,7 @@ export function baseResolver(
 
         firstGroupSubCommand ??= sub;
 
-        if (virtualInstance && sub.constructor === virtualInstance) {
+        if (sub.name === fallbackSubcomamndName) {
             virtualSubCommand = sub;
         }
 

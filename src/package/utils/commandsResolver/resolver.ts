@@ -11,7 +11,7 @@ export interface YunaCommandsResolverConfig {
      */
     useFallbackSubCommand?: boolean;
 
-    afterPrepare?(metadata: ReturnType<typeof getCommandsMetadata>): any;
+    afterPrepare?(this: AvailableClients, metadata: ReturnType<typeof getCommandsMetadata>): any;
 }
 
 export function YunaCommandsResolver({

@@ -5,6 +5,7 @@ import { createController, createWatcher, getController } from "./utils/messageW
 import type { YunaParserCreateOptions } from "./utils/parser/createConfig.js";
 import { YunaParser } from "./utils/parser/parser.js";
 
+export { Watch } from "./utils/messageWatcher/decorator.js";
 export { DeclareParserConfig } from "./utils/parser/createConfig.js";
 
 export { createWatcher } from "./utils/messageWatcher/controllerUtils.js";
