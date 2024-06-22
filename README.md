@@ -627,7 +627,7 @@ createWatcher<typeof options>({
 
 #### `Yuna.watchers` utils
 
-- `Yuna.watchers.createController`
+- **`Yuna.watchers.createController`**
 
 By default all watchers are stored in a `Map`, but if you wanted to you could use a `LimitedCollection` as follows:
 
@@ -639,19 +639,20 @@ Yuna.watchers.createController({
   cache: new LimitedCollection( /** your settings */)
 })
 ```
-- `Yuna.watchers.getFromContext`
+- **`Yuna.watchers.getFromContext`**
 
 Get the list of `watchers` (there may be more than one) associated to a `CommandContext`
 
 ```ts
 Yuna.watchers.getFromContext(ctx)
 ```
-- `Yuna.watchers.findInstances`
+- **`Yuna.watchers.findInstances`**
+
 Find watchers from a query.
+
 ```ts
 Yuna.watchers.findInstances(client, {
   /** query properties */
-
   userId: ctx.author.id,
   // messageId
   // channelId
@@ -672,7 +673,8 @@ Yuna.watchers.findInstances(client, (watcher) => watcher.message.author.id === c
  * */
 ```
 
-- `Yuna.watchers.getManyInstances`
+- **`Yuna.watchers.getManyInstances`**
+
 Similar to `findInstances` but this one will filter through all, it is used in the same way, but it will return all matches with the following type:
 ```ts
 {
@@ -681,10 +683,11 @@ Similar to `findInstances` but this one will filter through all, it is used in t
 }[]
 ```
 
-- `Yuna.watchers.isWatching`
+- **`Yuna.watchers.isWatching`**
+
 Use it to know when a `CommandContext` is being observed.
 
-- Use example
+- **`Use example`**
 
 Suppose you want to limit that a user can only have one watcher at a time in your command.
 

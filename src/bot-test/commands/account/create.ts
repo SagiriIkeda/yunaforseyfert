@@ -11,6 +11,7 @@ const options = {
 @Declare({
     name: "create",
     description: "create a new something",
+    aliases: ["cr"],
 })
 @Options(options)
 @Group("pengu")

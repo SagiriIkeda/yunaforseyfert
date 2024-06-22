@@ -18,7 +18,6 @@ export function Shortcut() {
     return <T extends Instantiable<SubCommand>>(target: T) => {
         return class extends target {
             [keyShortcut] = true;
-            __shortcut = true;
             declare run: SubCommand["run"];
         };
     };
@@ -39,7 +38,7 @@ export const getFallbackCommandName = (command: Instantiable<SubCommand> | null 
 export function DeclareFallbackSubCommand(command: Instantiable<SubCommand> | null | string) {
     return <T extends Instantiable<Command>>(target: T) => {
         return class extends target {
-            [keySubCommands] = { default: command, defaultName: getFallbackCommandName(command) };
+            [keySubCommands] = { fallback: command, fallbackName: getFallbackCommandName(command) };
         };
     };
 }

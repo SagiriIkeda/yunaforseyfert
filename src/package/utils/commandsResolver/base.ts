@@ -1,7 +1,7 @@
 import { ApplicationCommandOptionType, ApplicationCommandType } from "discord-api-types/v10";
-import type { Command, ContextMenuCommand, SubCommand } from "seyfert";
+import type { Command, SubCommand } from "seyfert";
 import { IgnoreCommand } from "seyfert";
-import { type AvailableClients, type YunaUsableCommand, fallbackSubNameKey, keySubCommands } from "../../things";
+import { type AvailableClients, type YunaUsable, fallbackSubNameKey, keySubCommands } from "../../things";
 import { type GroupLink, ShortcutType, type UseYunaCommandsClient, type YunaGroup, commandsConfigKey } from "./prepare";
 import type { YunaCommandsResolverConfig } from "./resolver";
 
@@ -33,14 +33,13 @@ export function baseResolver(
 
     let [parent, group, sub] = queryArray;
 
-    const searchFn = (command: Command | ContextMenuCommand | SubCommand | GroupLink) =>
-        command.name === parent || (command as Command).aliases?.includes(parent);
+    const searchFn = (command: Command | SubCommand | GroupLink) => command.name === parent || command.aliases?.includes(parent);
 
     let parentCommand = (
         metadata?.commands
             ? metadata.commands.find(searchFn)
             : client.commands.values.find((command) => command.type === ApplicationCommandType.ChatInput && searchFn(command))
-    ) as Exclude<YunaUsableCommand, SubCommand> | undefined;
+    ) as Exclude<YunaUsable, SubCommand> | undefined;
 
     const shortcut = parentCommand ? undefined : metadata?.shortcuts.find(searchFn);
     const isGroupShortcut = shortcut?.type === ShortcutType.Group;
@@ -53,8 +52,7 @@ export function baseResolver(
 
     const parentSubCommandsMetadata = parentCommand?.[keySubCommands];
 
-    const availableInMessage = (command: YunaUsableCommand) =>
-        config?.inMessage === true ? command.ignore !== IgnoreCommand.Message : true;
+    const availableInMessage = (command: YunaUsable) => (config?.inMessage === true ? command.ignore !== IgnoreCommand.Message : true);
 
     if (isGroupShortcut) {
         parentCommand = shortcut.parent;
@@ -87,7 +85,7 @@ export function baseResolver(
 
     const subName = groupName ? sub : group;
 
-    const fallbackSubcomamndName = groupData ? (groupData as YunaGroup)[fallbackSubNameKey] : parentSubCommandsMetadata?.defaultName;
+    const fallbackSubCommandName = groupData ? (groupData as YunaGroup)[fallbackSubNameKey] : parentSubCommandsMetadata?.fallbackName;
 
     let virtualSubCommand: SubCommand | undefined;
     let firstGroupSubCommand: SubCommand | undefined;
@@ -99,18 +97,21 @@ export function baseResolver(
 
         firstGroupSubCommand ??= sub;
 
-        if (sub.name === fallbackSubcomamndName) {
+        if (sub.name === fallbackSubCommandName) {
             virtualSubCommand = sub;
         }
 
         return sub.name === subName || sub.aliases?.includes(subName);
     }) as SubCommand | undefined;
 
-    if (
-        (!virtualSubCommand && (groupData?.fallbackSubCommand !== null || parentSubCommandsMetadata?.default !== null)) ||
-        config?.useFallbackSubCommand === true
-    ) {
-        virtualSubCommand ??= firstGroupSubCommand;
+    if (!(subCommand || virtualSubCommand)) {
+        const fallbackData = groupData ? groupData.fallbackSubCommand : parentSubCommandsMetadata?.fallback;
+        const allowed = fallbackData !== null && fallbackData !== undefined;
+        const global = config?.useFallbackSubCommand === true && fallbackData === undefined;
+
+        if (global || allowed) {
+            virtualSubCommand = firstGroupSubCommand;
+        }
     }
 
     subCommand && padIdx++;

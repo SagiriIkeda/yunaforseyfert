@@ -1,12 +1,6 @@
-import { Command, SubCommand, type UsingClient } from "seyfert";
-import {
-    type AvailableClients,
-    type Instantiable,
-    type YunaUsableCommand,
-    fallbackSubNameKey,
-    keyShortcut,
-    keySubCommands,
-} from "../../things";
+import { ApplicationCommandType } from "discord-api-types/v10";
+import { type Command, SubCommand, type UsingClient } from "seyfert";
+import { type AvailableClients, type Instantiable, type YunaUsable, fallbackSubNameKey, keyShortcut, keySubCommands } from "../../things";
 import { baseResolver } from "./base";
 import { getFallbackCommandName } from "./decorators";
 import type { YunaCommandsResolverConfig } from "./resolver";
@@ -24,9 +18,11 @@ export type UseYunaCommandsClient = UsingClient & {
 export const ShortcutType = {
     Group: Symbol(),
 };
-export interface YunaGroup {
-    [fallbackSubNameKey]?: string;
-}
+export type YunaGroup = NonNullable<Command["groups"]> extends Record<string, infer R>
+    ? R & {
+          [fallbackSubNameKey]?: string;
+      }
+    : never;
 
 export interface GroupLink {
     name: string;
@@ -82,8 +78,9 @@ export function prepareCommands(client: AvailableClients) {
     if (!client.commands?.values.length)
         return client.logger.warn("[Yuna.commands.prepare] The commands have not been loaded yet or there are none at all.");
 
-    for (const command of client.commands?.values ?? []) {
-        if (!(command instanceof Command)) continue;
+    for (const command of client.commands.values) {
+        if (command.type !== ApplicationCommandType.ChatInput) continue;
+
         metadata.commands.push(command);
 
         if (command.groups)
@@ -111,14 +108,10 @@ export function prepareCommands(client: AvailableClients) {
             if (!(sub instanceof SubCommand)) continue;
             hasSubCommands = true;
             sub.parent = command;
-
-            // console.log(sub);
-
-            // console.log(sub.name == "create" && sub[keyShortcut])
-            if ((sub as YunaUsableCommand)[keyShortcut] === true) metadata.shortcuts.push(sub);
+            if ((sub as YunaUsable)[keyShortcut] === true) metadata.shortcuts.push(sub);
         }
 
-        if (!hasSubCommands) (command as YunaUsableCommand)[keySubCommands] = null;
+        if (!hasSubCommands) (command as YunaUsable)[keySubCommands] = null;
     }
 
     metadata.config?.afterPrepare?.call(client, metadata);

@@ -12,9 +12,9 @@ export type Instantiable<C> = { new (...args: any[]): C };
 export type AvailableClients = UsingClient | Client | WorkerClient;
 export type ArgsResult = Record<string, string>;
 
-export type YunaUsableCommand = (Command | SubCommand) & {
+export type YunaUsable<T extends Command | SubCommand = Command | SubCommand> = T & {
     [keyMetadata]?: YunaParserCommandMetaData;
     [keyConfig]?: YunaParserCreateOptions;
-    [keySubCommands]?: { default?: Instantiable<SubCommand> | null; defaultName?: string } | null;
+    [keySubCommands]?: { fallback?: Instantiable<SubCommand> | null; fallbackName?: string } | null;
     [keyShortcut]?: boolean;
 };

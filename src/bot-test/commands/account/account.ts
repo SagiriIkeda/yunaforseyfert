@@ -12,9 +12,9 @@ import OtherCommand from "./other";
 @Options([CreateCommand, OtherCommand])
 @Groups({
     pengu: {
-        aliases: ["pengu", "pingu"],
+        aliases: ["pingu"],
         shortcut: true,
-        fallbackSubCommand: null,
+        fallbackSubCommand: CreateCommand,
         defaultDescription: "si",
     },
 })

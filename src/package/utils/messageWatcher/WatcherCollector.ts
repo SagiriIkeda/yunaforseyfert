@@ -57,7 +57,7 @@ export class MessageWatcherCollector<const O extends OptionsRecord> {
 
     readonly id: string;
 
-    invoker: YunaMessageWatcherController;
+    controller: YunaMessageWatcherController;
 
     /** @internal */
     fakeUser: APIUser;
@@ -84,7 +84,7 @@ export class MessageWatcherCollector<const O extends OptionsRecord> {
 
         this.client = client;
         this.shardId = shardId ?? 1;
-        this.invoker = invoker;
+        this.controller = invoker;
         this.command = command;
 
         this.options = options ?? {};
@@ -141,13 +141,14 @@ export class MessageWatcherCollector<const O extends OptionsRecord> {
     }
 
     get instances() {
-        return this.invoker.collectors.get(this.id) ?? [];
+        return this.controller.collectors.get(this.id) ?? [];
     }
 
     #oldContent?: string;
     /** @internal */
     prefixes?: string[];
 
+    /** @internal */
     async update(message: GatewayMessageUpdateDispatchData) {
         if (!message.content) return;
 
@@ -276,13 +277,13 @@ export class MessageWatcherCollector<const O extends OptionsRecord> {
         this.onStopEvent = callback;
         return this;
     }
-
+    /** stop all instances */
     stopAll(reason: string) {
         for (const instance of this.instances) {
             instance.stop(reason);
         }
     }
-
+    /** stop this instance */
     stop(reason: string) {
         clearTimeout(this.#idle);
         clearTimeout(this.#timeout);
@@ -292,7 +293,7 @@ export class MessageWatcherCollector<const O extends OptionsRecord> {
         const instanceId = instances.indexOf(this);
 
         if (instanceId !== -1) instances.splice(instanceId, 1);
-        if (instances.length === 0) this.invoker.collectors.delete(this.id);
+        if (instances.length === 0) this.controller.collectors.delete(this.id);
 
         this.onStopEvent?.(reason);
         return this;

@@ -1,6 +1,6 @@
 import type { CommandContext, OptionsRecord } from "seyfert";
 import type { Awaitable } from "seyfert/lib/common";
-import type { YunaUsableCommand } from "../../things";
+import type { YunaUsable } from "../../things";
 import type {
     MessageWatcherCollector,
     MessageWatcherCollectorOptions,
@@ -16,7 +16,7 @@ type Event<E extends (...args: any[]) => any, O extends OptionsRecord> = (
     ...args: Parameters<E>
 ) => ReturnType<E>;
 
-interface WatchOptions<C extends YunaUsableCommand, O extends OptionsRecord> extends MessageWatcherCollectorOptions {
+interface WatchOptions<C extends YunaUsable, O extends OptionsRecord> extends MessageWatcherCollectorOptions {
     /**
      * It will be emitted before creating the watcher,
      * if you return `false` it will not be created.
@@ -30,7 +30,7 @@ interface WatchOptions<C extends YunaUsableCommand, O extends OptionsRecord> ext
 }
 
 export function Watch<
-    const C extends YunaUsableCommand,
+    const C extends YunaUsable,
     O extends Parameters<NonNullable<C["run"]>>[0] extends CommandContext<infer O> ? O : never,
 >(options: WatchOptions<C, O>) {
     return (target: C, _propertyKey: "run", descriptor: PropertyDescriptor) => {

@@ -16,7 +16,7 @@ import { describe, expect, test } from "vitest";
 import ChoicesNumberTestCommand, { ChoicesTestCommand } from "../bot-test/commands/choicesTest";
 import TestCommand from "../bot-test/commands/test";
 import { ParserRecommendedConfig, Yuna } from "../package";
-import type { YunaUsableCommand } from "../package/things";
+import type { YunaUsable } from "../package/things";
 import type { YunaParserCreateOptions } from "../package/utils/parser/createConfig";
 
 const testCommand = new TestCommand();
@@ -29,7 +29,7 @@ const testParser = (
     text: string,
     equalTo: Record<string, string>,
     config?: YunaParserCreateOptions,
-    command: YunaUsableCommand = testCommand,
+    command: YunaUsable = testCommand,
     message?: Message,
 ) => {
     return expect(Yuna.parser(config).call(client.handleCommand, text, command, message)).toEqual(equalTo);

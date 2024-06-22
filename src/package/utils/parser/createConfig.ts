@@ -1,6 +1,6 @@
 import type { ApplicationCommandOptionType } from "discord-api-types/v10";
 import type { CommandOption } from "seyfert";
-import { type YunaUsableCommand, keyConfig, keyMetadata } from "../../things";
+import { type YunaUsable, keyConfig, keyMetadata } from "../../things";
 import { YunaParserCommandMetaData } from "./CommandMetaData";
 
 type ValidLongTextTags = "'" | '"' | "`";
@@ -267,7 +267,7 @@ export const mergeConfig = (c1: YunaParserCreateOptions, c2: YunaParserCreateOpt
     return result;
 };
 
-export const getYunaMetaDataFromCommand = (command: YunaUsableCommand) => {
+export const getYunaMetaDataFromCommand = (command: YunaUsable) => {
     const InCommandMetadata = command[keyMetadata];
 
     const base = command.constructor;

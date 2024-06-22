@@ -1,6 +1,6 @@
 import { ApplicationCommandOptionType } from "discord-api-types/v10";
 import type { CommandOption, SeyfertNumberOption, SeyfertStringOption } from "seyfert";
-import { type YunaUsableCommand, keyConfig } from "../../things";
+import { type YunaUsable, keyConfig } from "../../things";
 import { type CommandOptionWithType, type YunaParserCreateOptions, createRegexes, mergeConfig } from "./createConfig";
 
 const InvalidOptionType = new Set([
@@ -12,7 +12,7 @@ const InvalidOptionType = new Set([
 type DecoredChoice = [rawName: string, name: string, value: string | number];
 
 export class YunaParserCommandMetaData {
-    command: YunaUsableCommand;
+    command: YunaUsable;
     iterableOptions: CommandOption[] = [];
 
     regexes?: ReturnType<typeof createRegexes>;
@@ -27,7 +27,7 @@ export class YunaParserCommandMetaData {
 
     options = new Map<string, CommandOptionWithType>();
 
-    constructor(command: YunaUsableCommand) {
+    constructor(command: YunaUsable) {
         this.command = command;
         this.config = this.command[keyConfig];
 

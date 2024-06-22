@@ -16,7 +16,7 @@ export interface YunaCommandsResolverConfig {
 
 export function YunaCommandsResolver({
     client,
-    useFallbackSubCommand = true,
+    useFallbackSubCommand = false,
     afterPrepare,
 }: YunaCommandsResolverConfig & { client: AvailableClients }) {
     const config = {
@@ -32,7 +32,7 @@ export function YunaCommandsResolver({
     return function (this: HandleCommand, content: string) {
         const { endPad = 0, command, parent } = baseResolver(client, content, baseResolverConfig) ?? {};
 
-        const argsContent = content.slice(endPad);
+        const argsContent = content.slice(endPad).trimStart();
 
         return {
             parent: parent,
