@@ -549,7 +549,7 @@ And now it will be updated every time the message is edited!
    * It will be emitted before creating the watcher,
    * if you return `false` it will not be created.
    */
-  beforeCreate() {},
+  beforeCreate(ctx) {},
 
   /** 
    * when the user has removed or used an unrecognized prefix, or changed the command he was using.
@@ -690,12 +690,12 @@ Use it to know when a `CommandContext` is being observed.
 
 Suppose you want to limit that a user can only have one watcher at a time in your command.
 
-Using the `@Watch` decorator you would do it with the beforeCreate event, and with `createWatcher` before executing that function.  Example with `the beforeCreate`
+Using the `@Watch` decorator you would do it with the beforeCreate event, and with `createWatcher` before executing that function.  Example with the `beforeCreate`
 
 ```ts
 @Watch({
   idle: 10_000,
-  beforeCreate() {
+  beforeCreate(ctx) {
     // Get some watcher associated to the user in this command
     const userWatcher = Yuna.watchers.findInstances(ctx.client, {
         userId: ctx.author.id,
