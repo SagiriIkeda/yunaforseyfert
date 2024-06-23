@@ -45,6 +45,11 @@ export type FindWatcherQuery =
       }
     | ((watcher: MessageWatcherCollector<any>) => boolean);
 
+export interface WatcherQueryResult {
+    id: string;
+    instances: MessageWatcherCollector<any>[];
+}
+
 export type watcherCreateData = WatcherCreateData | Pick<CommandContext, "client" | "command" | "message" | "shardId">;
 
 export class YunaMessageWatcherController {
@@ -178,7 +183,7 @@ export class YunaMessageWatcherController {
         return true;
     }
 
-    *#getWatcherInstances(query: FindWatcherQuery) {
+    *#getWatcherInstances(query: FindWatcherQuery): Generator<WatcherQueryResult> {
         const searchFn = typeof query === "function" ? query : this.#baseSearch.bind(this, query);
 
         for (const val of this.collectors.values()) {
@@ -192,7 +197,7 @@ export class YunaMessageWatcherController {
         }
     }
 
-    findWatcherInstances(query: FindWatcherQuery) {
+    findWatcherInstances(query: FindWatcherQuery): WatcherQueryResult | undefined {
         return this.#getWatcherInstances(query).next().value;
     }
 

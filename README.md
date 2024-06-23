@@ -712,6 +712,8 @@ Using the `@Watch` decorator you would do it with the beforeCreate event, and wi
 })
 ```
 
+> Also, `Watch` is an alias for `Yuna.watchers` :)
+
 
 </details>
 
