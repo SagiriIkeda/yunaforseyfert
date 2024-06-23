@@ -549,7 +549,7 @@ And now it will be updated every time the message is edited!
    * It will be emitted before creating the watcher,
    * if you return `false` it will not be created.
    */
-  beforeCreate() {}
+  beforeCreate() {},
 
   /** 
    * when the user has removed or used an unrecognized prefix, or changed the command he was using.
@@ -651,26 +651,25 @@ Yuna.watchers.getFromContext(ctx)
 Find watchers from a query.
 
 ```ts
+/** 
+ * This method returns the key (id where it is stored) of the watcher, and its instances in an array. 
+ * @returns 
+ * {
+ *  id: string,
+ *  instances: MessageWatcher[]
+ * }
+ * */
 Yuna.watchers.findInstances(client, {
   /** query properties */
   userId: ctx.author.id,
   // messageId
   // channelId
   // guildId
-  // command: {Command | SubCommand}
+  // command {Command | SubCommand}
 })
 
 // the query can also be a callback that returns a boolean
 Yuna.watchers.findInstances(client, (watcher) => watcher.message.author.id === ctx.author.id)
-
-/** 
- * This method returns the key (id where it is stored) of the watcher, and its instances in an array. 
- * @example 
- * {
- *  id: string,
- *  instances: MessageWatcher[]
- * }
- * */
 ```
 
 - **`Yuna.watchers.getManyInstances`**

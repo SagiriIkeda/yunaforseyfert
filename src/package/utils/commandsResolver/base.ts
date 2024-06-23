@@ -15,6 +15,22 @@ interface YunaCommandsResolverData {
 
 type Config = YunaCommandsResolverConfig & { inMessage?: boolean };
 
+const getMatches = (query: string) => {
+    const result: RegExpMatchArray[] = [];
+    const values: string[] = [];
+
+    const matches = query.matchAll(/[^\s\x7F\n]+/g);
+
+    for (let i = 0; i < 3; i++) {
+        const match = matches.next().value as RegExpMatchArray | undefined;
+        if (!match) continue;
+        result.push(match);
+        values.push(match[0].toLowerCase());
+    }
+
+    return { result, values };
+};
+
 export function baseResolver(client: AvailableClients, query: string | string[], config: Config): YunaCommandsResolverData | undefined;
 export function baseResolver(client: AvailableClients, query: string | string[], config?: undefined): UsableCommand | undefined;
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: 🐧
@@ -24,10 +40,11 @@ export function baseResolver(
     config?: Config,
 ): UsableCommand | YunaCommandsResolverData | undefined {
     const metadata = (client as UseYunaCommandsClient)[commandsConfigKey];
-    const matchs = typeof query === "string" ? Array.from(query.matchAll(/[^\s\x7F\n]+/g)).slice(0, 3) : undefined;
 
-    const queryArray =
-        (matchs?.map(([val]) => val.toLowerCase()) ?? (Array.isArray(query) && query.slice(0, 3).map((t) => t.toLowerCase()))) || [];
+    const matchsData = typeof query === "string" ? getMatches(query) : undefined;
+    const matchs = matchsData?.result;
+
+    const queryArray = matchsData?.values ?? (Array.isArray(query) ? query.slice(0, 3) : []).map((t) => t.toLowerCase());
 
     if (!(queryArray.length && client.commands)) return;
 
@@ -39,7 +56,7 @@ export function baseResolver(
         metadata?.commands
             ? metadata.commands.find(searchFn)
             : client.commands.values.find((command) => command.type === ApplicationCommandType.ChatInput && searchFn(command))
-    ) as Exclude<YunaUsable, SubCommand> | undefined;
+    ) as YunaUsable<Command> | undefined;
 
     const shortcut = parentCommand ? undefined : metadata?.shortcuts.find(searchFn);
     const isGroupShortcut = shortcut?.type === ShortcutType.Group;
@@ -47,7 +64,8 @@ export function baseResolver(
     if (!(parentCommand || shortcut)) return;
 
     const getPadEnd = (id: number) => {
-        return matchs && matchs[id]?.index + matchs[id]?.[0]?.length;
+        const match = matchs?.[id];
+        return match && (match?.index ?? 0) + match[0]?.length;
     };
 
     const parentSubCommandsMetadata = parentCommand?.[keySubCommands];

@@ -1,6 +1,6 @@
 import type { LocaleString } from "discord-api-types/v10";
 import type { Command } from "seyfert";
-import type { Instantiable } from "./src/package/things";
+import type { Instantiable } from "./package/things";
 
 declare module "seyfert" {
     export interface SubCommand {

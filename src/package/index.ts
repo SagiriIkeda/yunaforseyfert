@@ -81,25 +81,26 @@ class BaseYuna {
         getController,
         /**  Get the list of `watchers` (there may be more than one) associated to a `CommandContext`. */
         getFromContext(ctx: CommandContext) {
-            return this.getController(ctx.client)?.getWatcherInstancesFromContext(ctx);
+            return getController(ctx.client)?.getWatcherInstancesFromContext(ctx);
         },
         /**
          * Find watchers from a query.
          * This method returns the key (id where it is stored) of the watcher, and its instances in an array.
          */
         findInstances(client: AvailableClients, query: FindWatcherQuery) {
-            return this.getController(client)?.findWatcherInstances(query);
+            return getController(client)?.findWatcherInstances(query);
         },
         /** Similar to `findInstances` but this one will filter through all, it is used in the same way, but it will return all matches */
         getManyInstances(client: AvailableClients, query: FindWatcherQuery) {
-            return this.getController(client)?.getManyWatcherInstances(query);
+            return getController(client)?.getManyWatcherInstances(query);
         },
         /**
          * Use it to know when a `CommandContext` is being observed.
          */
         isWatching(ctx: CommandContext) {
-            return this.getFromContext(ctx) !== undefined;
+            return Yuna.watchers.getFromContext(ctx) !== undefined;
         },
     };
 }
+
 export const Yuna = new BaseYuna();

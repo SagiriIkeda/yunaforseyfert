@@ -23,5 +23,5 @@
         "stripInternal": true
     },
     "exclude": ["node_modules"],
-    "include": ["src/**/*", "seyfert.d.ts"]
+    "include": ["src/**/*"]
 }
