@@ -3,7 +3,7 @@
         "module": "CommonJS",
         "target": "ES6",
         "strict": true,
-        "moduleResolution": "Node10",
+        "moduleResolution": "Node",
         "esModuleInterop": true,
         "experimentalDecorators": true,
         "declaration": true,

@@ -15,7 +15,7 @@ import { HandleCommand } from "seyfert/lib/commands/handle";
 import { describe, expect, test } from "vitest";
 import ChoicesNumberTestCommand, { ChoicesTestCommand } from "../bot-test/commands/choicesTest";
 import TestCommand from "../bot-test/commands/test";
-import { ParserRecommendedConfig, Yuna } from "../package";
+import { ParserRecommendedConfig, Yuna } from "../package/index";
 import type { YunaUsable } from "../package/things";
 import type { YunaParserCreateOptions } from "../package/utils/parser/createConfig";
 

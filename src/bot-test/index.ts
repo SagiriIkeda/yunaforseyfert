@@ -1,6 +1,6 @@
 import { Client } from "seyfert";
 import { HandleCommand } from "seyfert/lib/commands/handle";
-import { Yuna } from "../package";
+import { Yuna } from "../package/index";
 
 const client = new Client({
     commands: {

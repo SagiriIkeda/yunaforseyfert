@@ -1,6 +1,6 @@
 import { inspect } from "node:util";
 import { Command, type CommandContext, Declare, Embed, Options, createStringOption } from "seyfert";
-import { Yuna } from "../../package";
+import { Yuna } from "../../package/index.js";
 import { Watch } from "../../package/utils/messageWatcher/decorator";
 
 const options = {

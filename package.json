@@ -8,11 +8,9 @@
   "scripts": {
     "idx": "tsc && cd src/bot-test/ && node --env-file=.env ../../dist/bot-test/index.js",
     "yuna:publish": "mkdir -p .npm && npm run build && node dist/package/lib/prepublish.js && cp -r build .npm/build && cp -r types .npm/types",
-    "postpublish": "rm -rf .npm",
-    "publish": "npm run yuna:publish && cd .npm && npm publish",
+    "publish": "npm run yuna:publish && cd .npm && npm publish && cd .. && rm -rf .npm",
     "pack": "npm run yuna:publish && cd .npm && npm pack",
-    "prepare": "npx husky",
-    "postinstall": "npm run build",
+    "prepare": "npm run build && npx husky",
     "build:esbuild": "npx esbuild --bundle src/package/index.ts --minify --outdir=build --platform=node --packages=external",
     "build": "tsc && npm run build:esbuild",
     "tsc": "tsc",

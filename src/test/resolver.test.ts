@@ -7,7 +7,7 @@ import OtherCommand from "../bot-test/commands/account/other";
 import EvalCommand from "../bot-test/commands/eval";
 import PingCommand from "../bot-test/commands/ping";
 import TestCommand from "../bot-test/commands/test";
-import { Yuna } from "../package";
+import { Yuna } from "../package/index";
 import { type Instantiable, type YunaUsable, fallbackSubNameKey, keySubCommands } from "../package/things";
 import { type YunaGroup, prepareCommands } from "../package/utils/commandsResolver/prepare";
 import type { YunaCommandsResolverConfig } from "../package/utils/commandsResolver/resolver";

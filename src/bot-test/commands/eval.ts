@@ -5,7 +5,7 @@
 import { inspect } from "node:util";
 import { Command, type CommandContext, Declare, Embed, Options, createStringOption } from "seyfert";
 import { EmbedColors } from "seyfert/lib/common/index.js";
-import { ParserRecommendedConfig } from "../../package";
+import { ParserRecommendedConfig } from "../../package/index.js";
 import { DeclareParserConfig } from "../../package/utils/parser/createConfig";
 
 export const codeBlock = (language: string, code: string) => `\`\`\`${language}\n${code}\n\`\`\``;
