@@ -7,9 +7,7 @@
   "types": "./types/package/index.d.ts",
   "scripts": {
     "idx": "tsc && cd src/bot-test/ && node --env-file=.env ../../dist/bot-test/index.js",
-    "yuna:publish": "mkdir -p .npm && npm run build && node dist/package/lib/prepublish.js && cp -r build .npm/build && cp -r types .npm/types",
-    "publish": "npm run yuna:publish && cd .npm && npm publish && cd .. && rm -rf .npm",
-    "pack": "npm run yuna:publish && cd .npm && npm pack",
+    "yuna": "mkdir -p .npm && npm run build && node dist/package/lib/prepublish.js && cp -r build .npm/build && cp -r types .npm/types",
     "prepare": "npm run build && npx husky",
     "build:esbuild": "npx esbuild --bundle src/package/index.ts --minify --outdir=build --platform=node --packages=external",
     "build": "tsc && npm run build:esbuild",

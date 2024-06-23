@@ -7,6 +7,6 @@ const move = (src: string) => copyFileSync(src, `.npm/${src}`);
 
 writeFileSync(".npm/package.json", JSON.stringify(newPackageJSON, null, 4), "utf-8");
 
-const moveFiles = [".npmignore", "README.md", "seyfert.d.ts"];
+const moveFiles = [".npmignore", "README.md"];
 
 for (const file of moveFiles) move(file);
