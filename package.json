@@ -7,7 +7,7 @@
   "types": "./types/package/index.d.ts",
   "scripts": {
     "idx": "tsc && cd src/bot-test/ && node --env-file=.env ../../dist/bot-test/index.js",
-    "pre:publish": "mkdir -p .npm && npm run build && node dist/package/lib/prepublish.js && cp -r build .npm/build && cp -r types .npm/types",
+    "yuna:publish": "mkdir -p .npm && npm run build && node dist/package/lib/prepublish.js && cp -r build .npm/build && cp -r types .npm/types",
     "postpublish": "rm -rf .npm",
     "publish": "npm run pre:publish && cd .npm && npm publish",
     "pack": "npm run pre:publish && cd .npm && npm pack",
