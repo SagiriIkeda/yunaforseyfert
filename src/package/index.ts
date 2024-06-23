@@ -7,6 +7,7 @@ import type { FindWatcherQuery } from "./utils/messageWatcher/WatcherController.
 import { createController, createWatcher, getController } from "./utils/messageWatcher/controllerUtils.js";
 import type { YunaParserCreateOptions } from "./utils/parser/createConfig.js";
 import { YunaParser } from "./utils/parser/parser.js";
+import "./seyfert.js";
 
 export { Watch } from "./utils/messageWatcher/decorator.js";
 export { DeclareParserConfig } from "./utils/parser/createConfig.js";

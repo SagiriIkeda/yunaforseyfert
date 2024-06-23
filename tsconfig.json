@@ -3,7 +3,7 @@
         "module": "CommonJS",
         "target": "ES6",
         "strict": true,
-        "moduleResolution": "Node",
+        "moduleResolution": "Node10",
         "esModuleInterop": true,
         "experimentalDecorators": true,
         "declaration": true,
@@ -20,8 +20,8 @@
         "noErrorTruncation": true,
         "outDir": "./dist",
         "rootDir": "./src",
-        "stripInternal": true
+        "stripInternal": true,
     },
     "exclude": ["node_modules"],
-    "include": ["src/**/*"]
+    "include": ["src/**/*"],
 }

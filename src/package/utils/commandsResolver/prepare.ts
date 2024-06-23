@@ -1,6 +1,14 @@
 import { ApplicationCommandType } from "discord-api-types/v10";
 import { type Command, SubCommand, type UsingClient } from "seyfert";
-import { type AvailableClients, type Instantiable, type YunaUsable, fallbackSubNameKey, keyShortcut, keySubCommands } from "../../things";
+import {
+    type AvailableClients,
+    type Instantiable,
+    type YunaGroupType,
+    type YunaUsable,
+    fallbackSubNameKey,
+    keyShortcut,
+    keySubCommands,
+} from "../../things";
 import { baseResolver } from "./base";
 import { getFallbackCommandName } from "./decorators";
 import type { YunaCommandsResolverConfig } from "./resolver";
@@ -18,11 +26,9 @@ export type UseYunaCommandsClient = UsingClient & {
 export const ShortcutType = {
     Group: Symbol(),
 };
-export type YunaGroup = NonNullable<Command["groups"]> extends Record<string, infer R>
-    ? R & {
-          [fallbackSubNameKey]?: string;
-      }
-    : never;
+export type YunaGroup = YunaGroupType & {
+    [fallbackSubNameKey]?: string;
+};
 
 export interface GroupLink {
     name: string;
