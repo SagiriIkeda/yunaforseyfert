@@ -9,10 +9,10 @@
 
 You can do it using `npm` or another packager manager, i prefer use  `pnpm`
 
-```bash
+```sh
 pnpm add yunaforseyfert
 
-//or you can use the dev version!
+//or you can use the dev version
 pnpm add https://github.com/SagiriIkeda/yunaforsefyert
 ```
 
