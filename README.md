@@ -9,10 +9,13 @@
 
 You can do it using `npm` or another packager manager, i prefer use  `pnpm`
 
-```bash
+```
 pnpm add yunaforseyfert
+```
 
-//or you can use the dev version
+Or you can use the dev version:
+
+```
 pnpm add https://github.com/SagiriIkeda/yunaforsefyert
 ```
 
@@ -23,7 +26,7 @@ pnpm add https://github.com/SagiriIkeda/yunaforsefyert
     <h2 style="display: inline">YunaParser</h2>
     <br/>
     <blockquote style="padding-left:10px;margin-top:10px">
-    <i>A <strong>args parser for text commands</strong>,
+    <i>An <strong>args parser for text commands</strong>,
     which adds various syntax for more convenient use.</i>
     </blockquote>
   </summary>
@@ -103,11 +106,9 @@ export default class TestCommand extends Command {
 
 The command has two options `first` and `second`, in that order.
 
-
 For the parser, each word counts as an option, and will be added in the order of the command. That is, if we use the command in the following way:
 
 <img src="https://i.imgur.com/xdpSRIg.png" width="100%" />
-
 
 `ctx.options` will be return 
 ```json
@@ -144,7 +145,9 @@ Another case is that the option is the last or only one, in this case it will no
 You can use the following syntaxes:
 
 `--option` content
+
 `-option` content
+
 `option:` content
 
 Like this.
@@ -155,15 +158,12 @@ Also, if an option is of type `Boolean` , when used with only the `-option` or `
 
 <img src="https://i.imgur.com/T8JwCdY.png" width="100%" />
 
-
 ```jsonc
 {
   "first": "hello",
   "devmode": "true" // will later be converted to true.
 }
 ```
-
-
 
 #### Escaping characters
 
@@ -305,7 +305,6 @@ Also, if necessary, each command can use a specific configuration. For this, you
 ```js
 import { DeclareParserConfig } from "yunaforseyfert";
 
-
 const options = {
     first: createStringOption({
         description: "first option",
@@ -348,7 +347,7 @@ This will enable **disableLongTextTagsInLastOption** and **breakSearchOnConsumeA
   <br/>
 
   <blockquote style="padding-left:10px;margin-top:10px">
-  <i>a resolver, which provides some extra functions. </i>
+  <i>A resolver, which provides some extra functions. </i>
   </blockquote>
   </summary>
 
