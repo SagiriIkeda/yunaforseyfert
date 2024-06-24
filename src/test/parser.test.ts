@@ -1,21 +1,52 @@
+import type { APIUser } from "discord-api-types/v10";
+import {
+    Client,
+    Command,
+    Message,
+    type MessageData,
+    Options,
+    User,
+    type UsingClient,
+    createBooleanOption,
+    createStringOption,
+    createUserOption,
+} from "seyfert";
+import { HandleCommand } from "seyfert/lib/commands/handle";
 import { describe, expect, test } from "vitest";
 import ChoicesNumberTestCommand, { ChoicesTestCommand } from "../bot-test/commands/choicesTest";
 import TestCommand from "../bot-test/commands/test";
-import { ParserRecommendedConfig, YunaParser } from "../package";
-import type { YunaParserCreateOptions, YunaParserUsableCommand } from "../package/utils/parser/createConfig";
+import { ParserRecommendedConfig, Yuna } from "../package/index";
+import type { YunaUsable } from "../package/things";
+import type { YunaParserCreateOptions } from "../package/utils/parser/createConfig";
 
 const testCommand = new TestCommand();
 const choicesCommand = new ChoicesTestCommand();
 const choicesNumberCommand = new ChoicesNumberTestCommand();
 
+const client = new Client() as UsingClient;
+
 const testParser = (
     text: string,
     equalTo: Record<string, string>,
     config?: YunaParserCreateOptions,
-    command: YunaParserUsableCommand = testCommand,
+    command: YunaUsable = testCommand,
+    message?: Message,
 ) => {
-    return expect(YunaParser(config)(text, command)).toEqual(equalTo);
+    return expect(Yuna.parser(config).call(client.handleCommand, text, command, message)).toEqual(equalTo);
 };
+
+const YunaParser = Yuna.parser();
+class YunaHandleCommand extends HandleCommand {
+    argsParser = YunaParser;
+}
+
+client.setServices({ handleCommand: YunaHandleCommand });
+
+describe("assignation to seyfert", () => {
+    test("assignation", () => {
+        expect(client.handleCommand.argsParser).toBe(YunaParser);
+    });
+});
 
 describe("words", () => {
     test("one words", () => testParser("penguin world", { first: "penguin", second: "world" }));
@@ -47,7 +78,7 @@ describe("long text tags", () => {
             "\"penguin\" 'beautiful sentence'",
             { first: '"penguin"', second: "beautiful sentence" },
             {
-                enabled: {
+                syntax: {
                     longTextTags: ["`", "'"],
                 },
             },
@@ -62,7 +93,7 @@ describe("named options", () => {
             "-first test --second take this",
             { first: "test -", second: "take this" },
             {
-                enabled: {
+                syntax: {
                     namedOptions: ["-"],
                 },
             },
@@ -72,7 +103,7 @@ describe("named options", () => {
             "--first penguin life second: test --second take this",
             { first: "penguin life second: test", second: "take this" },
             {
-                enabled: {
+                syntax: {
                     namedOptions: ["-", "--"],
                 },
             },
@@ -138,5 +169,105 @@ describe("RecommendedConfig", () => {
         testParser('typescript "world" penguin', { first: "typescript", second: '"world" penguin' }, ParserRecommendedConfig.Eval);
         testParser('"typescript" "world" penguin', { first: "typescript", second: '"world" penguin' }, ParserRecommendedConfig.Eval);
         testParser(`"typescript" ${code}`, { first: "typescript", second: code }, ParserRecommendedConfig.Eval);
+    });
+});
+
+@Options({
+    first: createStringOption({
+        description: "pengu",
+        required: true,
+    }),
+    devmode: createBooleanOption({
+        description: "pengu",
+        required: true,
+    }),
+})
+class BaseBooleanCommand extends Command {}
+
+const BooleanCommand = new BaseBooleanCommand();
+
+describe("boolean: --option", () => {
+    test("--option", () => {
+        testParser("hello --devmode", { first: "hello", devmode: "true" }, undefined, BooleanCommand);
+        testParser("hello --devmode true", { first: "hello", devmode: "true" }, undefined, BooleanCommand);
+        testParser("hello --devmode false", { first: "hello", devmode: "false" }, undefined, BooleanCommand);
+    });
+});
+
+@Options({
+    user: createUserOption({
+        description: "pengu",
+        required: true,
+    }),
+    message: createStringOption({
+        description: "pengu",
+        required: true,
+    }),
+})
+class BaseUserCommand extends Command {}
+const UserCommand = new BaseUserCommand();
+
+const NoboAndJusto: APIUser = {
+    id: "391283181665517568",
+    username: "/**@時間*/ M",
+    discriminator: "0",
+    global_name: "pengu",
+    avatar: "penguin",
+};
+
+const Sagiwin: APIUser = {
+    id: "388415190225518602",
+    username: "sagiwin",
+    global_name: "pengu",
+    discriminator: "0",
+    avatar: "penguin",
+};
+
+const message = new Message(client, {
+    author: NoboAndJusto,
+    referenced_message: {
+        author: Sagiwin,
+    } as unknown as MessageData,
+    embeds: [],
+} as unknown as MessageData);
+
+describe("aggregateUserFromMessageReference", () => {
+    test("requirePing: false", () => {
+        testParser(
+            "happy day",
+            { user: Sagiwin.id, message: "happy day" },
+            { useRepliedUserAsAnOption: { requirePing: false } },
+            UserCommand,
+            message,
+        );
+    });
+    test("requirePing: true (not PING enabled)", () => {
+        testParser(
+            "happy day",
+            { user: "happy", message: "day" },
+            { useRepliedUserAsAnOption: { requirePing: true } },
+            UserCommand,
+            message,
+        );
+    });
+
+    test("requirePing: true (PING enabled)", () => {
+        message.mentions.users.push(new User(client, Sagiwin));
+        testParser(
+            "happy day",
+            { user: Sagiwin.id, message: "happy day" },
+            { useRepliedUserAsAnOption: { requirePing: true } },
+            UserCommand,
+            message,
+        );
+    });
+    test("without reply", () => {
+        testParser(
+            `${Sagiwin.id} happy day`,
+            { user: Sagiwin.id, message: "happy day" },
+            { useRepliedUserAsAnOption: { requirePing: true } },
+            UserCommand,
+            new Message(client, { author: NoboAndJusto, embeds: [] } as unknown as MessageData),
+        );
     });
 });

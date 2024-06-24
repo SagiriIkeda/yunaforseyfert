@@ -1,11 +1,12 @@
 node_modules
 
-.env
+*.env
 .vscode
 .gitignore
 .npmignore
 
 package-lock.json
+pnpm-lock.yaml
 seyfert.config.js
 tsconfig.json
 biome.json
@@ -15,4 +16,3 @@ biome.json
 
 dist
 src
-saves

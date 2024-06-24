@@ -15,7 +15,6 @@
                 "noEmptyBlockStatements": "off"
             },
             "style": {
-                
                 "noNonNullAssertion": "off",
                 "noParameterAssign": "off",
                 "noInferrableTypes": "off",
@@ -37,6 +36,7 @@
                 }
             },
             "correctness": {
+                "noNodejsModules": "off",
                 "noVoidTypeReturn": "off"
             },
             "security": {
