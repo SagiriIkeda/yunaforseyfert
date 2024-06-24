@@ -9,7 +9,7 @@
 
 You can do it using `npm` or another packager manager, i prefer use  `pnpm`
 
-```sh
+```bash
 pnpm add yunaforseyfert
 
 //or you can use the dev version
