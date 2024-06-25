@@ -8,6 +8,7 @@ import { YunaParser } from "./utils/parser/parser.js";
 import { YunaWatcherUtils } from "./utils/messageWatcher/watcherUtils.js";
 export { Watch } from "./utils/messageWatcher/watcherUtils.js";
 export { DeclareParserConfig } from "./utils/parser/createConfig.js";
+export { Shortcut } from "./utils/commandsResolver/decorators.js";
 
 export { createWatcher } from "./utils/messageWatcher/controllerUtils.js";
 

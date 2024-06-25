@@ -7,35 +7,39 @@
 
 # Installation 
 
-you can do it using `npm` or another packager manager, i prefer use  `pnpm`
+You can do it using `npm` or another packager manager, i prefer use  `pnpm`
 
 ```
 pnpm add yunaforseyfert
 ```
 
+Or you can use the dev version:
+
+```
+pnpm add https://github.com/SagiriIkeda/yunaforsefyert
+```
+
 # Features
 
 <details>
-
   <summary>
     <h2 style="display: inline">YunaParser</h2>
     <br/>
     <blockquote style="padding-left:10px;margin-top:10px">
-    <i> an <strong>args parser for text commands</strong>,
-    which adds various syntax for more convenient use of said commands,
-    to the standard one provided.</i>
+    <i>An <strong>args parser for text commands</strong>,
+    which adds various syntax for more convenient use.</i>
     </blockquote>
   </summary>
 
 ### Installation
 
-After you install `yunaforseyfert` you need to import `Yuna` like this
+After you install `yunaforseyfert` you need to import `Yuna` like this:
 
 ```js
 import { Yuna } from "yunaforseyfert";
 ```
 
-Then, you need to add it as seyfert's default argsParser, as follows
+Then, you need to add it as seyfert's default argsParser, as follows:
 
 ```js
 import { HandleCommand } from "seyfert/lib/commands/handle";
@@ -44,6 +48,7 @@ import { Yuna } from "yunaforseyfert";
 class YourHandleCommand extends HandleCommand {
     argsParser = Yuna.parser(); // Here are the settings, but that will be explained below
 }
+
 // your bot's client
 client.setServices({
     handleCommand: YourHandleCommand,
@@ -75,9 +80,7 @@ const options = {
 })
 @Options(options)
 export default class TestCommand extends Command {
-
   async run(ctx: CommandContext<typeof options>) { 
-
     const { first, second } = ctx.options;
 
     const embed = new Embed({
@@ -98,17 +101,14 @@ export default class TestCommand extends Command {
       embeds: [embed]
     });
   }
-
 }
 ```
 
 The command has two options `first` and `second`, in that order.
 
-
 For the parser, each word counts as an option, and will be added in the order of the command. That is, if we use the command in the following way:
 
 <img src="https://i.imgur.com/xdpSRIg.png" width="100%" />
-
 
 `ctx.options` will be return 
 ```json
@@ -142,7 +142,7 @@ Another case is that the option is the last or only one, in this case it will no
 
 **What if I want to use the options in the order I want or need?**
 
-you can use the following syntaxes
+You can use the following syntaxes:
 
 `--option` content
 
@@ -158,15 +158,12 @@ Also, if an option is of type `Boolean` , when used with only the `-option` or `
 
 <img src="https://i.imgur.com/T8JwCdY.png" width="100%" />
 
-
 ```jsonc
 {
   "first": "hello",
   "devmode": "true" // will later be converted to true.
 }
 ```
-
-
 
 #### Escaping characters
 
@@ -184,7 +181,7 @@ this will return:
 ```
 also this works with 
 
-`"` `'` **\`** 
+`"` `'` `\``
 
 `:` `-` `--` *(in named options)*
 
@@ -308,7 +305,6 @@ Also, if necessary, each command can use a specific configuration. For this, you
 ```js
 import { DeclareParserConfig } from "yunaforseyfert";
 
-
 const options = {
     first: createStringOption({
         description: "first option",
@@ -334,7 +330,6 @@ This can be used as
 ```js
 import { DeclareParserConfig, ParserRecommendedConfig } from "yunaforseyfert";
 
-
 @DeclareParserConfig(ParserRecommendedConfig.Eval)
 ```
 This will enable **disableLongTextTagsInLastOption** and **breakSearchOnConsumeAll**. Things that I consider necessary in an eval.
@@ -352,7 +347,7 @@ This will enable **disableLongTextTagsInLastOption** and **breakSearchOnConsumeA
   <br/>
 
   <blockquote style="padding-left:10px;margin-top:10px">
-  <i>a resolver, which provides some extra functions. </i>
+  <i>A resolver, which provides some extra functions. </i>
   </blockquote>
   </summary>
 
@@ -389,11 +384,11 @@ yourBotClient.setServices({
 
 After this, you are ready to enjoy the following advantages!
 
-### Case insensitive
+### Case Insensitive
 
-> use your commands regardless of case , it will sound stupid in some cases
+> Ise your commands regardless of case, it will sound stupid in some cases
 > 
-> but I have seen users try to use them with capital letters. 🐧
+> But I have seen users try to use them with capital letters. 🐧
 
 ### Shortcuts 
 
@@ -517,7 +512,7 @@ export default class ParentCommand extends Command {}
 
 You have some ways to use it, use whichever you prefer. They are practically the same.
 
-#### `@Watch` Decorator Way
+#### Using the `@Watch` decorator:
 
 ```ts
 import { Watch } from "yunaforseyfert";
@@ -566,7 +561,7 @@ And now it will be updated every time the message is edited!
 ```
 
 
-#### `createWatcher` function Way
+#### Using the `createWatcher` function:
 
 ```ts
 import { createWatcher } from "yunaforseyfert";
@@ -578,7 +573,6 @@ import { createWatcher } from "yunaforseyfert";
 export default class TestCommand extends Command {
   // example
   async run(ctx: CommandContext<typeof options>) {
-
     const msg = await ctx.editOrReply({ content: ctx.options.text });
 
     // checks that there is a message to be observed
@@ -771,7 +765,6 @@ Also the `enabled` configuration of the `Yuna.parser` has been renamed to `synta
 ```
 
 </details>
-
 <br/>
 
 
@@ -779,4 +772,3 @@ Also the `enabled` configuration of the `Yuna.parser` has been renamed to `synta
     Thanks for read and using yunaforseyfert!
     By SagiriIkeda with 🐧❤️
 ```
-
