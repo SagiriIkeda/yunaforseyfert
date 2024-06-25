@@ -1,10 +1,11 @@
-# yunaforseyfert
+<center>
+<img src="https://i.imgur.com/brbipcY.png" alt="yunaforseyfert"  style="max-width: 80%; padding-bottom: 30px"/>
+</center>
 
-this really is for me and my friends. (my first enemies)
+> ` yunaforseyfert ` it's a package that tries to bring the features of my bot, but for seyfert, at a really slow pace. 
+> *This really is for me and my friends. **(my first enemies)***
 
-yunaforseyfert, it's a package that tries to bring the features of my bot, but for seyfert, at a really slow pace
-
-# installation 
+# Installation 
 
 you can do it using `npm` or another packager manager, i prefer use  `pnpm`
 
@@ -14,27 +15,40 @@ pnpm add yunaforseyfert
 
 # Features
 
-## YunaParser 
+<details>
 
-An **args parser for text commands**, which adds various syntax for more convenient use of said commands, to the standard one provided.
+  <summary>
+    <h2 style="display: inline">YunaParser</h2>
+    <br/>
+    <blockquote style="padding-left:10px;margin-top:10px">
+    <i> an <strong>args parser for text commands</strong>,
+    which adds various syntax for more convenient use of said commands,
+    to the standard one provided.</i>
+    </blockquote>
+  </summary>
 
 ### Installation
 
-After you install `yunaforseyfert` you need to import `YunaParser` like this
+After you install `yunaforseyfert` you need to import `Yuna` like this
 
 ```js
-import { YunaParser } from "yunaforseyfert"
+import { Yuna } from "yunaforseyfert";
 ```
 
 Then, you need to add it as seyfert's default argsParser, as follows
 
 ```js
+import { HandleCommand } from "seyfert/lib/commands/handle";
+import { Yuna } from "yunaforseyfert";
+
+class YourHandleCommand extends HandleCommand {
+    argsParser = Yuna.parser(); // Here are the settings, but that will be explained below
+}
 // your bot's client
-new Client({ 
-    commands: {
-        argsParser: YunaParser() // Here are the settings, but that will be explained below
-    }
+client.setServices({
+    handleCommand: YourHandleCommand,
 });
+
 ```
 
 And now, the magic will begin!
@@ -108,7 +122,7 @@ But, if i want to use more than one word?
 
 You can use the following syntax
 
-`"your words"` `'yout beutiful sentence'` **\`penguin world\`**
+`"your words"` `'your beutiful sentence'` **\`penguin world\`**
 
 <img src="https://i.imgur.com/Us2zi3V.png" width="100%" />
 
@@ -120,7 +134,7 @@ it will return
     "second": "your beatiful sentence"
 }
 ```
-Another case is that the option is the last or only one, in this case it will not be necessary to use "" and all the remaining content will be taken as the option, Example:
+Another case is that the option is the last or only one, in this case it will not be necessary to use "" and all the remaining content will be taken as the option. Example:
 
 <img src="https://i.imgur.com/MayfQbj.png" width="100%" />
 
@@ -139,6 +153,19 @@ you can use the following syntaxes
 Like this.
 
 <img src="https://i.imgur.com/6olfDEu.png" width="100%" />
+
+Also, if an option is of type `Boolean` , when used with only the `-option` or `--option` syntax with nothing else following it, it will return true. Example:
+
+<img src="https://i.imgur.com/T8JwCdY.png" width="100%" />
+
+
+```jsonc
+{
+  "first": "hello",
+  "devmode": "true" // will later be converted to true.
+}
+```
+
 
 
 #### Escaping characters
@@ -164,23 +191,23 @@ also this works with
 `/` *(in urls, like https://)*
 
 ### Config
-The configurations allow changing the behavior of the parser; this is done when using `YunaParser` The allowed ones are as follows:
+The configurations allow changing the behavior of the parser; this is done when using `Yuna.parser` The allowed ones are as follows:
 
 ```ts
-YunaParser({
+Yuna.parser({
     /**
      * this only show console.log with the options parsed.
      * @default false */
     logResult: false,
-
-    enabled: {
+    /** syntaxes enabled */
+    syntax: {
         /** especify what longText tags you want
          *
          * " => "penguin life"
          *
          * ' => 'beautiful sentence'
          *
-         * ` => `LiSA『Shouted Serenade』 is a good song`
+         * ` => `Eve『Insomnia』 is a good song`
          *
          * @default 🐧 all enabled
          */
@@ -232,6 +259,17 @@ YunaParser({
          */
         canUseDirectlyValue: true;
     };
+
+    /** If the first option is of the 'User' type,
+     *  it can be taken as the user to whom the message is replying.
+     *  @default {null} (not enabled)
+     */
+    useRepliedUserAsAnOption: {
+        /** need to have the mention enabled (@PING)
+         * @default {false}
+         */
+        requirePing: false;
+    };
 })
 ```
 
@@ -249,6 +287,21 @@ YunaParser({
 
 
 <img src="https://i.imgur.com/2BNIBIx.png" width="100%" />
+
+
+**useRepliedUserAsAnOption**
+
+> Suppose we have a command with two options, `user` and `message`. As long as we have the `useRepliedUserAsAnOption` option set, the `user` option will be taken as the user to whom the message is replying, and the other options (if any) will be used normally in the message. In case you are not replying to any message `user` will have to be specified in the message, as it is normally. Example:
+
+**replying example**
+
+
+<img src="https://i.imgur.com/7aujz0w.png" width="100%" />
+
+**not replying example**
+
+
+<img src="https://i.imgur.com/llpFwE9.png" width="100%" />
 
 Also, if necessary, each command can use a specific configuration. For this, you can use the `@DeclareParserConfig` decorator
 
@@ -290,9 +343,440 @@ This will enable **disableLongTextTagsInLastOption** and **breakSearchOnConsumeA
 ### "Demostration" thanks to @justo
 <img src="https://i.imgur.com/cRrLoG2.gif" width="100%" />
 
-> ```
-> Thanks for read and using yunaforseyfert!
-> By SagiriIkeda with 🐧
-> ```
+</details>
 
+<details>
+
+  <summary>
+  <h2 style="display: inline">YunaCommandsResolver</h2>
+  <br/>
+
+  <blockquote style="padding-left:10px;margin-top:10px">
+  <i>a resolver, which provides some extra functions. </i>
+  </blockquote>
+  </summary>
+
+### Installation
+
+Set `Yuna.resolve` as the default `resolveCommandFromContent` of seyfert, as follows:
+
+```js
+
+import { HandleCommand } from "seyfert/lib/commands/handle";
+import { Yuna } from "yunaforseyfert";
+
+class YourHandleCommand extends HandleCommand {
+
+  resolveCommandFromContent = Yuna.resolver({
+      /**
+       * You need to pass the client in order to prepare the commands that the resolver will use.
+      */
+      client: this.client,
+      /**
+       * Event to be emitted each time the commands are prepared.
+      */
+      afterPrepare: (metadata) => {
+          this.client.logger.debug(`Ready to use ${metadata.commands.length} commands !`);
+      },
+  });
+
+}
+
+yourBotClient.setServices({
+  handleCommand: YourHandleCommand,
+});
+```
+
+After this, you are ready to enjoy the following advantages!
+
+### Case insensitive
+
+> use your commands regardless of case , it will sound stupid in some cases
+> 
+> but I have seen users try to use them with capital letters. 🐧
+
+### Shortcuts 
+
+Accesses a subcommand or group, without the need to place the parent command. For example, you would normally access it as `music play`, now you can access it directly as `play`.
+
+To configure it in your subcommands, you must use the `@Shortcut` decorator.
+
+```ts
+import { Shortcut } from "yunaforseyfert";
+
+@Declare({
+    name: "example",
+    description: "example subCommand",
+})
+@Group("penguin")
+@Shortcut()
+export default class ExampleSubCommand extends SubCommand {
+    // ...
+}
+
+```
+And now it can be accessed directly as `example` without the parent command.
+
+In groups the configuration is as follows, you must add the `shortcut` property as `true` in your group. Example:
+
+```ts
+/** ... */
+@Groups({
+  penguin: {
+      defaultDescription: "penguin group",
+      shortcut: true,
+  }
+})
+export default class ParentCommand extends Command {}
+```
+
+And now the subCommand shown above can also be accessed as `penguin example` without the parent.
+
+### fallbackSubCommand
+
+Used to access a default subcommand, in case one is not found.
+
+Suppose you have the following command structure:
+
+```
+- parent
+    - sub1
+    - group
+        - sub
+    - sub2
+    - sub3
+ ```
+
+And the user has tried to use `parent sub4`
+
+since that subcommand does not exist, `sub1` (or another specified one, but by default it will be the first one, from the parent or group) will be used.
+
+It is also useful to use a subcommand without placing its name.
+
+To enable this feature globally, when using `Yuna.resolve`, add the `useFallbackSubCommand` property as `true`. Example:
+
+```ts
+Yuna.resolver({
+  //...
+  useFallbackSubCommand: true,
+})
+```
+
+### Note
+
+For the correct functioning of the resolver the commands must be prepared, this is done by default after they are all loaded or reloaded. But if you reload a specific Command/SubCommand it is recommended that you reprepare the commands manually, this can be done by:
+
+```ts 
+import { Yuna } from "yunaforseyfert"
+
+Yuna.commands.prepare(client /* your bot's client */)
+```
+
+It can also be enabled/disabled on a specific parent command using the `@DeclareFallbackSubCommand` decorator as follows:
+
+```ts
+import { DeclareFallbackSubCommand } from "yunaforseyfert";
+import PrimarySubCommand from "./primary.js"
+
+@Options([PrimarySubCommand, /* ...*/])
+@DeclareFallbackSubCommand(PrimarySubCommand) // You must pass the class of the subCommand that will be taken by default, or null to disable this feature.
+export default class ParentCommand extends Command {}
+```
+
+In a group it is established as follows: 
+
+```ts
+import PrimaryGroupSubCommand from "./penguin/primary.js"
+
+/** ... */
+@Groups({
+  penguin: {
+      defaultDescription: "penguin group",
+      fallbackSubCommand: PrimaryGroupSubCommand,
+  }
+})
+export default class ParentCommand extends Command {}
+```
+
+
+
+
+</details>
+
+<details>
+
+  <summary>
+  <h2 style="display: inline">MessageWatcher</h2>
+  <br/>
+  <blockquote style="padding-left:10px;margin-top:10px">
+  <i>A simple solution to be able to manage when a message is edited and update the command options. </i>
+  </blockquote>
+  </summary>
+
+### Implementation and Usage
+
+You have some ways to use it, use whichever you prefer. They are practically the same.
+
+#### `@Watch` Decorator Way
+
+```ts
+import { Watch } from "yunaforseyfert";
+
+/** ... */
+@Options(options)
+export default class TestCommand extends Command {
+  // example
+  @Watch({ time: 100_000  /** 100s */  })
+  async run(ctx: CommandContext<typeof options>) {
+    ctx.editOrReply({ content: ctx.options.text });
+  }
+}
+```
+And now it will be updated every time the message is edited!
+
+##### `@Watch` options 
+
+```ts
+@Watch({
+  filter(ctx) { return true },
+  time: 100_000,
+  /** Downtime until the watcher stops. */
+  idle: 10_000, 
+
+  // others optionally events
+
+  /**
+   * It will be emitted before creating the watcher,
+   * if you return `false` it will not be created.
+   */
+  beforeCreate(ctx) {},
+
+  /** 
+   * when the user has removed or used an unrecognized prefix, or changed the command he was using.
+    * reason can be: "UnspecifiedPrefix" | "CommandChanged"
+  */
+  onUsageError(error) { console.log({ error }) },
+  /** when there was an error when parsing options */
+  onOptionsError(error) { console.log({ error }) },
+
+  onStop(reason) { 
+    this.ctx.editOrReply({ content: `watcher stopped by reason: ${reason}` }) 
+  },
+})
+```
+
+
+#### `createWatcher` function Way
+
+```ts
+import { createWatcher } from "yunaforseyfert";
+
+// and now use it in your commands in the following way
+
+/** ... */
+@Options(options)
+export default class TestCommand extends Command {
+  // example
+  async run(ctx: CommandContext<typeof options>) {
+
+    const msg = await ctx.editOrReply({ content: ctx.options.text });
+
+    // checks that there is a message to be observed
+    if(!msg || !ctx.message) return;
+
+    const watcher = createWatcher(ctx, {
+      // how long will the watcher last
+      time: 100_000,
+      // you also have the idle property
+    });
+
+    // Find out when the message has changed and get the new options.
+    watcher.onChange((options) => {
+      msg.edit({ content: options.text });
+    });
+
+    // others optionally events
+    watcher.onStop((reason) => {
+      ctx.write({ content: `watcher stopped by reason: ${reason}` });
+    })
+
+    watcher.onOptionsError((error) => console.log({ error }))
+
+    watcher.onUsageError((reason) => console.log({ reason }))
+
+    // to stop a watcher use
+    watcher.stop("reason")
+
+  }
+}
+
+
+```
+
+if necessary you can also create a watcher as follows
+
+```ts
+createWatcher<typeof options>({
+  client, // your client
+  command, // used command
+  message, // msg
+}, { 
+  /* options...*/ 
+})
+```
+
+#### `Yuna.watchers` utils
+
+- **`Yuna.watchers.createController`**
+
+By default all watchers are stored in a `Map`, but if you wanted to you could use a `LimitedCollection` as follows:
+
+```ts
+import { LimitedCollection } from "seyfert";
+
+Yuna.watchers.createController({
+  client, // your bot's client
+  cache: new LimitedCollection( /** your settings */)
+})
+```
+- **`Yuna.watchers.getFromContext`**
+
+Get the list of `watchers` (there may be more than one) associated to a `CommandContext`
+
+```ts
+Yuna.watchers.getFromContext(ctx)
+```
+- **`Yuna.watchers.findInstances`**
+
+Find watchers from a query.
+
+```ts
+/** 
+ * This method returns the key (id where it is stored) of the watcher, and its instances in an array. 
+ * @returns 
+ * {
+ *  id: string,
+ *  instances: MessageWatcher[]
+ * }
+ * */
+Yuna.watchers.findInstances(client, {
+  /** query properties */
+  userId: ctx.author.id,
+  // messageId
+  // channelId
+  // guildId
+  // command {Command | SubCommand}
+})
+
+// the query can also be a callback that returns a boolean
+Yuna.watchers.findInstances(client, (watcher) => watcher.message.author.id === ctx.author.id)
+```
+
+- **`Yuna.watchers.getManyInstances`**
+
+Similar to `findInstances` but this one will filter through all, it is used in the same way, but it will return all matches with the following type:
+```ts
+{
+ id: string,
+ instances: MessageWatcher[]
+}[]
+```
+
+- **`Yuna.watchers.isWatching`**
+
+Use it to know when a `CommandContext` is being observed.
+
+- **`Use example`**
+
+Suppose you want to limit that a user can only have one watcher at a time in your command.
+
+Using the `@Watch` decorator you would do it with the beforeCreate event, and with `createWatcher` before executing that function.  Example with the `beforeCreate`
+
+```ts
+@Watch({
+  idle: 10_000,
+  beforeCreate(ctx) {
+    // Get some watcher associated to the user in this command
+    const userWatcher = Yuna.watchers.findInstances(ctx.client, {
+        userId: ctx.author.id,
+        command: this, // this refers to the Command
+    });
+
+    // If not, we do not proceed.
+    if (!userWatcher) return;
+    //From there, get the first MessageWatcher of the previous message (the one we want to stop watching).
+    const [watcher] = userWatcher.instances;
+    // stop all instances of that message.
+    watcher?.stopAll("AnotherInstanceCreated");
+  }
+})
+```
+
+> Also, `Watch` is an alias for `Yuna.watchers` :)
+
+
+</details>
+
+<br/>
+
+And more **features** coming soon! ***(not so soon)*** 🐧
+
+
+# FAQ
+
+<details>
+
+  <summary>
+  <h2 style="display: inline">Migrate from &lt;v0.10 to v1.0 (and Seyfert v1 to v2)</h2>
+  </summary>
+
+The way to set the `argsParser` has changed in `seyfert v2`, it has also changed its name
+now it should be done as follows:
+
+  ```diff
+- import { YunaParser } from "yunaforseyfert";
+- 
+- // your bot's client
+- new Client({ 
+-     commands: {
+-         argsParser: YunaParser() // Here are the settings
+-     }
+- });
++ import { HandleCommand } from "seyfert/lib/commands/handle";
++ import { Yuna } from "yunaforseyfert";
++ 
++ const client = new Client();
++ 
++ class YourHandleCommand extends HandleCommand {
++     argsParser = Yuna.parser(); // Here are the settings
++ }
++ 
++ client.setServices({
++     handleCommand: YourHandleCommand,
++ });
+  ```
+
+Also the `enabled` configuration of the `Yuna.parser` has been renamed to `syntax`.
+```diff
+- YunaParser({
+-   enabled: {
+-     // ...
+-   }
+- })
++ Yuna.parser({
++   syntax: {
++     // ...
++   }
++ })
+```
+
+</details>
+
+<br/>
+
+
+```
+    Thanks for read and using yunaforseyfert!
+    By SagiriIkeda with 🐧❤️
+```
 
