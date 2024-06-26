@@ -2,16 +2,17 @@ import { ApplicationCommandOptionType } from "discord-api-types/v10";
 import type { Command, Message, SubCommand } from "seyfert";
 import type { HandleCommand } from "seyfert/lib/commands/handle";
 import type { ArgsResult } from "../../things";
+import { YunaParserCommandMetaData } from "./CommandMetaData";
 import { YunaParserOptionsChoicesResolver } from "./choicesResolver";
 import {
     type CommandOptionWithType,
     RemoveFromCheckNextChar,
     RemoveLongCharEscapeMode,
     RemoveNamedEscapeMode,
+    type ValidNamedOptionSyntax,
     type YunaParserCreateOptions,
     createConfig,
     createRegexes,
-    getYunaMetaDataFromCommand,
 } from "./createConfig";
 
 const InvalidTagsToBeLong = new Set(["-", ":"]);
@@ -47,9 +48,11 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
     const globalConfig = createConfig(config);
     const globalRegexes = createRegexes(globalConfig);
 
+    const globalVNS = YunaParserCommandMetaData.getValidNamedOptionSyntaxes(globalConfig);
+
     // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: omitting this rule the life is better
     return function (this: HandleCommand, content: string, command: Command | SubCommand, message?: Message): Record<string, string> {
-        const commandMetadata = getYunaMetaDataFromCommand(command);
+        const commandMetadata = YunaParserCommandMetaData.from(command);
 
         const { iterableOptions, options, choices } = commandMetadata;
 
@@ -63,7 +66,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
         let { checkNextChar } = regexes;
 
-        const validNamedOptionSyntaxes = Object.fromEntries(config.syntax?.namedOptions?.map((t) => [t, true]) ?? []);
+        const validNamedOptionSyntaxes = commandMetadata.vns ?? globalVNS;
 
         const { breakSearchOnConsumeAllOptions, useUniqueNamedSyntaxAtSameTime, disableLongTextTagsInLastOption } = config;
 
@@ -232,6 +235,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
         };
 
         for (const match of matches) {
+            if (!match.groups) break;
             if (actualOptionIdx >= iterableOptions.length && breakSearchOnConsumeAllOptions) break;
 
             const _isRecentlyCosedAnyTag = isRecentlyClosedAnyTag;
@@ -239,18 +243,76 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
             const { index = 0, groups } = match;
 
-            const { tag, value, backescape, named } = groups ?? {};
+            const { tag, value, backescape, named } = groups;
+
+            if (!(lastestLongWord && namedOptionInitialized)) {
+                if (value && tagOpenWith === null) {
+                    const placeIsForLeft = !(_isRecentlyCosedAnyTag || unindexedRightText || spacesRegex.test(content[index - 1]));
+
+                    if (placeIsForLeft && lastOptionNameAdded) {
+                        argsResult[lastOptionNameAdded] += value;
+                        continue;
+                    }
+
+                    const aggregated = aggregateNextOption(value, index);
+
+                    if (!aggregated) break;
+                }
+                if (tag) {
+                    const isDisabledLongTextTagsInLastOption =
+                        disableLongTextTagsInLastOption && actualOptionIdx >= iterableOptions.length - 1;
+                    const isInvalidTag = InvalidTagsToBeLong.has(tag);
+
+                    if (isEscapingNext) {
+                        isEscapingNext = false;
+                        if (!tagOpenWith) {
+                            aggregateUnindexedText(index, tag, "/", undefined, undefined, _isRecentlyCosedAnyTag);
+                        }
+                    } else if (isInvalidTag || isDisabledLongTextTagsInLastOption) {
+                        aggregateUnindexedText(index, tag, "", undefined, undefined, _isRecentlyCosedAnyTag);
+                        continue;
+                    } else if (!tagOpenWith) {
+                        tagOpenWith = tag as unknown as typeof tagOpenWith;
+                        tagOpenPosition = index + 1;
+                    } else if (tagOpenWith === tag && tagOpenPosition) {
+                        aggregateTagLongText(tag, tagOpenPosition, index);
+                    }
+
+                    continue;
+                }
+                if (backescape) {
+                    const isDisabledLongTextTagsInLastOption =
+                        disableLongTextTagsInLastOption && actualOptionIdx >= iterableOptions.length - 1;
+
+                    const { length } = backescape;
+
+                    const nextChar = content[index + length];
+
+                    const { isPossiblyEscapingNext, strRepresentation } = evaluateBackescapes(
+                        backescape,
+                        nextChar,
+                        checkNextChar,
+                        isDisabledLongTextTagsInLastOption,
+                    );
+
+                    if (isPossiblyEscapingNext) isEscapingNext = true;
+
+                    strRepresentation &&
+                        aggregateUnindexedText(index, strRepresentation, "", backescape, undefined, _isRecentlyCosedAnyTag);
+                }
+            }
 
             if (named && !tagOpenWith) {
-                const { hyphens, hyphensname, dots, dotsname } = groups ?? {};
+                const { hyphens, hyphensname, dots, dotsname } = groups;
 
                 const [, , backescapes] = match;
 
                 const tagName = hyphensname ?? dotsname;
+                const typeUsed = (hyphens ?? dots) as ValidNamedOptionSyntax;
 
-                const zeroTagUsed = (hyphens ?? dots)[0] as "-" | ":";
+                const zeroTagUsed = typeUsed[0] as ValidNamedOptionSyntax[0];
 
-                const isValidTag = validNamedOptionSyntaxes[hyphens ?? dots] === true;
+                const isValidTag = validNamedOptionSyntaxes[typeUsed] === true;
 
                 if (isValidTag && !namedOptionTagUsed && config.useUniqueNamedSyntaxAtSameTime) {
                     namedOptionTagUsed = zeroTagUsed;
@@ -289,65 +351,6 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                     start: index + named.length,
                     dotted: dotsname !== undefined,
                 };
-
-                continue;
-            }
-
-            if (lastestLongWord || namedOptionInitialized) continue;
-
-            if (backescape) {
-                const isDisabledLongTextTagsInLastOption = disableLongTextTagsInLastOption && actualOptionIdx >= iterableOptions.length - 1;
-
-                const { length } = backescape;
-
-                const nextChar = content[index + length];
-
-                const { isPossiblyEscapingNext, strRepresentation } = evaluateBackescapes(
-                    backescape,
-                    nextChar,
-                    checkNextChar,
-                    isDisabledLongTextTagsInLastOption,
-                );
-
-                if (isPossiblyEscapingNext) isEscapingNext = true;
-
-                strRepresentation && aggregateUnindexedText(index, strRepresentation, "", backescape, undefined, _isRecentlyCosedAnyTag);
-                continue;
-            }
-
-            if (tag) {
-                const isDisabledLongTextTagsInLastOption = disableLongTextTagsInLastOption && actualOptionIdx >= iterableOptions.length - 1;
-                const isInvalidTag = InvalidTagsToBeLong.has(tag);
-
-                if (isEscapingNext) {
-                    isEscapingNext = false;
-                    if (!tagOpenWith) {
-                        aggregateUnindexedText(index, tag, "/", undefined, undefined, _isRecentlyCosedAnyTag);
-                    }
-                } else if (isInvalidTag || isDisabledLongTextTagsInLastOption) {
-                    aggregateUnindexedText(index, tag, "", undefined, undefined, _isRecentlyCosedAnyTag);
-                    continue;
-                } else if (!tagOpenWith) {
-                    tagOpenWith = tag as unknown as typeof tagOpenWith;
-                    tagOpenPosition = index + 1;
-                } else if (tagOpenWith === tag && tagOpenPosition) {
-                    aggregateTagLongText(tag, tagOpenPosition, index);
-                }
-
-                continue;
-            }
-
-            if (value && tagOpenWith === null) {
-                const placeIsForLeft = !(_isRecentlyCosedAnyTag || unindexedRightText || spacesRegex.test(content[index - 1]));
-
-                if (placeIsForLeft && lastOptionNameAdded) {
-                    argsResult[lastOptionNameAdded] += value;
-                    continue;
-                }
-
-                const aggregated = aggregateNextOption(value, index);
-
-                if (!aggregated) break;
             }
         }
 

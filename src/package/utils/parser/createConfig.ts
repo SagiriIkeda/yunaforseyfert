@@ -1,10 +1,9 @@
 import type { ApplicationCommandOptionType } from "discord-api-types/v10";
 import type { CommandOption } from "seyfert";
-import { type YunaUsable, keyConfig, keyMetadata } from "../../things";
-import { YunaParserCommandMetaData } from "./CommandMetaData";
+import { keyConfig } from "../../things";
 
 type ValidLongTextTags = "'" | '"' | "`";
-type ValidNamedOptionSyntax = "-" | "--" | ":";
+export type ValidNamedOptionSyntax = "-" | "--" | ":";
 export type CommandOptionWithType = CommandOption & { type: ApplicationCommandOptionType };
 
 export interface YunaParserCreateOptions {
@@ -116,9 +115,9 @@ export const RemoveLongCharEscapeMode = (EscapeMode: EscapeModeType) => {
     return EscapeMode;
 };
 
-export const createRegexes = ({ syntax: enabled }: YunaParserCreateOptions) => {
-    const hasAnyLongTextTag = (enabled?.longTextTags?.length ?? 0) >= 1;
-    const hasAnyNamedSyntax = (enabled?.namedOptions?.length ?? 0) >= 1;
+export const createRegexes = ({ syntax }: YunaParserCreateOptions) => {
+    const hasAnyLongTextTag = (syntax?.longTextTags?.length ?? 0) >= 1;
+    const hasAnyNamedSyntax = (syntax?.namedOptions?.length ?? 0) >= 1;
 
     const hasAnyEspecialSyntax = hasAnyNamedSyntax || hasAnyLongTextTag;
 
@@ -128,12 +127,12 @@ export const createRegexes = ({ syntax: enabled }: YunaParserCreateOptions) => {
 
     const syntaxes: string[] = [];
 
-    const has1HaphenSyntax = enabled?.namedOptions?.includes("-");
-    const has2HaphenSyntax = enabled?.namedOptions?.includes("--");
-    const hasDottedSyntax = enabled?.namedOptions?.includes(":");
+    const has1HaphenSyntax = syntax?.namedOptions?.includes("-");
+    const has2HaphenSyntax = syntax?.namedOptions?.includes("--");
+    const hasDottedSyntax = syntax?.namedOptions?.includes(":");
 
     const escapedLongTextTags =
-        enabled?.longTextTags
+        syntax?.longTextTags
             ?.map((tag) => {
                 escapeModes[tag!] = new RegExp(`(\\\\+)([${tag}\\s]|$)`, "g");
 
@@ -265,18 +264,4 @@ export const mergeConfig = (c1: YunaParserCreateOptions, c2: YunaParserCreateOpt
     }
 
     return result;
-};
-
-export const getYunaMetaDataFromCommand = (command: YunaUsable) => {
-    const InCommandMetadata = command[keyMetadata];
-
-    const base = command.constructor;
-
-    if (InCommandMetadata && InCommandMetadata?.base === base) return InCommandMetadata;
-
-    const metadata = new YunaParserCommandMetaData(command);
-
-    command[keyMetadata] = metadata;
-
-    return metadata;
 };
