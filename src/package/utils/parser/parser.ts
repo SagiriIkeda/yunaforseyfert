@@ -65,39 +65,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
         const config = commandMetadata.getConfig(globalConfig);
 
-        const regexes = commandMetadata.regexes ?? globalRegexes;
-
-        const { elementsRegex, escapeModes: __realEscapeModes } = regexes;
-
-        let { checkNextChar } = regexes;
-
-        const validNamedOptionSyntaxes = commandMetadata.vns ?? globalVNS;
-
-        const { breakSearchOnConsumeAllOptions, useUniqueNamedSyntaxAtSameTime, disableLongTextTagsInLastOption } = config;
-
-        const localEscapeModes = { ...__realEscapeModes };
-
-        const matches = content.matchAll(elementsRegex);
-
-        let tagOpenWith: '"' | "'" | "`" | "-" | null = null;
-        let tagOpenPosition: number | null = null;
         let actualOptionIdx = 0;
-        let isEscapingNext = false;
-        let unindexedRightText = "";
-
-        let namedOptionTagUsed: string | undefined;
-
-        let namedOptionInitialized: {
-            name: string;
-            start: number;
-            dotted: boolean;
-        } | null = null;
-
-        let lastestLongWord: { start: number; name: string; unindexedRightText: string } | undefined;
-
-        let lastOptionNameAdded: string | undefined;
-        let isRecentlyClosedAnyTag = false;
-
         const argsResult: ArgsResult = {};
 
         // aggregateUserFromMessageReference
@@ -122,6 +90,38 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             config.logResult && logResult(this, argsResult);
             return argsResult;
         }
+
+        const regexes = commandMetadata.regexes ?? globalRegexes;
+
+        const { elementsRegex, escapeModes: __realEscapeModes } = regexes;
+
+        let { checkNextChar } = regexes;
+
+        const validNamedOptionSyntaxes = commandMetadata.vns ?? globalVNS;
+
+        const { breakSearchOnConsumeAllOptions, useUniqueNamedSyntaxAtSameTime, disableLongTextTagsInLastOption } = config;
+
+        const localEscapeModes = { ...__realEscapeModes };
+
+        const matches = content.matchAll(elementsRegex);
+
+        let tagOpenWith: '"' | "'" | "`" | "-" | null = null;
+        let tagOpenPosition: number | null = null;
+        let isEscapingNext = false;
+        let unindexedRightText = "";
+
+        let namedOptionTagUsed: string | undefined;
+
+        let namedOptionInitialized: {
+            name: string;
+            start: number;
+            dotted: boolean;
+        } | null = null;
+
+        let lastestLongWord: { start: number; name: string; unindexedRightText: string } | undefined;
+
+        let lastOptionNameAdded: string | undefined;
+        let isRecentlyClosedAnyTag = false;
 
         const aggregateNextOption = (value: string, start: number | null) => {
             if (start === null && unindexedRightText) {
