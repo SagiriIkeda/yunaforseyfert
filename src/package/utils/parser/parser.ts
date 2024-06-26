@@ -50,6 +50,11 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
     const globalVNS = YunaParserCommandMetaData.getValidNamedOptionSyntaxes(globalConfig);
 
+    const logResult = (self: HandleCommand, argsResult: ArgsResult) =>
+        self.client.logger.debug("[Yuna.parser]", {
+            argsResult,
+        });
+
     // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: omitting this rule the life is better
     return function (this: HandleCommand, content: string, command: Command | SubCommand, message?: Message): Record<string, string> {
         const commandMetadata = YunaParserCommandMetaData.from(command);
@@ -95,6 +100,29 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
         const argsResult: ArgsResult = {};
 
+        // aggregateUserFromMessageReference
+        const aggregateUserFromMessageReference = (() => {
+            const reference = message?.referencedMessage;
+            if (
+                !reference ||
+                (reference.author.id !== message.author.id &&
+                    config.useRepliedUserAsAnOption?.requirePing &&
+                    message?.mentions.users[0]?.id !== reference.author.id)
+            )
+                return;
+            const option = iterableOptions[actualOptionIdx] as CommandOptionWithType | undefined;
+            if (option?.type !== ApplicationCommandOptionType.User) return;
+
+            argsResult[option.name] = reference.author.id;
+            actualOptionIdx++;
+            return true;
+        })();
+
+        if (aggregateUserFromMessageReference && actualOptionIdx >= iterableOptions.length) {
+            config.logResult && logResult(this, argsResult);
+            return argsResult;
+        }
+
         const aggregateNextOption = (value: string, start: number | null) => {
             if (start === null && unindexedRightText) {
                 const savedUnindexedText = unindexedRightText;
@@ -125,22 +153,6 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
             return lastOptionNameAdded;
         };
-        // aggregateUserFromMessageReference
-        (() => {
-            const reference = message?.referencedMessage;
-            if (
-                !reference ||
-                (reference.author.id !== message.author.id &&
-                    config.useRepliedUserAsAnOption?.requirePing &&
-                    message?.mentions.users[0]?.id !== reference.author.id)
-            )
-                return;
-            const option = iterableOptions[actualOptionIdx] as CommandOptionWithType | undefined;
-            if (option?.type !== ApplicationCommandOptionType.User) return;
-
-            argsResult[option.name] = reference.author.id;
-            actualOptionIdx++;
-        })();
 
         const aggregateLastestLongWord = (end: number = content.length, postText = "") => {
             if (!lastestLongWord) return;
@@ -216,7 +228,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             const escapeModeType = dotted ? "forNamedDotted" : "forNamed";
             const escapeMode = localEscapeModes[escapeModeType];
 
-            const value = sanitizeBackescapes(content.slice(start, end).trimStart(), escapeMode, checkNextChar).trim();
+            const value = sanitizeBackescapes(content.slice(start, end), escapeMode, checkNextChar).trim();
 
             namedOptionInitialized = null;
 
@@ -364,10 +376,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             YunaParserOptionsChoicesResolver(commandMetadata, argsResult, config);
         }
 
-        config.logResult &&
-            this.client.logger.debug("[Yuna.parser]", {
-                argsResult,
-            });
+        config.logResult && logResult(this, argsResult);
 
         return argsResult;
     };
