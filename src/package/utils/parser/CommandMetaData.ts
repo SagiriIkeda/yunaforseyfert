@@ -52,7 +52,7 @@ export class YunaParserCommandMetaData {
                 if (InvalidOptionType.has(option.type)) continue;
 
                 this.iterableOptions.push(option);
-                this.options.set(option.name, option);
+                // this.options.set(option.name, option);
 
                 if (!option.choices?.length) continue;
 
@@ -67,9 +67,9 @@ export class YunaParserCommandMetaData {
     }
 
     getConfig(globalConfig: YunaParserCreateOptions) {
-        const config = this.config ? mergeConfig(globalConfig, this.config) : globalConfig;
+        if (!this.config || this.globalConfig === globalConfig) return globalConfig;
 
-        if (this.globalConfig === globalConfig || !this.config) return config;
+        const config = mergeConfig(globalConfig, this.config);
 
         this.globalConfig = globalConfig;
 

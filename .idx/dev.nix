@@ -7,6 +7,7 @@
   # Use https://search.nixos.org/packages to find packages
   packages = [
     pkgs.corepack
+    pkgs.bun
   ];
 
   # Sets environment variables in the workspace
