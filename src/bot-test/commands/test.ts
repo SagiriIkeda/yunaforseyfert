@@ -26,16 +26,12 @@ export default class TestCommand extends Command {
             this.ctx?.editOrReply({ content: `watcher end '${reason}'`, embeds: [] });
         },
         beforeCreate(ctx) {
-            const userWatcher = Yuna.watchers.findInstances(ctx.client, {
+            const userWatcher = Yuna.watchers.find(ctx.client, {
                 userId: ctx.author.id,
                 command: this,
             });
 
-            if (!userWatcher) return;
-
-            const [watcher] = userWatcher.instances;
-
-            watcher?.stopAll("AnotherInstanceCreated");
+            userWatcher?.stop("AnotherInstanceCreated");
         },
     })
     async run(ctx: CommandContext<typeof options>) {

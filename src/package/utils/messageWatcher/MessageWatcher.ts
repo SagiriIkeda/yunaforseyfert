@@ -16,25 +16,10 @@ import {
 } from "seyfert";
 import { Transformers } from "seyfert/lib/client/transformers";
 import { type MakeRequired, toSnakeCase } from "seyfert/lib/common";
-import { type YunaMessageWatcherController, createId } from "./WatcherController";
-
-export type MessageWatcherCollectorOptions = {
-    idle?: number;
-    time?: number;
-};
+import { type WatchersController, createId } from "./WatcherController";
+import { MessageObserver, type ObserverOptions } from "./WatcherObserver";
 
 type RawMessageUpdated = MakeRequired<GatewayMessageUpdateDispatchData, "content">;
-
-export type OnChangeEvent<O extends OptionsRecord> = (ctx: CommandContext<O>, rawMessage: RawMessageUpdated) => any;
-export type OnStopEvent = (reason: string) => any;
-export type OnOptionsErrorEvent = (data: OnOptionsReturnObject) => any;
-
-interface UsageErrorEvents {
-    UnspecifiedPrefix: [];
-    CommandChanged: [newCommand: Command | SubCommand | undefined];
-}
-
-export type OnUsageErrorEvent = <E extends keyof UsageErrorEvents>(reason: E, ...params: UsageErrorEvents[E]) => any;
 
 const createFakeAPIUser = (user: User) => {
     const created: Record<string, any> = {};
@@ -47,36 +32,28 @@ const createFakeAPIUser = (user: User) => {
     return created as APIUser;
 };
 
-export class MessageWatcherCollector<const O extends OptionsRecord> {
-    readonly options: MessageWatcherCollectorOptions;
-
+export class MessageWatcher<const O extends OptionsRecord = any> {
     message: Message;
-
-    #idle?: NodeJS.Timeout;
-    #timeout?: NodeJS.Timeout;
 
     readonly id: string;
 
-    controller: YunaMessageWatcherController;
-
-    /** @internal */
-    fakeUser: APIUser;
+    controller: WatchersController;
 
     client: Client | WorkerClient;
-
     command: Command | SubCommand;
     shardId: number;
 
     originCtx?: CommandContext<O>;
     ctx?: CommandContext<O>;
 
+    observers = new Set<MessageObserver<this>>();
+
     constructor(
-        invoker: YunaMessageWatcherController,
+        invoker: WatchersController,
         client: Client | WorkerClient,
         message: Message,
         command: Command | SubCommand,
         shardId?: number,
-        options?: MessageWatcherCollectorOptions,
         ctx?: CommandContext<O>,
     ) {
         this.originCtx = ctx;
@@ -87,37 +64,21 @@ export class MessageWatcherCollector<const O extends OptionsRecord> {
         this.controller = invoker;
         this.command = command;
 
-        this.options = options ?? {};
         this.message = message;
 
         this.id = createId(message);
 
-        this.fakeUser = this.instances[0]?.fakeUser ?? createFakeAPIUser(this.message.author);
-        this.fakeMessage = this.instances[0]?.fakeMessage ?? this.createFakeAPIMessage();
-        this.prefixes = this.instances[0]?.prefixes;
-
-        this.refresh();
-    }
-
-    refresh(all = false) {
-        const { idle, time } = this.options;
-
-        if (time && (all || !this.#timeout)) {
-            clearTimeout(this.#timeout);
-            this.#timeout = setTimeout(() => this.stop("timeout"), time);
-        }
-
-        if (!idle) return;
-
-        clearTimeout(this.#idle);
-
-        this.#idle = setTimeout(() => this.stop("idle"), idle);
+        this.__fakeUser = createFakeAPIUser(this.message.author);
+        this.__fakeMessage = this.__createFakeAPIMessage();
     }
 
     /** @internal */
-    fakeMessage: ReturnType<MessageWatcherCollector<O>["createFakeAPIMessage"]>;
+    __fakeUser: APIUser;
+
     /** @internal */
-    createFakeAPIMessage(): Omit<GatewayMessageCreateDispatchData, "mentions" | `mention_${string}`> {
+    __fakeMessage: ReturnType<MessageWatcher<O>["__createFakeAPIMessage"]>;
+    /** @internal */
+    __createFakeAPIMessage(): Omit<GatewayMessageCreateDispatchData, "mentions" | `mention_${string}`> {
         const { message } = this;
 
         return {
@@ -132,16 +93,8 @@ export class MessageWatcherCollector<const O extends OptionsRecord> {
             pinned: message.pinned,
             type: this.message.type,
             attachments: this.message.attachments.map(toSnakeCase),
-            author: this.fakeUser,
+            author: this.__fakeUser,
         };
-    }
-
-    resetTimers() {
-        return this.refresh(true);
-    }
-
-    get instances() {
-        return this.controller.collectors.get(this.id) ?? [];
     }
 
     #oldContent?: string;
@@ -149,7 +102,7 @@ export class MessageWatcherCollector<const O extends OptionsRecord> {
     prefixes?: string[];
 
     /** @internal */
-    async update(message: GatewayMessageUpdateDispatchData) {
+    async __handleUpdate(message: GatewayMessageUpdateDispatchData) {
         if (!message.content) return;
 
         /**
@@ -159,12 +112,12 @@ export class MessageWatcherCollector<const O extends OptionsRecord> {
 
         const content = message.content.trimStart();
 
-        type EventKeys = Extract<keyof MessageWatcherCollector<O>, `on${string}Event`>;
-        type EventParams<E extends EventKeys> = Parameters<NonNullable<MessageWatcherCollector<O>[E]>>;
+        type EventKeys = Extract<keyof MessageObserver<this>, `on${string}Event`>;
+        type EventParams<E extends EventKeys> = Parameters<NonNullable<MessageObserver<this>[E]>>;
 
         const runForAll = <E extends EventKeys>(event: E, ...parameters: EventParams<E>) => {
-            //@ts-expect-error
-            for (const instance of this.instances) instance[event]?.(...parameters);
+            // @ts-expect-error
+            for (const observer of this.observers) observer[event]?.(...parameters);
         };
 
         const { client } = this;
@@ -172,9 +125,9 @@ export class MessageWatcherCollector<const O extends OptionsRecord> {
         const self = client as UsingClient;
 
         const fakeAPIMessage: GatewayMessageCreateDispatchData = {
-            ...this.fakeMessage,
+            ...this.__fakeMessage,
             ...message,
-            author: this.fakeUser,
+            author: this.__fakeUser,
             mention_everyone: message.mention_everyone ?? this.message.mentionEveryone,
             mention_roles: message.mention_roles ?? this.message.mentionRoles,
             mention_channels: message.mention_channels ?? this.message.mentionChannels?.map(toSnakeCase) ?? [],
@@ -242,60 +195,33 @@ export class MessageWatcherCollector<const O extends OptionsRecord> {
         ctx.messageResponse = this.originCtx?.messageResponse;
 
         Object.assign(ctx, client.options.context?.(newMessage));
-
-        for (const instance of this.instances) instance.ctx = ctx;
-
+        this.ctx = ctx;
+        //@ts-expect-error
         runForAll("onChangeEvent", ctx, message as RawMessageUpdated);
     }
 
     /** @internal */
-    onOptionsErrorEvent?: OnOptionsErrorEvent;
+    stopObserver(observer: MessageObserver<this>, reason: string) {
+        const deleted = this.observers.delete(observer);
+        if (!deleted) return;
 
-    onOptionsError(callback: OnOptionsErrorEvent) {
-        this.onOptionsErrorEvent = callback;
-        return this;
-    }
-    /** @internal */
-    onChangeEvent?: OnChangeEvent<O>;
+        observer.stopTimers();
+        observer.onStopEvent?.(reason);
 
-    onChange(callback: OnChangeEvent<O>) {
-        this.onChangeEvent = callback;
-        return this;
+        if (this.observers.size) return;
+
+        this.controller.watchers.delete(this.id);
     }
 
-    /** @internal */
-    onUsageErrorEvent?: OnUsageErrorEvent;
-
-    onUsageError(callback: OnUsageErrorEvent) {
-        this.onUsageErrorEvent = callback;
-        return this;
-    }
-    /** @internal */
-    onStopEvent?: OnStopEvent;
-
-    onStop(callback: OnStopEvent) {
-        this.onStopEvent = callback;
-        return this;
-    }
-    /** stop all instances */
-    stopAll(reason: string) {
-        for (const instance of this.instances) {
-            instance.stop(reason);
-        }
-    }
-    /** stop this instance */
     stop(reason: string) {
-        clearTimeout(this.#idle);
-        clearTimeout(this.#timeout);
+        for (const observer of this.observers) this.stopObserver(observer, reason);
+    }
 
-        const { instances } = this;
+    observe(options: ObserverOptions = {}) {
+        const observer = new MessageObserver(this, options);
 
-        const instanceId = instances.indexOf(this);
+        this.observers.add(observer);
 
-        if (instanceId !== -1) instances.splice(instanceId, 1);
-        if (instances.length === 0) this.controller.collectors.delete(this.id);
-
-        this.onStopEvent?.(reason);
-        return this;
+        return observer;
     }
 }

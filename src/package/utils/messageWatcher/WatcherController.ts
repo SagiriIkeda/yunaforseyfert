@@ -1,17 +1,17 @@
 import { GatewayDispatchEvents } from "discord-api-types/v10";
+import type { Client } from "seyfert";
 import {
     type BaseMessage,
     type Command,
     CommandContext,
     type LimitedCollection,
-    type Message,
     type OptionsRecord,
     type SubCommand,
     type UsingClient,
     type WorkerClient,
 } from "seyfert";
-import type { Client } from "seyfert";
-import { MessageWatcherCollector, type MessageWatcherCollectorOptions } from "./WatcherCollector";
+import { MessageWatcher } from "./MessageWatcher";
+import type { MessageObserver, ObserverOptions } from "./WatcherObserver";
 
 export function createId(message: string, channelId: string): string;
 export function createId(message: BaseMessage): string;
@@ -20,19 +20,11 @@ export function createId(message: BaseMessage | string, channelId?: string): str
     return `${message.channelId}.${message.id}`;
 }
 
-type CollectorsCacheAdapter = Map<string, MessageWatcherCollector<any>[]> | LimitedCollection<string, MessageWatcherCollector<any>[]>;
+type CollectorsCacheAdapter = Map<string, MessageWatcher> | LimitedCollection<string, MessageWatcher>;
 
 export interface YunaMessageWatcherControllerConfig {
     client: UsingClient;
     cache?: CollectorsCacheAdapter;
-}
-
-export interface WatcherCreateData {
-    client: UsingClient;
-    message: Message;
-    prefix: string;
-    command: Command | SubCommand;
-    shardId?: number;
 }
 
 export type FindWatcherQuery =
@@ -43,17 +35,12 @@ export type FindWatcherQuery =
           userId?: string;
           command?: Command | SubCommand;
       }
-    | ((watcher: MessageWatcherCollector<any>) => boolean);
+    | ((watcher: MessageWatcher) => boolean);
 
-export interface WatcherQueryResult {
-    id: string;
-    instances: MessageWatcherCollector<any>[];
-}
+export type WatcherCreateData = Pick<CommandContext, "client" | "command" | "message" | "shardId">;
 
-export type watcherCreateData = WatcherCreateData | Pick<CommandContext, "client" | "command" | "message" | "shardId">;
-
-export class YunaMessageWatcherController {
-    collectors: CollectorsCacheAdapter = new Map<string, MessageWatcherCollector<any>[]>();
+export class WatchersController {
+    watchers: CollectorsCacheAdapter = new Map<string, MessageWatcher>();
 
     watching = false;
 
@@ -61,7 +48,7 @@ export class YunaMessageWatcherController {
 
     constructor({ cache = new Map(), client }: YunaMessageWatcherControllerConfig) {
         this.client = client;
-        this.collectors = cache;
+        this.watchers = cache;
     }
 
     init() {
@@ -70,7 +57,7 @@ export class YunaMessageWatcherController {
 
         this.watching = true;
 
-        const cache = this.collectors;
+        const cache = this.watchers;
 
         const deleteBy = (data: { channelId: string } | { guildId: string }) => {
             const isChannel = "channelId" in data;
@@ -79,13 +66,11 @@ export class YunaMessageWatcherController {
             const key = isChannel ? "channelId" : "guildId";
             const errorName = isChannel ? "channelDelete" : "guildDelete";
 
-            for (const instancesData of [...cache.values()]) {
-                const instances = (instancesData as Exclude<typeof instancesData, MessageWatcherCollector<any>[]>).value ?? instancesData;
+            for (const instancesData of cache.values()) {
+                const watcher = (instancesData as Exclude<typeof instancesData, MessageWatcher>).value ?? instancesData;
 
-                const [zero] = instances;
-                if (!zero || zero.message[key] !== id) continue;
-
-                for (const instance of instances) instance.stop(errorName);
+                if (watcher.message[key] !== id) continue;
+                watcher.stop(errorName);
             }
         };
 
@@ -95,8 +80,8 @@ export class YunaMessageWatcherController {
         };
 
         const deleteByMessage = (messageId: string, channelId: string, reason: string) => {
-            const instances = get(messageId, channelId) ?? [];
-            for (const instance of instances) instance.stop(reason);
+            const watcher = get(messageId, channelId);
+            watcher?.stop(reason);
         };
 
         client.collectors.create({
@@ -126,8 +111,7 @@ export class YunaMessageWatcherController {
                         deleteByMessage(data.id, data.channel_id, "MessageDelete");
                         break;
                     case GatewayDispatchEvents.MessageUpdate: {
-                        const instances = get(data.id, data.channel_id);
-                        instances?.[0]?.update(data);
+                        get(data.id, data.channel_id)?.__handleUpdate(data);
                         break;
                     }
                 }
@@ -135,9 +119,9 @@ export class YunaMessageWatcherController {
         });
     }
 
-    create<const O extends OptionsRecord | undefined = undefined, const C extends watcherCreateData = watcherCreateData>(
+    create<const O extends OptionsRecord | undefined = undefined, const C extends WatcherCreateData = WatcherCreateData>(
         ctx: C,
-        options?: MessageWatcherCollectorOptions,
+        options?: ObserverOptions,
     ) {
         const { message, command, client } = ctx;
         if (!message) throw Error("CommandContext does not have a message");
@@ -145,36 +129,37 @@ export class YunaMessageWatcherController {
 
         const id = createId(message);
 
-        const instancesList = this.collectors.get(id);
+        const watcher = this.watchers.get(id);
 
         this.init();
 
         type OptionsType = O extends undefined ? (C extends CommandContext<infer R> ? R : {}) : O;
 
-        const watcher = new MessageWatcherCollector<OptionsType>(
-            this,
-            client as Client | WorkerClient,
-            message,
-            command,
-            ctx.shardId,
-            options,
-            ctx instanceof CommandContext ? ctx : undefined,
-        );
+        if (!watcher)
+            this.watchers.set(
+                id,
+                new MessageWatcher<OptionsType>(
+                    this,
+                    client as Client | WorkerClient,
+                    message,
+                    command,
+                    ctx.shardId,
+                    ctx instanceof CommandContext ? ctx : undefined,
+                ),
+            );
 
-        if (!instancesList) this.collectors.set(id, []);
+        const observer = this.watchers.get(id)!.observe(options) as MessageObserver<MessageWatcher<OptionsType>>;
 
-        this.collectors.get(id)?.push(watcher);
-
-        return watcher;
+        return observer;
     }
 
-    getWatcherInstancesFromContext({ message }: Pick<CommandContext, "message">) {
+    getWatcherFromContext({ message }: Pick<CommandContext, "message">) {
         if (!message) return;
         const id = createId(message);
-        return this.collectors.get(id);
+        return this.watchers.get(id);
     }
 
-    #baseSearch(query: Exclude<FindWatcherQuery, Function>, watcher: MessageWatcherCollector<any>) {
+    #baseSearch(query: Exclude<FindWatcherQuery, Function>, watcher: MessageWatcher) {
         if (query.guildId && watcher.message.guildId !== query.guildId) return false;
         if (query.channelId && watcher.message.channelId !== query.channelId) return false;
         if (query.messageId && watcher.message.id !== query.messageId) return false;
@@ -183,25 +168,23 @@ export class YunaMessageWatcherController {
         return true;
     }
 
-    *#getWatcherInstances(query: FindWatcherQuery): Generator<WatcherQueryResult> {
+    *#findWatchers(query: FindWatcherQuery): Generator<MessageWatcher> {
         const searchFn = typeof query === "function" ? query : this.#baseSearch.bind(this, query);
 
-        for (const val of this.collectors.values()) {
-            const instances = (val as Exclude<typeof val, MessageWatcherCollector<any>[]>).value ?? val;
-
-            const [watcher] = instances;
+        for (const value of this.watchers.values()) {
+            const watcher = (value as Exclude<typeof value, MessageWatcher<any>>).value ?? value;
 
             if (watcher && searchFn(watcher) === true) {
-                yield { id: watcher.id, instances };
+                yield watcher;
             }
         }
     }
 
-    findWatcherInstances(query: FindWatcherQuery): WatcherQueryResult | undefined {
-        return this.#getWatcherInstances(query).next().value;
+    findWatcher(query: FindWatcherQuery): MessageWatcher | undefined {
+        return this.#findWatchers(query).next().value;
     }
 
-    getManyWatcherInstances(query: FindWatcherQuery) {
-        return Array.from(this.#getWatcherInstances(query));
+    findManyWatchers(query: FindWatcherQuery) {
+        return Array.from(this.#findWatchers(query));
     }
 }

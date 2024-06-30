@@ -95,7 +95,6 @@ export class YunaParserCommandMetaData {
     }
 
     static getValidNamedOptionSyntaxes(config: YunaParserCreateOptions): ValidNamedOptionSyntaxes {
-        if (!config.syntax?.namedOptions) return {};
-        return Object.fromEntries(config.syntax.namedOptions.map((t) => [t, true]));
+        return Object.fromEntries(config.syntax?.namedOptions?.map((t) => [t, true]) ?? []);
     }
 }

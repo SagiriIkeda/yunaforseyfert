@@ -1,33 +1,23 @@
 import type { CommandContext, OptionsRecord } from "seyfert";
 import type { Awaitable } from "seyfert/lib/common";
 import type { AvailableClients, YunaUsable } from "../../things";
-import type {
-    MessageWatcherCollector,
-    MessageWatcherCollectorOptions,
-    OnChangeEvent,
-    OnOptionsErrorEvent,
-    OnStopEvent,
-    OnUsageErrorEvent,
-} from "./WatcherCollector";
-import type { FindWatcherQuery, WatcherQueryResult } from "./WatcherController";
+import type { MessageWatcher } from "./MessageWatcher";
+import type { FindWatcherQuery } from "./WatcherController";
+import type { MessageObserver, OnChangeEvent, OnOptionsErrorEvent, OnStopEvent, OnUsageErrorEvent } from "./WatcherObserver";
+import type { ObserverOptions } from "./WatcherObserver";
 import { createController, createWatcher, getController } from "./controllerUtils";
 
-type Event<E extends (...args: any[]) => any, O extends OptionsRecord> = (
-    this: MessageWatcherCollector<O>,
-    ...args: Parameters<E>
-) => ReturnType<E>;
-
-interface WatchOptions<C extends YunaUsable, O extends OptionsRecord> extends MessageWatcherCollectorOptions {
+interface WatchOptions<C extends YunaUsable, O extends OptionsRecord> extends ObserverOptions {
     /**
      * It will be emitted before creating the watcher,
      * if you return `false` it will not be created.
      */
     beforeCreate?(this: C, ctx: CommandContext<O>): Awaitable<boolean> | void;
-    filter?(...args: Parameters<OnChangeEvent<O>>): boolean;
-    onStop?: Event<OnStopEvent, O>;
-    onChange?: Event<OnChangeEvent<O>, O>;
-    onUsageError?: Event<OnUsageErrorEvent, O>;
-    onOptionsError?: Event<OnOptionsErrorEvent, O>;
+    filter?(...args: Parameters<OnChangeEvent<MessageObserver<MessageWatcher<O>>, O>>): boolean;
+    onStop?: OnStopEvent<MessageObserver<MessageWatcher<O>>>;
+    onChange?: OnChangeEvent<MessageObserver<MessageWatcher<O>>, O>;
+    onUsageError?: OnUsageErrorEvent<MessageObserver<MessageWatcher<O>>>;
+    onOptionsError?: OnOptionsErrorEvent<MessageObserver<MessageWatcher<O>>>;
 }
 
 function DecoratorWatcher<
@@ -57,10 +47,10 @@ function DecoratorWatcher<
                 options.onChange?.call(watcher, ctx, msg);
             });
 
-            options.onOptionsError && watcher.onOptionsError(options.onOptionsError.bind(watcher));
-            options.onUsageError && watcher.onUsageError(options.onUsageError.bind(watcher) as OnUsageErrorEvent);
-            options.onStop && watcher.onStop(options.onStop.bind(watcher));
-            options.onOptionsError && watcher.onOptionsError(options.onOptionsError.bind(watcher));
+            options.onOptionsError && watcher.onOptionsError(options.onOptionsError);
+            options.onUsageError && watcher.onUsageError(options.onUsageError);
+            options.onStop && watcher.onStop(options.onStop);
+            options.onOptionsError && watcher.onOptionsError(options.onOptionsError);
         };
     };
 }
@@ -70,14 +60,14 @@ export interface WatchUtils {
     createController: typeof createController;
     getController: typeof getController;
     /**  Get the list of `watchers` (there may be more than one) associated to a `CommandContext`. */
-    getFromContext(ctx: CommandContext): MessageWatcherCollector<any>[] | undefined;
+    getFromContext(ctx: CommandContext): MessageWatcher<any> | undefined;
     /**
      * Find watchers from a query.
      * This method returns the key (id where it is stored) of the watcher, and its instances in an array.
      */
-    findInstances(client: AvailableClients, query: FindWatcherQuery): WatcherQueryResult | undefined;
+    find(client: AvailableClients, query: FindWatcherQuery): MessageWatcher | undefined;
     /** Similar to `findInstances` but this one will filter through all, it is used in the same way, but it will return all matches */
-    getManyInstances(client: AvailableClients, query: FindWatcherQuery): WatcherQueryResult[] | undefined;
+    findMany(client: AvailableClients, query: FindWatcherQuery): MessageWatcher[] | undefined;
     /**
      * Use it to know when a `CommandContext` is being observed.
      */
@@ -89,13 +79,13 @@ export const YunaWatcherUtils: WatchUtils = {
     createController,
     getController,
     getFromContext(ctx: CommandContext) {
-        return getController(ctx.client)?.getWatcherInstancesFromContext(ctx);
+        return getController(ctx.client)?.getWatcherFromContext(ctx);
     },
-    findInstances(client: AvailableClients, query: FindWatcherQuery) {
-        return getController(client)?.findWatcherInstances(query);
+    find(client: AvailableClients, query: FindWatcherQuery) {
+        return getController(client)?.findWatcher(query);
     },
-    getManyInstances(client: AvailableClients, query: FindWatcherQuery) {
-        return getController(client)?.getManyWatcherInstances(query);
+    findMany(client: AvailableClients, query: FindWatcherQuery) {
+        return getController(client)?.findManyWatchers(query);
     },
     isWatching(ctx: CommandContext) {
         return this.getFromContext(ctx) !== undefined;
@@ -104,12 +94,16 @@ export const YunaWatcherUtils: WatchUtils = {
 
 export const Watch = DecoratorWatcher as typeof DecoratorWatcher & WatchUtils;
 
+type UtilsDescriptor = {
+    [k in keyof WatchUtils]: { value: WatchUtils[k] };
+};
+
 Object.defineProperties(Watch, {
     create: { value: createWatcher },
     createController: { value: createController },
     getController: { value: getController },
     getFromContext: { value: YunaWatcherUtils.getFromContext },
-    findInstances: { value: YunaWatcherUtils.findInstances },
-    getManyInstances: { value: YunaWatcherUtils.getManyInstances },
+    find: { value: YunaWatcherUtils.find },
+    findMany: { value: YunaWatcherUtils.findMany },
     isWatching: { value: YunaWatcherUtils.isWatching.bind(YunaWatcherUtils) },
-});
+} satisfies UtilsDescriptor);
