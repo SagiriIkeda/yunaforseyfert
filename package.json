@@ -2,16 +2,15 @@
   "name": "yunaforseyfert",
   "version": "1.0.0",
   "description": "Yunathings for seyfert",
-  "main": "./build/index.js",
   "type": "commonjs",
-  "types": "./types/package/index.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
   "scripts": {
     "idx": "tsc && cd src/bot-test/ && node --env-file=.env ../../dist/bot-test/index.js",
     "yuna": "mkdir -p .npm && npm run build && node dist/package/lib/prepublish.js && cp -r build .npm/build && cp -r types .npm/types",
     "prepare": "npm run build && npx husky",
-    "build:esbuild": "npx esbuild --bundle src/package/index.ts --minify --outdir=build --platform=node --packages=external",
-    "build": "tsc && npm run build:esbuild",
-    "tsc": "tsc",
+    "build": "tsup --config tsup.config.json",
     "lint": "biome lint --write ./src",
     "format": "biome check --write ./src",
     "test": "vitest"
@@ -40,9 +39,9 @@
   "devDependencies": {
     "@biomejs/biome": "1.8.0",
     "@types/node": "^20.14.2",
-    "esbuild": "^0.20.2",
     "husky": "^9.0.11",
     "lint-staged": "^15.2.7",
+    "tsup": "^8.1.0",
     "typescript": "^5.0.0",
     "vitest": "^1.5.2"
   }

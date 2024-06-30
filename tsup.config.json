@@ -1,0 +1,9 @@
+{
+    "dts": true,
+    "entry": ["./src/package/index.ts"],
+    "splitting": false,
+    "sourcemap": true,
+    "minify": true,
+    "clean": true,
+    "format": ["cjs"]
+}
