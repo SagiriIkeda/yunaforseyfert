@@ -2,8 +2,8 @@
     "dts": true,
     "entry": ["./src/package/index.ts"],
     "splitting": false,
-    "sourcemap": true,
     "minify": true,
+    "outDir": "build",
     "clean": true,
     "format": ["cjs"]
 }
