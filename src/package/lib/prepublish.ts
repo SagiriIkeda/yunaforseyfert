@@ -1,7 +1,6 @@
 import { copyFileSync, writeFileSync } from "node:fs";
 import packageJSON from "../../../package.json";
-
-const { scripts: _s, "lint-staged": _l, ...newPackageJSON } = packageJSON;
+const { scripts: _s, "lint-staged": _l, private: _p, ...newPackageJSON } = packageJSON as typeof packageJSON & { private: boolean };
 
 const move = (src: string) => copyFileSync(src, `.npm/${src}`);
 

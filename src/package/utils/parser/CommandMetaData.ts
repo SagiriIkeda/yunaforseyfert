@@ -15,7 +15,7 @@ const InvalidOptionType = new Set([
     ApplicationCommandOptionType.SubcommandGroup,
 ]);
 
-type DecoredChoice = [rawName: string, name: string, value: string | number];
+type DecoredChoice = [rawName: string, name: string, value: string];
 
 type ValidNamedOptionSyntaxes = Partial<Record<ValidNamedOptionSyntax, true>>;
 export class YunaParserCommandMetaData {
@@ -52,7 +52,7 @@ export class YunaParserCommandMetaData {
                 if (InvalidOptionType.has(option.type)) continue;
 
                 this.iterableOptions.push(option);
-                // this.options.set(option.name, option);
+                this.options.set(option.name, option);
 
                 if (!option.choices?.length) continue;
 
