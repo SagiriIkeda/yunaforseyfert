@@ -1,38 +1,16 @@
-import type { GatewayMessageUpdateDispatchData } from "discord-api-types/v10";
-
-import type { Client, Command, CommandContext, Message, OnOptionsReturnObject, OptionsRecord, SubCommand, WorkerClient } from "seyfert";
-import type { MakeRequired } from "seyfert/lib/common";
+import type { Client, Command, CommandContext, Message, OptionsRecord, SubCommand, WorkerClient } from "seyfert";
 import type { WatchersController } from "./Controller";
 import type { MessageWatcherManager } from "./Manager";
+import type {
+    WatcherOnChangeEvent,
+    WatcherOnOptionsErrorEvent,
+    WatcherOnStopEvent,
+    WatcherOnUsageErrorEvent,
+    WatcherOptions,
+} from "./types";
 
-export type ObserverOptions = {
-    idle?: number;
-    time?: number;
-};
-
-type RawMessageUpdated = MakeRequired<GatewayMessageUpdateDispatchData, "content">;
-
-export type OnChangeEvent<M extends MessageObserver, O extends OptionsRecord> = (
-    this: M,
-    ctx: CommandContext<O>,
-    rawMessage: RawMessageUpdated,
-) => any;
-export type OnStopEvent<M extends MessageObserver> = (this: M, reason: string) => any;
-export type OnOptionsErrorEvent<M extends MessageObserver> = (this: M, data: OnOptionsReturnObject) => any;
-
-interface UsageErrorEvents {
-    UnspecifiedPrefix: [];
-    CommandChanged: [newCommand: Command | SubCommand | undefined];
-}
-
-export type OnUsageErrorEvent<M extends MessageObserver> = <E extends keyof UsageErrorEvents>(
-    this: M,
-    reason: E,
-    ...params: UsageErrorEvents[E]
-) => any;
-
-export class MessageObserver<const O extends OptionsRecord = any> {
-    readonly options: ObserverOptions;
+export class MessageWatcher<const O extends OptionsRecord = any> {
+    readonly options: WatcherOptions;
 
     #idle?: NodeJS.Timeout;
     #timeout?: NodeJS.Timeout;
@@ -44,8 +22,8 @@ export class MessageObserver<const O extends OptionsRecord = any> {
     command: Command | SubCommand;
     shardId: number;
 
-    constructor(manager: MessageWatcherManager<O>, options?: ObserverOptions) {
-        this.options = options ?? {};
+    constructor(manager: MessageWatcherManager<O>, options: WatcherOptions = {}) {
+        this.options = options;
         this.message = manager.message;
         this.manager = manager;
         this.controller = manager.controller;
@@ -53,7 +31,7 @@ export class MessageObserver<const O extends OptionsRecord = any> {
         this.command = manager.command;
         this.shardId = manager.shardId;
 
-        this.refresh();
+        this.refreshTimers();
     }
     /** key where the watcher is stored */
     get id() {
@@ -78,8 +56,7 @@ export class MessageObserver<const O extends OptionsRecord = any> {
     get originCtx(): CommandContext<O> | undefined {
         return this.manager.originCtx;
     }
-
-    refresh(all = false) {
+    refreshTimers(all = false) {
         const { idle, time } = this.options;
 
         if (time && (all || !this.#timeout)) {
@@ -95,7 +72,7 @@ export class MessageObserver<const O extends OptionsRecord = any> {
     }
 
     resetTimers() {
-        return this.refresh(true);
+        return this.refreshTimers(true);
     }
 
     stopTimers() {
@@ -104,39 +81,36 @@ export class MessageObserver<const O extends OptionsRecord = any> {
     }
 
     /** @internal */
-    onOptionsErrorEvent?: OnOptionsErrorEvent<this>;
+    onOptionsErrorEvent?: WatcherOnOptionsErrorEvent<this>;
 
-    onOptionsError(callback: OnOptionsErrorEvent<this>) {
+    onOptionsError(callback: WatcherOnOptionsErrorEvent<this>) {
         this.onOptionsErrorEvent = callback.bind(this);
         return this;
     }
     /** @internal */
-    onChangeEvent?: OnChangeEvent<this, O>;
+    onChangeEvent?: WatcherOnChangeEvent<this, O>;
 
-    onChange(callback: OnChangeEvent<this, O>) {
+    onChange(callback: WatcherOnChangeEvent<this, O>) {
         this.onChangeEvent = callback.bind(this);
         return this;
     }
 
     /** @internal */
-    onUsageErrorEvent?: OnUsageErrorEvent<this>;
+    onUsageErrorEvent?: WatcherOnUsageErrorEvent<this>;
 
-    onUsageError(callback: OnUsageErrorEvent<this>) {
-        this.onUsageErrorEvent = callback.bind(this) as OnUsageErrorEvent<this>;
+    onUsageError(callback: WatcherOnUsageErrorEvent<this>) {
+        this.onUsageErrorEvent = callback.bind(this) as WatcherOnUsageErrorEvent<this>;
         return this;
     }
     /** @internal */
-    onStopEvent?: OnStopEvent<this>;
+    onStopEvent?: WatcherOnStopEvent<this>;
 
-    onStop(callback: OnStopEvent<this>) {
+    onStop(callback: WatcherOnStopEvent<this>) {
         this.onStopEvent = callback.bind(this);
         return this;
     }
-    /** stop all observers to this watcher */
-    stopAll(reason: string) {
-        return this.manager.stop(reason);
-    }
-    /** stop this observer */
+
+    /** stop this watcher */
     stop(reason: string) {
         return this.manager.stopWatcher(this, reason);
     }

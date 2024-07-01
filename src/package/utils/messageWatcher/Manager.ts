@@ -17,7 +17,8 @@ import {
 import { Transformers } from "seyfert/lib/client/transformers";
 import { type MakeRequired, toSnakeCase } from "seyfert/lib/common";
 import { type WatchersController, createId } from "./Controller";
-import { MessageObserver as MessageWatcher, type ObserverOptions } from "./Watcher";
+import { MessageWatcher } from "./Watcher";
+import type { WatcherOptions } from "./types";
 
 type RawMessageUpdated = MakeRequired<GatewayMessageUpdateDispatchData, "content">;
 
@@ -31,6 +32,9 @@ const createFakeAPIUser = (user: User) => {
 
     return created as APIUser;
 };
+
+type EventKeys<O extends OptionsRecord> = Extract<keyof MessageWatcher<O>, `on${string}Event`>;
+type EventParams<O extends OptionsRecord, E extends EventKeys<O>> = Parameters<OmitThisParameter<NonNullable<MessageWatcher<O>[E]>>>;
 
 export class MessageWatcherManager<const O extends OptionsRecord = any> {
     message: Message;
@@ -102,6 +106,12 @@ export class MessageWatcherManager<const O extends OptionsRecord = any> {
     prefixes?: string[];
 
     /** @internal */
+    emit<E extends EventKeys<O>>(event: E, ...parameters: EventParams<O, E>) {
+        //@ts-expect-error
+        for (const watcher of this.watchers) watcher[event]?.(...parameters);
+    }
+
+    /** @internal */
     async __handleUpdate(message: GatewayMessageUpdateDispatchData) {
         if (!message.content) return;
 
@@ -111,14 +121,6 @@ export class MessageWatcherManager<const O extends OptionsRecord = any> {
          */
 
         const content = message.content.trimStart();
-
-        type EventKeys = Extract<keyof MessageWatcher<O>, `on${string}Event`>;
-        type EventParams<E extends EventKeys> = Parameters<NonNullable<MessageWatcher<O>[E]>>;
-
-        const runForAll = <E extends EventKeys>(event: E, ...parameters: EventParams<E>) => {
-            // @ts-expect-error
-            for (const observer of this.watchers) observer[event]?.(...parameters);
-        };
 
         const { client } = this;
 
@@ -141,7 +143,7 @@ export class MessageWatcherManager<const O extends OptionsRecord = any> {
 
         const prefix = this.prefixes?.find((prefix) => content.startsWith(prefix));
 
-        if (!prefix) return runForAll("onUsageErrorEvent", "UnspecifiedPrefix");
+        if (!prefix) return this.emit("onUsageErrorEvent", "UnspecifiedPrefix");
 
         const slicedContent = content.slice(prefix.length);
 
@@ -149,7 +151,7 @@ export class MessageWatcherManager<const O extends OptionsRecord = any> {
 
         const { argsContent, command, parent } = handleCommand.resolveCommandFromContent(slicedContent, prefix, fakeAPIMessage);
 
-        if (command !== this.command) return runForAll("onUsageErrorEvent", "CommandChanged", command);
+        if (command !== this.command) return this.emit("onUsageErrorEvent", "CommandChanged", command);
 
         if (argsContent === undefined) return;
 
@@ -178,7 +180,7 @@ export class MessageWatcherManager<const O extends OptionsRecord = any> {
                     ];
                 }),
             );
-            runForAll("onOptionsErrorEvent", errorsObject);
+            this.emit("onOptionsErrorEvent", errorsObject);
             return;
         }
 
@@ -188,7 +190,7 @@ export class MessageWatcherManager<const O extends OptionsRecord = any> {
         //@ts-expect-error
         const [erroredOptions] = await command.__runOptions(ctx, optionsResolver);
 
-        if (erroredOptions) return runForAll("onOptionsErrorEvent", erroredOptions);
+        if (erroredOptions) return this.emit("onOptionsErrorEvent", erroredOptions);
 
         this.#oldContent = slicedContent;
 
@@ -196,27 +198,29 @@ export class MessageWatcherManager<const O extends OptionsRecord = any> {
 
         Object.assign(ctx, client.options.context?.(newMessage));
         this.ctx = ctx;
-        runForAll("onChangeEvent", ctx, message as RawMessageUpdated);
+
+        this.emit("onChangeEvent", ctx, message as RawMessageUpdated);
     }
 
     /** @internal */
-    stopWatcher(observer: MessageWatcher<O>, reason: string) {
-        const deleted = this.watchers.delete(observer);
-        if (!deleted) return;
+    stopWatcher(watcher: MessageWatcher<O>, reason: string) {
+        const isDeleted = this.watchers.delete(watcher);
+        if (!isDeleted) return;
 
-        observer.stopTimers();
-        observer.onStopEvent?.(reason);
+        watcher.stopTimers();
+        watcher.onStopEvent?.(reason);
 
         if (this.watchers.size) return;
 
         this.controller.managers.delete(this.id);
     }
 
+    /** stop this and all watchers in this manager */
     stop(reason: string) {
         for (const observer of this.watchers) this.stopWatcher(observer, reason);
     }
 
-    watch(options: ObserverOptions = {}) {
+    watch(options: WatcherOptions = {}) {
         const observer = new MessageWatcher(this, options);
 
         this.watchers.add(observer);

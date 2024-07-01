@@ -1,29 +1,14 @@
-import type { CommandContext, OptionsRecord } from "seyfert";
-import type { Awaitable } from "seyfert/lib/common";
+import type { CommandContext } from "seyfert";
 import type { AvailableClients, YunaUsable } from "../../things";
 import type { FindWatcherQuery, inferWatcherFromCtx } from "./Controller";
 import type { MessageWatcherManager } from "./Manager";
-import type { MessageObserver, OnChangeEvent, OnOptionsErrorEvent, OnStopEvent, OnUsageErrorEvent } from "./Watcher";
-import type { ObserverOptions } from "./Watcher";
 import { createController, createWatcher, getController } from "./controllerUtils";
-
-interface WatchOptions<C extends YunaUsable, O extends OptionsRecord> extends ObserverOptions {
-    /**
-     * It will be emitted before creating the watcher,
-     * if you return `false` it will not be created.
-     */
-    beforeCreate?(this: C, ctx: CommandContext<O>): Awaitable<boolean> | void;
-    filter?(...args: Parameters<OnChangeEvent<MessageObserver<O>, O>>): boolean;
-    onStop?: OnStopEvent<MessageObserver<O>>;
-    onChange?: OnChangeEvent<MessageObserver<O>, O>;
-    onUsageError?: OnUsageErrorEvent<MessageObserver<O>>;
-    onOptionsError?: OnOptionsErrorEvent<MessageObserver<O>>;
-}
+import type { DecoratorWatchOptions } from "./types";
 
 function DecoratorWatcher<
     const C extends YunaUsable,
     O extends Parameters<NonNullable<C["run"]>>[0] extends CommandContext<infer O> ? O : never,
->(options: WatchOptions<C, O>) {
+>(options: DecoratorWatchOptions<C, O>) {
     return (target: C, _propertyKey: "run", descriptor: PropertyDescriptor) => {
         const commandRun = target.run;
 

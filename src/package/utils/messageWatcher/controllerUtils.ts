@@ -1,7 +1,7 @@
 import type { OptionsRecord, UsingClient } from "seyfert";
 import type { AvailableClients } from "../../things";
 import { type WatcherCreateData, WatchersController, type YunaMessageWatcherControllerConfig } from "./Controller";
-import type { ObserverOptions } from "./Watcher";
+import type { WatcherOptions } from "./types";
 
 const controllerKey = Symbol("YunaMessageWatcherController");
 
@@ -21,7 +21,7 @@ export const getController = (client: AvailableClients) => {
 
 export const createWatcher = <const O extends OptionsRecord | undefined = undefined, const C extends WatcherCreateData = WatcherCreateData>(
     ctx: C,
-    options?: ObserverOptions,
+    options?: WatcherOptions,
 ) => {
     return createController({ client: ctx.client }).create<O, C>(ctx, options);
 };

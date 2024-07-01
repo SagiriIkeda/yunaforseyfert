@@ -6,11 +6,24 @@ import type { YunaParserCreateOptions } from "./utils/parser/createConfig.js";
 import { YunaParser } from "./utils/parser/parser.js";
 
 import { YunaWatcherUtils } from "./utils/messageWatcher/watcherUtils.js";
+
 export { Watch } from "./utils/messageWatcher/watcherUtils.js";
 export { DeclareParserConfig } from "./utils/parser/createConfig.js";
 export { Shortcut } from "./utils/commandsResolver/decorators.js";
 
 export { createWatcher } from "./utils/messageWatcher/controllerUtils.js";
+
+export { MessageWatcherManager } from "./utils/messageWatcher/Manager.js";
+export { MessageWatcher } from "./utils/messageWatcher/Watcher.js";
+
+export type {
+    WatcherOnChangeEvent,
+    WatcherOnOptionsErrorEvent,
+    WatcherOnStopEvent,
+    WatcherOnUsageErrorEvent,
+    WatcherOptions,
+    DecoratorWatchOptions,
+} from "./utils/messageWatcher/types.js";
 
 export const ParserRecommendedConfig = {
     /** things that I consider necessary in an Eval command. */

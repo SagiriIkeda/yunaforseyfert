@@ -11,7 +11,7 @@ import {
     type WorkerClient,
 } from "seyfert";
 import { MessageWatcherManager } from "./Manager.js";
-import type { ObserverOptions } from "./Watcher";
+import type { WatcherOptions } from "./types.js";
 
 export function createId(message: string, channelId: string): string;
 export function createId(message: BaseMessage): string;
@@ -120,7 +120,7 @@ export class WatchersController {
 
     create<const O extends OptionsRecord | undefined = undefined, const C extends WatcherCreateData = WatcherCreateData>(
         ctx: C,
-        options?: ObserverOptions,
+        options?: WatcherOptions,
     ) {
         const { message, command, client } = ctx;
         if (!message) throw Error("CommandContext does not have a message");
