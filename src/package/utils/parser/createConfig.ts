@@ -1,6 +1,6 @@
 import type { ApplicationCommandOptionType } from "discord-api-types/v10";
 import type { CommandOption } from "seyfert";
-import { keyConfig } from "../../things";
+import { Keys } from "../../things";
 
 type ValidLongTextTags = "'" | '"' | "`";
 export type ValidNamedOptionSyntax = "-" | "--" | ":";
@@ -203,7 +203,7 @@ export function DeclareParserConfig(config: YunaParserCreateOptions = {}) {
     return <T extends { new (...args: any[]): {} }>(target: T) => {
         if (!Object.keys(config).length) return target;
         return class extends target {
-            [keyConfig] = createConfig(config, false);
+            [Keys.parserConfig] = createConfig(config, false);
         };
     };
 }

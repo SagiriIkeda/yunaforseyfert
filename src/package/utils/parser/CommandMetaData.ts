@@ -1,6 +1,6 @@
 import { ApplicationCommandOptionType } from "discord-api-types/v10";
 import type { CommandOption, SeyfertNumberOption, SeyfertStringOption } from "seyfert";
-import { type YunaUsable, keyConfig, keyMetadata } from "../../things";
+import { Keys, type YunaUsable } from "../../things";
 import {
     type CommandOptionWithType,
     type ValidNamedOptionSyntax,
@@ -40,7 +40,7 @@ export class YunaParserCommandMetaData {
 
     constructor(command: YunaUsable) {
         this.command = command;
-        this.config = this.command[keyConfig];
+        this.config = this.command[Keys.parserConfig];
 
         this.base = command.constructor;
 
@@ -81,7 +81,7 @@ export class YunaParserCommandMetaData {
     }
 
     static from(command: YunaUsable) {
-        const InCommandMetadata = command[keyMetadata];
+        const InCommandMetadata = command[Keys.parserMetadata];
 
         const base = command.constructor;
 
@@ -89,7 +89,7 @@ export class YunaParserCommandMetaData {
 
         const metadata = new YunaParserCommandMetaData(command);
 
-        command[keyMetadata] = metadata;
+        command[Keys.parserMetadata] = metadata;
 
         return metadata;
     }

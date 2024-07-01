@@ -53,7 +53,7 @@ export class MessageWatcherManager<const O extends OptionsRecord = any> {
     watchers = new Set<MessageWatcher<O>>();
 
     constructor(
-        invoker: WatchersController,
+        controller: WatchersController,
         client: Client | WorkerClient,
         message: Message,
         command: Command | SubCommand,
@@ -65,7 +65,7 @@ export class MessageWatcherManager<const O extends OptionsRecord = any> {
 
         this.client = client;
         this.shardId = shardId ?? 1;
-        this.controller = invoker;
+        this.controller = controller;
         this.command = command;
 
         this.message = message;

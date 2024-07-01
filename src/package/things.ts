@@ -3,21 +3,30 @@ import type { Client, Command, SubCommand, UsingClient, WorkerClient } from "sey
 import type { YunaParserCommandMetaData } from "./utils/parser/CommandMetaData";
 import type { YunaParserCreateOptions } from "./utils/parser/createConfig";
 
-export const keyMetadata = Symbol("YunaParserMetaData");
-export const keyConfig = Symbol("YunaParserConfig");
-export const keySubCommands = Symbol("YunaSubCommands");
-export const keyShortcut = Symbol("YunaShortcut");
-export const fallbackSubNameKey = Symbol("fallbackSubcommandName");
+// biome-ignore lint/complexity/noStaticOnlyClass: 🐧
+export class Keys {
+    static readonly parserMetadata = Symbol("ParserMetadata");
+    static readonly parserConfig = Symbol("ParserConfig");
+
+    static readonly resolverSubCommands = Symbol("Subcommands");
+    static readonly resolverIsShortcut = Symbol("IsShortcut");
+    /** fallbackSubcommandName */
+    static readonly resolverFallbackSubCommand = Symbol("FallbackSubcommandName");
+
+    static readonly clientResolverMetadata = Symbol("ResolverMetadata");
+    static readonly clientResolverAlreadyModdedEvents = Symbol("YunaMessageWatcherController");
+    static readonly clientWatcherController = Symbol("YunaMessageWatcherController");
+}
 
 export type Instantiable<C> = { new (...args: any[]): C };
 export type AvailableClients = UsingClient | Client | WorkerClient;
 export type ArgsResult = Record<string, string>;
 
 export type YunaUsable<T extends Command | SubCommand = Command | SubCommand> = T & {
-    [keyMetadata]?: YunaParserCommandMetaData;
-    [keyConfig]?: YunaParserCreateOptions;
-    [keySubCommands]?: { fallback?: Instantiable<SubCommand> | null; fallbackName?: string } | null;
-    [keyShortcut]?: boolean;
+    [Keys.parserMetadata]?: YunaParserCommandMetaData;
+    [Keys.parserConfig]?: YunaParserCreateOptions;
+    [Keys.resolverSubCommands]?: { fallback?: Instantiable<SubCommand> | null; fallbackName?: string } | null;
+    [Keys.resolverIsShortcut]?: boolean;
 };
 
 export type YunaGroupType = {

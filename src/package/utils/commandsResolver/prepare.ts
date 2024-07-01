@@ -1,22 +1,12 @@
 import { ApplicationCommandType } from "discord-api-types/v10";
 import { type Command, SubCommand, type UsingClient } from "seyfert";
-import {
-    type AvailableClients,
-    type Instantiable,
-    type YunaGroupType,
-    type YunaUsable,
-    fallbackSubNameKey,
-    keyShortcut,
-    keySubCommands,
-} from "../../things";
+import { type AvailableClients, type Instantiable, Keys, type YunaGroupType, type YunaUsable } from "../../things";
 import { baseResolver } from "./base";
 import { getFallbackCommandName } from "./decorators";
 import type { YunaCommandsResolverConfig } from "./resolver";
 
-export const commandsConfigKey = Symbol("YunaCommands");
-
 export type UseYunaCommandsClient = UsingClient & {
-    [commandsConfigKey]?: {
+    [Keys.clientResolverMetadata]?: {
         shortcuts: (SubCommand | GroupLink)[];
         commands: Command[];
         config?: YunaCommandsResolverConfig;
@@ -27,7 +17,7 @@ export const ShortcutType = {
     Group: Symbol(),
 };
 export type YunaGroup = YunaGroupType & {
-    [fallbackSubNameKey]?: string;
+    [Keys.resolverFallbackSubCommand]?: string;
 };
 
 export interface GroupLink {
@@ -40,14 +30,12 @@ export interface GroupLink {
     type: typeof ShortcutType.Group;
 }
 
-const AlreadyModdedEvents = Symbol("YunaCommandsResolverLoaded");
-
 export const addCommandsEvents = (client: AvailableClients) => {
     const self = client as AvailableClients & {
-        commands: AvailableClients["commands"] & { [AlreadyModdedEvents]?: true };
+        commands: AvailableClients["commands"] & { [Keys.clientResolverAlreadyModdedEvents]?: true };
     };
     if (!client.commands) return client.logger.warn("[Yuna.resolver] Client.commands is undefined");
-    if (self.commands[AlreadyModdedEvents] === true) return;
+    if (self.commands[Keys.clientResolverAlreadyModdedEvents] === true) return;
 
     for (const event of ["load", "reloadAll"]) {
         const def = client.commands[event as "load"];
@@ -62,14 +50,14 @@ export const addCommandsEvents = (client: AvailableClients) => {
         });
     }
 
-    self.commands[AlreadyModdedEvents] = true;
+    self.commands[Keys.clientResolverAlreadyModdedEvents] = true;
 };
 
 export const getCommandsMetadata = (client: AvailableClients) => {
     const self = client as UseYunaCommandsClient;
 
     // biome-ignore lint/suspicious/noAssignInExpressions: penguin
-    return (self[commandsConfigKey] ??= {
+    return (self[Keys.clientResolverMetadata] ??= {
         shortcuts: [],
         commands: [],
     });
@@ -96,7 +84,7 @@ export function prepareCommands(client: AvailableClients) {
 
                 const fallbackSubName = group.fallbackSubCommand ? getFallbackCommandName(group.fallbackSubCommand) : undefined;
 
-                gr[fallbackSubNameKey] = fallbackSubName;
+                gr[Keys.resolverFallbackSubCommand] = fallbackSubName;
 
                 metadata.shortcuts.push({
                     name,
@@ -114,10 +102,10 @@ export function prepareCommands(client: AvailableClients) {
             if (!(sub instanceof SubCommand)) continue;
             hasSubCommands = true;
             sub.parent = command;
-            if ((sub as YunaUsable)[keyShortcut] === true) metadata.shortcuts.push(sub);
+            if ((sub as YunaUsable)[Keys.resolverIsShortcut] === true) metadata.shortcuts.push(sub);
         }
 
-        if (!hasSubCommands) (command as YunaUsable)[keySubCommands] = null;
+        if (!hasSubCommands) (command as YunaUsable)[Keys.resolverSubCommands] = null;
     }
 
     metadata.config?.afterPrepare?.call(client, metadata);
