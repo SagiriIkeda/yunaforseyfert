@@ -16,8 +16,8 @@ import {
 } from "seyfert";
 import { Transformers } from "seyfert/lib/client/transformers";
 import { type MakeRequired, toSnakeCase } from "seyfert/lib/common";
-import { type WatchersController, createId } from "./WatcherController";
-import { MessageObserver, type ObserverOptions } from "./WatcherObserver";
+import { type WatchersController, createId } from "./Controller";
+import { MessageObserver as MessageWatcher, type ObserverOptions } from "./Watcher";
 
 type RawMessageUpdated = MakeRequired<GatewayMessageUpdateDispatchData, "content">;
 
@@ -32,7 +32,7 @@ const createFakeAPIUser = (user: User) => {
     return created as APIUser;
 };
 
-export class MessageWatcher<const O extends OptionsRecord = any> {
+export class MessageWatcherManager<const O extends OptionsRecord = any> {
     message: Message;
 
     readonly id: string;
@@ -46,7 +46,7 @@ export class MessageWatcher<const O extends OptionsRecord = any> {
     originCtx?: CommandContext<O>;
     ctx?: CommandContext<O>;
 
-    observers = new Set<MessageObserver<this>>();
+    watchers = new Set<MessageWatcher<O>>();
 
     constructor(
         invoker: WatchersController,
@@ -76,7 +76,7 @@ export class MessageWatcher<const O extends OptionsRecord = any> {
     __fakeUser: APIUser;
 
     /** @internal */
-    __fakeMessage: ReturnType<MessageWatcher<O>["__createFakeAPIMessage"]>;
+    __fakeMessage: ReturnType<MessageWatcherManager<O>["__createFakeAPIMessage"]>;
     /** @internal */
     __createFakeAPIMessage(): Omit<GatewayMessageCreateDispatchData, "mentions" | `mention_${string}`> {
         const { message } = this;
@@ -112,12 +112,12 @@ export class MessageWatcher<const O extends OptionsRecord = any> {
 
         const content = message.content.trimStart();
 
-        type EventKeys = Extract<keyof MessageObserver<this>, `on${string}Event`>;
-        type EventParams<E extends EventKeys> = Parameters<NonNullable<MessageObserver<this>[E]>>;
+        type EventKeys = Extract<keyof MessageWatcher<O>, `on${string}Event`>;
+        type EventParams<E extends EventKeys> = Parameters<NonNullable<MessageWatcher<O>[E]>>;
 
         const runForAll = <E extends EventKeys>(event: E, ...parameters: EventParams<E>) => {
             // @ts-expect-error
-            for (const observer of this.observers) observer[event]?.(...parameters);
+            for (const observer of this.watchers) observer[event]?.(...parameters);
         };
 
         const { client } = this;
@@ -196,31 +196,30 @@ export class MessageWatcher<const O extends OptionsRecord = any> {
 
         Object.assign(ctx, client.options.context?.(newMessage));
         this.ctx = ctx;
-        //@ts-expect-error
         runForAll("onChangeEvent", ctx, message as RawMessageUpdated);
     }
 
     /** @internal */
-    stopObserver(observer: MessageObserver<this>, reason: string) {
-        const deleted = this.observers.delete(observer);
+    stopWatcher(observer: MessageWatcher<O>, reason: string) {
+        const deleted = this.watchers.delete(observer);
         if (!deleted) return;
 
         observer.stopTimers();
         observer.onStopEvent?.(reason);
 
-        if (this.observers.size) return;
+        if (this.watchers.size) return;
 
-        this.controller.watchers.delete(this.id);
+        this.controller.managers.delete(this.id);
     }
 
     stop(reason: string) {
-        for (const observer of this.observers) this.stopObserver(observer, reason);
+        for (const observer of this.watchers) this.stopWatcher(observer, reason);
     }
 
-    observe(options: ObserverOptions = {}) {
-        const observer = new MessageObserver(this, options);
+    watch(options: ObserverOptions = {}) {
+        const observer = new MessageWatcher(this, options);
 
-        this.observers.add(observer);
+        this.watchers.add(observer);
 
         return observer;
     }

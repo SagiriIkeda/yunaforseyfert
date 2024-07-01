@@ -1,7 +1,7 @@
 import type { OptionsRecord, UsingClient } from "seyfert";
 import type { AvailableClients } from "../../things";
-import { type WatcherCreateData, WatchersController, type YunaMessageWatcherControllerConfig } from "./WatcherController";
-import type { ObserverOptions } from "./WatcherObserver";
+import { type WatcherCreateData, WatchersController, type YunaMessageWatcherControllerConfig } from "./Controller";
+import type { ObserverOptions } from "./Watcher";
 
 const controllerKey = Symbol("YunaMessageWatcherController");
 

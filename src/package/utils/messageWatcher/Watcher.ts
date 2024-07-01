@@ -2,8 +2,8 @@ import type { GatewayMessageUpdateDispatchData } from "discord-api-types/v10";
 
 import type { Client, Command, CommandContext, Message, OnOptionsReturnObject, OptionsRecord, SubCommand, WorkerClient } from "seyfert";
 import type { MakeRequired } from "seyfert/lib/common";
-import type { MessageWatcher } from "./MessageWatcher";
-import type { WatchersController } from "./WatcherController";
+import type { WatchersController } from "./Controller";
+import type { MessageWatcherManager } from "./Manager";
 
 export type ObserverOptions = {
     idle?: number;
@@ -31,9 +31,7 @@ export type OnUsageErrorEvent<M extends MessageObserver> = <E extends keyof Usag
     ...params: UsageErrorEvents[E]
 ) => any;
 
-type Options<M extends MessageWatcher> = M extends MessageWatcher<infer R> ? R : any;
-
-export class MessageObserver<const M extends MessageWatcher = any> {
+export class MessageObserver<const O extends OptionsRecord = any> {
     readonly options: ObserverOptions;
 
     #idle?: NodeJS.Timeout;
@@ -41,31 +39,31 @@ export class MessageObserver<const M extends MessageWatcher = any> {
 
     message: Message;
     controller: WatchersController;
-    watcher: M;
+    manager: MessageWatcherManager<O>;
     client: Client | WorkerClient;
     command: Command | SubCommand;
     shardId: number;
 
-    constructor(watcher: M, options?: ObserverOptions) {
+    constructor(manager: MessageWatcherManager<O>, options?: ObserverOptions) {
         this.options = options ?? {};
-        this.message = watcher.message;
-        this.watcher = watcher;
-        this.controller = watcher.controller;
-        this.client = watcher.client;
-        this.command = watcher.command;
-        this.shardId = watcher.shardId;
+        this.message = manager.message;
+        this.manager = manager;
+        this.controller = manager.controller;
+        this.client = manager.client;
+        this.command = manager.command;
+        this.shardId = manager.shardId;
 
         this.refresh();
     }
     /** key where the watcher is stored */
     get id() {
-        return this.watcher.id;
+        return this.manager.id;
     }
 
     get position() {
         let i = 0;
 
-        for (const watcher of this.watcher.observers) {
+        for (const watcher of this.manager.watchers) {
             if (watcher === this) return i;
             i++;
         }
@@ -73,12 +71,12 @@ export class MessageObserver<const M extends MessageWatcher = any> {
         return null;
     }
 
-    get ctx(): CommandContext<Options<M>> | undefined {
-        return this.watcher.ctx;
+    get ctx(): CommandContext<O> | undefined {
+        return this.manager.ctx;
     }
 
-    get originCtx(): CommandContext<Options<M>> | undefined {
-        return this.watcher.originCtx;
+    get originCtx(): CommandContext<O> | undefined {
+        return this.manager.originCtx;
     }
 
     refresh(all = false) {
@@ -113,9 +111,9 @@ export class MessageObserver<const M extends MessageWatcher = any> {
         return this;
     }
     /** @internal */
-    onChangeEvent?: OnChangeEvent<this, Options<M>>;
+    onChangeEvent?: OnChangeEvent<this, O>;
 
-    onChange(callback: OnChangeEvent<this, Options<M>>) {
+    onChange(callback: OnChangeEvent<this, O>) {
         this.onChangeEvent = callback.bind(this);
         return this;
     }
@@ -136,10 +134,10 @@ export class MessageObserver<const M extends MessageWatcher = any> {
     }
     /** stop all observers to this watcher */
     stopAll(reason: string) {
-        return this.watcher.stop(reason);
+        return this.manager.stop(reason);
     }
     /** stop this observer */
     stop(reason: string) {
-        return this.watcher.stopObserver(this, reason);
+        return this.manager.stopWatcher(this, reason);
     }
 }

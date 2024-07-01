@@ -10,8 +10,8 @@ import {
     type UsingClient,
     type WorkerClient,
 } from "seyfert";
-import { MessageWatcher } from "./MessageWatcher";
-import type { MessageObserver, ObserverOptions } from "./WatcherObserver";
+import { MessageWatcherManager } from "./Manager.js";
+import type { ObserverOptions } from "./Watcher";
 
 export function createId(message: string, channelId: string): string;
 export function createId(message: BaseMessage): string;
@@ -20,11 +20,11 @@ export function createId(message: BaseMessage | string, channelId?: string): str
     return `${message.channelId}.${message.id}`;
 }
 
-type CollectorsCacheAdapter = Map<string, MessageWatcher> | LimitedCollection<string, MessageWatcher>;
+type WatchersManagersCacheAdapter = Map<string, MessageWatcherManager> | LimitedCollection<string, MessageWatcherManager>;
 
 export interface YunaMessageWatcherControllerConfig {
     client: UsingClient;
-    cache?: CollectorsCacheAdapter;
+    cache?: WatchersManagersCacheAdapter;
 }
 
 export type FindWatcherQuery =
@@ -35,12 +35,16 @@ export type FindWatcherQuery =
           userId?: string;
           command?: Command | SubCommand;
       }
-    | ((watcher: MessageWatcher) => boolean);
+    | ((watcher: MessageWatcherManager) => boolean);
 
 export type WatcherCreateData = Pick<CommandContext, "client" | "command" | "message" | "shardId">;
 
+export type inferOptionsFromCtx<C> = C extends CommandContext<infer R> ? R : never;
+export type inferWatcherFromCtx<C> = MessageWatcherManager<inferOptionsFromCtx<C>>;
+
 export class WatchersController {
-    watchers: CollectorsCacheAdapter = new Map<string, MessageWatcher>();
+    /** watchers managers cache */
+    managers: WatchersManagersCacheAdapter = new Map<string, MessageWatcherManager>();
 
     watching = false;
 
@@ -48,16 +52,17 @@ export class WatchersController {
 
     constructor({ cache = new Map(), client }: YunaMessageWatcherControllerConfig) {
         this.client = client;
-        this.watchers = cache;
+        this.managers = cache;
     }
 
     init() {
         if (this.watching) return;
+
         const { client } = this;
 
         this.watching = true;
 
-        const cache = this.watchers;
+        const cache = this.managers;
 
         const deleteBy = (data: { channelId: string } | { guildId: string }) => {
             const isChannel = "channelId" in data;
@@ -67,7 +72,7 @@ export class WatchersController {
             const errorName = isChannel ? "channelDelete" : "guildDelete";
 
             for (const instancesData of cache.values()) {
-                const watcher = (instancesData as Exclude<typeof instancesData, MessageWatcher>).value ?? instancesData;
+                const watcher = (instancesData as Exclude<typeof instancesData, MessageWatcherManager>).value ?? instancesData;
 
                 if (watcher.message[key] !== id) continue;
                 watcher.stop(errorName);
@@ -86,11 +91,7 @@ export class WatchersController {
 
         client.collectors.create({
             event: "RAW",
-
-            filter() {
-                return true;
-            },
-
+            filter: () => true,
             run({ t: event, d: data }) {
                 switch (event) {
                     case GatewayDispatchEvents.GuildDelete:
@@ -103,9 +104,7 @@ export class WatchersController {
                         deleteBy({ channelId: data.id });
                         break;
                     case GatewayDispatchEvents.MessageDeleteBulk:
-                        for (const id of data.ids) {
-                            deleteByMessage(id, data.channel_id, "MessageBulkDelete");
-                        }
+                        for (const id of data.ids) deleteByMessage(id, data.channel_id, "MessageBulkDelete");
                         break;
                     case GatewayDispatchEvents.MessageDelete:
                         deleteByMessage(data.id, data.channel_id, "MessageDelete");
@@ -129,16 +128,16 @@ export class WatchersController {
 
         const id = createId(message);
 
-        const watcher = this.watchers.get(id);
+        const manager = this.managers.get(id);
 
         this.init();
 
         type OptionsType = O extends undefined ? (C extends CommandContext<infer R> ? R : {}) : O;
 
-        if (!watcher)
-            this.watchers.set(
+        if (!manager)
+            this.managers.set(
                 id,
-                new MessageWatcher<OptionsType>(
+                new MessageWatcherManager<OptionsType>(
                     this,
                     client as Client | WorkerClient,
                     message,
@@ -148,18 +147,18 @@ export class WatchersController {
                 ),
             );
 
-        const observer = this.watchers.get(id)!.observe(options) as MessageObserver<MessageWatcher<OptionsType>>;
+        const watcher = (this.managers.get(id) as MessageWatcherManager<OptionsType>)?.watch(options);
 
-        return observer;
+        return watcher;
     }
 
-    getWatcherFromContext({ message }: Pick<CommandContext, "message">) {
+    getWatcherFromContext<C extends CommandContext>({ message }: C) {
         if (!message) return;
         const id = createId(message);
-        return this.watchers.get(id);
+        return this.managers.get(id) as inferWatcherFromCtx<C> | undefined;
     }
 
-    #baseSearch(query: Exclude<FindWatcherQuery, Function>, watcher: MessageWatcher) {
+    #baseSearch(query: Exclude<FindWatcherQuery, Function>, watcher: MessageWatcherManager) {
         if (query.guildId && watcher.message.guildId !== query.guildId) return false;
         if (query.channelId && watcher.message.channelId !== query.channelId) return false;
         if (query.messageId && watcher.message.id !== query.messageId) return false;
@@ -168,19 +167,19 @@ export class WatchersController {
         return true;
     }
 
-    *#findWatchers(query: FindWatcherQuery): Generator<MessageWatcher> {
+    *#findWatchers(query: FindWatcherQuery): Generator<MessageWatcherManager> {
         const searchFn = typeof query === "function" ? query : this.#baseSearch.bind(this, query);
 
-        for (const value of this.watchers.values()) {
-            const watcher = (value as Exclude<typeof value, MessageWatcher<any>>).value ?? value;
+        for (const value of this.managers.values()) {
+            const watcher = (value as Exclude<typeof value, MessageWatcherManager<any>>).value ?? value;
 
-            if (watcher && searchFn(watcher) === true) {
-                yield watcher;
-            }
+            if (!watcher || searchFn(watcher) === false) continue;
+
+            yield watcher;
         }
     }
 
-    findWatcher(query: FindWatcherQuery): MessageWatcher | undefined {
+    findWatcher(query: FindWatcherQuery): MessageWatcherManager | undefined {
         return this.#findWatchers(query).next().value;
     }
 

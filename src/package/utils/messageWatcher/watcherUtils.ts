@@ -1,10 +1,10 @@
 import type { CommandContext, OptionsRecord } from "seyfert";
 import type { Awaitable } from "seyfert/lib/common";
 import type { AvailableClients, YunaUsable } from "../../things";
-import type { MessageWatcher } from "./MessageWatcher";
-import type { FindWatcherQuery } from "./WatcherController";
-import type { MessageObserver, OnChangeEvent, OnOptionsErrorEvent, OnStopEvent, OnUsageErrorEvent } from "./WatcherObserver";
-import type { ObserverOptions } from "./WatcherObserver";
+import type { FindWatcherQuery, inferWatcherFromCtx } from "./Controller";
+import type { MessageWatcherManager } from "./Manager";
+import type { MessageObserver, OnChangeEvent, OnOptionsErrorEvent, OnStopEvent, OnUsageErrorEvent } from "./Watcher";
+import type { ObserverOptions } from "./Watcher";
 import { createController, createWatcher, getController } from "./controllerUtils";
 
 interface WatchOptions<C extends YunaUsable, O extends OptionsRecord> extends ObserverOptions {
@@ -13,11 +13,11 @@ interface WatchOptions<C extends YunaUsable, O extends OptionsRecord> extends Ob
      * if you return `false` it will not be created.
      */
     beforeCreate?(this: C, ctx: CommandContext<O>): Awaitable<boolean> | void;
-    filter?(...args: Parameters<OnChangeEvent<MessageObserver<MessageWatcher<O>>, O>>): boolean;
-    onStop?: OnStopEvent<MessageObserver<MessageWatcher<O>>>;
-    onChange?: OnChangeEvent<MessageObserver<MessageWatcher<O>>, O>;
-    onUsageError?: OnUsageErrorEvent<MessageObserver<MessageWatcher<O>>>;
-    onOptionsError?: OnOptionsErrorEvent<MessageObserver<MessageWatcher<O>>>;
+    filter?(...args: Parameters<OnChangeEvent<MessageObserver<O>, O>>): boolean;
+    onStop?: OnStopEvent<MessageObserver<O>>;
+    onChange?: OnChangeEvent<MessageObserver<O>, O>;
+    onUsageError?: OnUsageErrorEvent<MessageObserver<O>>;
+    onOptionsError?: OnOptionsErrorEvent<MessageObserver<O>>;
 }
 
 function DecoratorWatcher<
@@ -60,14 +60,14 @@ export interface WatchUtils {
     createController: typeof createController;
     getController: typeof getController;
     /**  Get the list of `watchers` (there may be more than one) associated to a `CommandContext`. */
-    getFromContext(ctx: CommandContext): MessageWatcher<any> | undefined;
+    getFromContext<C extends CommandContext>(ctx: C): inferWatcherFromCtx<C> | undefined;
     /**
      * Find watchers from a query.
      * This method returns the key (id where it is stored) of the watcher, and its instances in an array.
      */
-    find(client: AvailableClients, query: FindWatcherQuery): MessageWatcher | undefined;
+    find(client: AvailableClients, query: FindWatcherQuery): MessageWatcherManager | undefined;
     /** Similar to `findInstances` but this one will filter through all, it is used in the same way, but it will return all matches */
-    findMany(client: AvailableClients, query: FindWatcherQuery): MessageWatcher[] | undefined;
+    findMany(client: AvailableClients, query: FindWatcherQuery): MessageWatcherManager[] | undefined;
     /**
      * Use it to know when a `CommandContext` is being observed.
      */
@@ -78,7 +78,7 @@ export const YunaWatcherUtils: WatchUtils = {
     create: createWatcher,
     createController,
     getController,
-    getFromContext(ctx: CommandContext) {
+    getFromContext<C extends CommandContext>(ctx: C) {
         return getController(ctx.client)?.getWatcherFromContext(ctx);
     },
     find(client: AvailableClients, query: FindWatcherQuery) {
