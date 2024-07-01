@@ -36,6 +36,7 @@ export interface DecoratorWatchOptions<C extends YunaUsable, O extends OptionsRe
      * if you return `false` it will not be created.
      */
     beforeCreate?(this: C, ctx: CommandContext<O>): Awaitable<boolean> | void;
+    /** filters the execution of the `onChange` event */
     filter?(...args: Parameters<WatcherOnChangeEvent<MessageWatcher<O>, O>>): boolean;
     onStop?: WatcherOnStopEvent<MessageWatcher<O>>;
     onChange?: WatcherOnChangeEvent<MessageWatcher<O>, O>;

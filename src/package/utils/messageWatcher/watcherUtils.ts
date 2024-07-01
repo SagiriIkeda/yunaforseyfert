@@ -44,17 +44,16 @@ export interface WatchUtils {
     create: typeof createWatcher;
     createController: typeof createController;
     getController: typeof getController;
-    /**  Get the list of `watchers` (there may be more than one) associated to a `CommandContext`. */
+    /**  Get `MessageWatcherManager` associated to a `CommandContext`. */
     getFromContext<C extends CommandContext>(ctx: C): inferWatcherFromCtx<C> | undefined;
     /**
-     * Find watchers from a query.
-     * This method returns the key (id where it is stored) of the watcher, and its instances in an array.
+     * Find an `MessageWatcherManager` from a query.
      */
     find(client: AvailableClients, query: FindWatcherQuery): MessageWatcherManager | undefined;
-    /** Similar to `findInstances` but this one will filter through all, it is used in the same way, but it will return all matches */
+    /** Similar to `find` but this one will filter through all, it is used in the same way, but it will return all matches */
     findMany(client: AvailableClients, query: FindWatcherQuery): MessageWatcherManager[] | undefined;
     /**
-     * Use it to know when a `CommandContext` is being observed.
+     * Use it to know when a `CommandContext` is being watched.
      */
     isWatching(ctx: CommandContext): boolean;
 }

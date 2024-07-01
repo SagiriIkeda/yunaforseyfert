@@ -38,7 +38,7 @@ type EventParams<O extends OptionsRecord, E extends EventKeys<O>> = Parameters<O
 
 export class MessageWatcherManager<const O extends OptionsRecord = any> {
     message: Message;
-
+    /** key where this is stored */
     readonly id: string;
 
     controller: WatchersController;

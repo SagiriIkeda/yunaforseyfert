@@ -533,6 +533,7 @@ And now it will be updated every time the message is edited!
 
 ```ts
 @Watch({
+  /** filters the execution of the `onChange` event */
   filter(ctx) { return true },
   time: 100_000,
   /** Downtime until the watcher stops. */
@@ -640,20 +641,13 @@ Get the list of `watchers` (there may be more than one) associated to a `Command
 ```ts
 Yuna.watchers.getFromContext(ctx)
 ```
-- **`Yuna.watchers.findInstances`**
+- **`Yuna.watchers.find`**
 
-Find watchers from a query.
+Find an `MessageWatcherManager` from a query.
 
 ```ts
-/** 
- * This method returns the key (id where it is stored) of the watcher, and its instances in an array. 
- * @returns 
- * {
- *  id: string,
- *  instances: MessageWatcher[]
- * }
- * */
-Yuna.watchers.findInstances(client, {
+// usage example
+Yuna.watchers.find(client, {
   /** query properties */
   userId: ctx.author.id,
   // messageId
@@ -663,22 +657,16 @@ Yuna.watchers.findInstances(client, {
 })
 
 // the query can also be a callback that returns a boolean
-Yuna.watchers.findInstances(client, (watcher) => watcher.message.author.id === ctx.author.id)
+Yuna.watchers.find(client, (watcher) => watcher.message.author.id === ctx.author.id)
 ```
 
-- **`Yuna.watchers.getManyInstances`**
+- **`Yuna.watchers.findMany`**
 
-Similar to `findInstances` but this one will filter through all, it is used in the same way, but it will return all matches with the following type:
-```ts
-{
- id: string,
- instances: MessageWatcher[]
-}[]
-```
+Similar to `find` but this one will filter through all, it is used in the same way, but it will return all matches
 
 - **`Yuna.watchers.isWatching`**
 
-Use it to know when a `CommandContext` is being observed.
+Use it to know when a `CommandContext` is being watched.
 
 - **`Use example`**
 
@@ -691,17 +679,13 @@ Using the `@Watch` decorator you would do it with the beforeCreate event, and wi
   idle: 10_000,
   beforeCreate(ctx) {
     // Get some watcher associated to the user in this command
-    const userWatcher = Yuna.watchers.findInstances(ctx.client, {
+    const userWatcher = Yuna.watchers.find(ctx.client, {
         userId: ctx.author.id,
         command: this, // this refers to the Command
     });
-
-    // If not, we do not proceed.
-    if (!userWatcher) return;
-    //From there, get the first MessageWatcher of the previous message (the one we want to stop watching).
-    const [watcher] = userWatcher.instances;
-    // stop all instances of that message.
-    watcher?.stopAll("AnotherInstanceCreated");
+    
+    // If found, we stop it
+    userWatcher?.stop("AnotherInstanceCreated");
   }
 })
 ```
