@@ -1,8 +1,8 @@
 import { ApplicationCommandOptionType, ApplicationCommandType } from "discord-api-types/v10";
 import type { Command, SubCommand } from "seyfert";
 import { IgnoreCommand } from "seyfert";
-import { type AvailableClients, type YunaUsable, fallbackSubNameKey, keySubCommands } from "../../things";
-import { type GroupLink, ShortcutType, type UseYunaCommandsClient, type YunaGroup, commandsConfigKey } from "./prepare";
+import { type AvailableClients, Keys, type YunaUsable } from "../../things";
+import { type GroupLink, ShortcutType, type UseYunaCommandsClient, type YunaGroup } from "./prepare";
 import type { YunaCommandsResolverConfig } from "./resolver";
 
 type UsableCommand = Command | SubCommand;
@@ -39,7 +39,7 @@ export function baseResolver(
     query: string | string[],
     config?: Config,
 ): UsableCommand | YunaCommandsResolverData | undefined {
-    const metadata = (client as UseYunaCommandsClient)[commandsConfigKey];
+    const metadata = (client as UseYunaCommandsClient)[Keys.clientResolverMetadata];
 
     const matchsData = typeof query === "string" ? getMatches(query) : undefined;
     const matchs = matchsData?.result;
@@ -68,7 +68,7 @@ export function baseResolver(
         return match && (match?.index ?? 0) + match[0]?.length;
     };
 
-    const parentSubCommandsMetadata = parentCommand?.[keySubCommands];
+    const parentSubCommandsMetadata = parentCommand?.[Keys.resolverSubCommands];
 
     const availableInMessage = (command: YunaUsable) => (config?.inMessage === true ? command.ignore !== IgnoreCommand.Message : true);
 
@@ -103,7 +103,9 @@ export function baseResolver(
 
     const subName = groupName ? sub : group;
 
-    const fallbackSubCommandName = groupData ? (groupData as YunaGroup)[fallbackSubNameKey] : parentSubCommandsMetadata?.fallbackName;
+    const fallbackSubCommandName = groupData
+        ? (groupData as YunaGroup)[Keys.resolverFallbackSubCommand]
+        : parentSubCommandsMetadata?.fallbackName;
 
     let virtualSubCommand: SubCommand | undefined;
     let firstGroupSubCommand: SubCommand | undefined;

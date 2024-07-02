@@ -1,5 +1,5 @@
 import type { Command, SubCommand } from "seyfert";
-import { type Instantiable, keyShortcut, keySubCommands } from "../../things";
+import { type Instantiable, Keys } from "../../things";
 
 /**
  * ### Yuna's Text Shortcuts
@@ -17,7 +17,7 @@ import { type Instantiable, keyShortcut, keySubCommands } from "../../things";
 export function Shortcut() {
     return <T extends Instantiable<SubCommand>>(target: T) => {
         return class extends target {
-            [keyShortcut] = true;
+            [Keys.resolverIsShortcut] = true;
             declare run: SubCommand["run"];
         };
     };
@@ -38,7 +38,7 @@ export const getFallbackCommandName = (command: Instantiable<SubCommand> | null 
 export function DeclareFallbackSubCommand(command: Instantiable<SubCommand> | null | string) {
     return <T extends Instantiable<Command>>(target: T) => {
         return class extends target {
-            [keySubCommands] = { fallback: command, fallbackName: getFallbackCommandName(command) };
+            [Keys.resolverSubCommands] = { fallback: command, fallbackName: getFallbackCommandName(command) };
         };
     };
 }

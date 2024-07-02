@@ -8,7 +8,7 @@ import EvalCommand from "../bot-test/commands/eval";
 import PingCommand from "../bot-test/commands/ping";
 import TestCommand from "../bot-test/commands/test";
 import { Yuna } from "../package/index";
-import { type Instantiable, type YunaUsable, fallbackSubNameKey, keySubCommands } from "../package/things";
+import { type Instantiable, Keys, type YunaUsable } from "../package/things";
 import { type YunaGroup, prepareCommands } from "../package/utils/commandsResolver/prepare";
 import type { YunaCommandsResolverConfig } from "../package/utils/commandsResolver/resolver";
 
@@ -148,11 +148,11 @@ describe("fallbackSubCommand", () => {
             fallbackName: undefined,
         };
 
-        accountInstance[keySubCommands] = setting;
+        accountInstance[Keys.resolverSubCommands] = setting;
         const group = accountInstance.groups?.pengu as YunaGroup;
         if (!group) return;
         group.fallbackSubCommand = fallback;
-        group[fallbackSubNameKey] = undefined;
+        group[Keys.resolverFallbackSubCommand] = undefined;
     };
     test("global useFallbackSubCommand", () => {
         applySetting(undefined);

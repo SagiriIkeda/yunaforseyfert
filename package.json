@@ -6,7 +6,7 @@
   "main": "./build/index.js",
   "types": "./build/index.d.ts",
   "private": true,
-  "files": ["dist"],
+  "files": ["build"],
   "scripts": {
     "bot": "cd src/bot-test && bun .",
     "yuna": "vitest run test && mkdir -p .npm && npm run build && bun src/package/lib/prepublish.ts && cp -r build .npm/build",
