@@ -3,10 +3,10 @@
 	"tasks": [
 		{
 			"type": "npm",
-			"script": "tsc",
-			"problemMatcher": [],
-			"label": "tsc",
-			"detail": "tsc"
+			"script": "esbuild",
+			"label": "esbuild",
+			"hide": true,
+			"detail": "transpile with esbuild omitting type checking",
 		}
 	]
 }
