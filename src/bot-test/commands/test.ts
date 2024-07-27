@@ -21,7 +21,7 @@ const options = {
 @Options(options)
 export default class TestCommand extends Command {
     @Watch({
-        idle: 10_000,
+        idle: 100_000,
         onStop(reason) {
             this.ctx?.editOrReply({ content: `watcher end '${reason}'`, embeds: [] });
         },

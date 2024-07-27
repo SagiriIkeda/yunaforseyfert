@@ -102,6 +102,10 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             quote: ValidLongTextTags;
             /** start position */
             start: number;
+            /** position with more left quotes */
+            toStart: number;
+            end?: number;
+            toEnd?: number;
         }
 
         let longTextTagsState: LongTextTagsState | null = null;
@@ -221,13 +225,15 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             aggregateNextOption(text, textPosition);
         };
 
-        const aggregateLongTextTag = (tag: string, start: number, end?: number) => {
-            const value = content.slice(start, end);
+        const aggregateLongTextTag = (end?: number) => {
+            if (!longTextTagsState) return;
+
+            const value = content.slice(longTextTagsState.toStart, end);
+
+            const reg = localEscapeModes[longTextTagsState.quote as keyof typeof localEscapeModes];
 
             longTextTagsState = null;
             isRecentlyClosedAnyTag = true;
-
-            const reg = localEscapeModes[tag as keyof typeof localEscapeModes];
 
             aggregateNextOption(reg ? sanitizeBackescapes(value, reg, checkNextChar) : value, null);
         };
@@ -359,9 +365,36 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                     longTextTagsState = {
                         quote: tag as ValidLongTextTags,
                         start: index + 1,
+                        toStart: index + 1,
                     };
-                } else if (longTextTagsState.quote === tag && longTextTagsState.start) {
-                    aggregateLongTextTag(tag, longTextTagsState.start, index);
+                } else if (longTextTagsState.quote === tag && longTextTagsState.start !== undefined) {
+                    // end quote
+
+                    const isStartSequentially = longTextTagsState.toStart === index;
+
+                    if (isStartSequentially) {
+                        longTextTagsState.toStart++;
+                    } else {
+                        // end quote
+
+                        const nextChar = content[index + 1];
+
+                        const nextCharIsSameQuote = nextChar === tag;
+
+                        const isPossiblyEndSequentially = nextCharIsSameQuote && longTextTagsState.end === undefined;
+
+                        if (isPossiblyEndSequentially) {
+                            longTextTagsState.end = index;
+                            longTextTagsState.toEnd = index;
+                            continue;
+                        }
+
+                        if (longTextTagsState.toEnd !== undefined && longTextTagsState.toEnd + 1 === index && nextCharIsSameQuote) {
+                            longTextTagsState.toEnd++;
+                        } else {
+                            aggregateLongTextTag(longTextTagsState.end ?? index);
+                        }
+                    }
                 }
 
                 continue;
@@ -385,7 +418,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
         if (namedOptionInitialized) {
             aggregateNextNamedOption(content.length);
-        } else if (longTextTagsState) aggregateLongTextTag(longTextTagsState.quote, longTextTagsState.start);
+        } else if (longTextTagsState) aggregateLongTextTag();
 
         if (choices && config.resolveCommandOptionsChoices !== null) {
             YunaParserOptionsChoicesResolver(commandMetadata, argsResult, config);
