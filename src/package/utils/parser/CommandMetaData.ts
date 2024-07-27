@@ -67,17 +67,19 @@ export class YunaParserCommandMetaData {
     }
 
     getConfig(globalConfig: YunaParserCreateOptions) {
-        if (!this.config || this.globalConfig === globalConfig) return globalConfig;
+        if (!this.config) return globalConfig;
 
-        const config = mergeConfig(globalConfig, this.config);
+        if (this.globalConfig === globalConfig) return this.config;
+
+        this.config = mergeConfig(globalConfig, this.config);
 
         this.globalConfig = globalConfig;
 
-        this.regexes = this.config?.syntax && createRegexes(config);
+        this.regexes = this.config?.syntax && createRegexes(this.config);
 
-        if (this.config.syntax?.namedOptions) this.vns = YunaParserCommandMetaData.getValidNamedOptionSyntaxes(config);
+        if (this.config.syntax?.namedOptions) this.vns = YunaParserCommandMetaData.getValidNamedOptionSyntaxes(this.config);
 
-        return config;
+        return this.config;
     }
 
     static from(command: YunaUsable) {

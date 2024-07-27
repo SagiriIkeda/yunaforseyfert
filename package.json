@@ -16,7 +16,7 @@
     "lint": "biome lint --write ./src",
     "format": "biome check --write ./src",
     "test": "vitest",
-    "esbuild": "esbuild src/**/*.ts --outdir=dist --sourcemap --platform=node --format=cjs --target=es2022"
+    "esbuild": "esbuild src/**/*.ts --outdir=dist --sourcemap=inline --platform=node --format=cjs --target=es2022"
   },
   "keywords": [
     "parser",

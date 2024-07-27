@@ -184,6 +184,8 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                 RemoveLongCharEscapeMode(localEscapeModes);
             }
 
+            console.log("with latest long word");
+
             const canUseAsLiterally = disableLongTextTagsInLastOption && breakSearchOnConsumeAllOptions && end === content.length;
 
             const slicedContent = content.slice(start, end);
@@ -239,6 +241,8 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
             longTextTagsState = null;
             isRecentlyClosedAnyTag = true;
+
+            console.log("with quote");
 
             aggregateNextOption(reg ? sanitizeBackescapes(value, reg, checkNextChar) : value, null);
         };
