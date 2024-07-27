@@ -82,6 +82,12 @@ export interface YunaParserCreateOptions {
         /** need to have the mention enabled (@PING) */
         requirePing: boolean;
     } | null;
+
+    /**
+     * Allow to use the language of a codeBlock as the previous option
+     * @default {false}
+     */
+    useCodeBlockLangAsAnOption?: boolean;
 }
 
 type EscapeModeType = Record<string, RegExp | undefined>;
@@ -220,6 +226,7 @@ export const createConfig = (config: YunaParserCreateOptions, isFull = true) => 
             newConfig.syntax.namedOptions = removeDuplicates(config?.syntax?.namedOptions ?? ["-", "--", ":"]);
     }
 
+    if (isFull || "useCodeBlockLangAsAnOption" in config) newConfig.useCodeBlockLangAsAnOption = config.useCodeBlockLangAsAnOption === true;
     if (isFull || "breakSearchOnConsumeAllOptions" in config)
         newConfig.breakSearchOnConsumeAllOptions = config.breakSearchOnConsumeAllOptions === true;
     if (isFull || "useUniqueNamedSyntaxAtSameTime" in config)

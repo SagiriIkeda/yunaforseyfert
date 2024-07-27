@@ -92,7 +92,12 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
         const validNamedOptionSyntaxes = commandMetadata.vns ?? globalVNS;
 
-        const { breakSearchOnConsumeAllOptions, useUniqueNamedSyntaxAtSameTime, disableLongTextTagsInLastOption } = config;
+        const {
+            breakSearchOnConsumeAllOptions,
+            useUniqueNamedSyntaxAtSameTime,
+            disableLongTextTagsInLastOption,
+            useCodeBlockLangAsAnOption,
+        } = config;
 
         const localEscapeModes = { ...__realEscapeModes };
 
@@ -413,7 +418,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                                 const hasCodeBlockLang = lines.length > 1 && !/^\s|\s\n?$/.test(codeBlockLangLine);
 
                                 if (hasCodeBlockLang) {
-                                    const canAddLangOption = iterableOptions.length - actualOptionIdx > 1;
+                                    const canAddLangOption = useCodeBlockLangAsAnOption && iterableOptions.length - actualOptionIdx > 1;
 
                                     if (canAddLangOption) {
                                         aggregateNextOption(codeBlockLangLine, longTextTagsState.toStart);
@@ -422,7 +427,13 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                                     longTextTagsState.toStart += codeBlockLangLine.length;
                                 }
 
-                                aggregateLongTextTag(endPosition);
+                                const startsWithLineBreak = content[longTextTagsState.toStart] === "\n";
+                                const endWithLineBreak = content[longTextTagsState.end - 1] === "\n";
+
+                                if (startsWithLineBreak) longTextTagsState.toStart++;
+                                if (endWithLineBreak) longTextTagsState.end--;
+
+                                aggregateLongTextTag(longTextTagsState.end ?? index);
                             }
                         }
                     }
