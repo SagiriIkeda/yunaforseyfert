@@ -9,6 +9,7 @@ import {
     RemoveFromCheckNextChar,
     RemoveLongCharEscapeMode,
     RemoveNamedEscapeMode,
+    type ValidLongTextTags,
     type ValidNamedOptionSyntax,
     type YunaParserCreateOptions,
     createConfig,
@@ -97,8 +98,14 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
         const matches = content.matchAll(elementsRegex);
 
-        let tagOpenWith: '"' | "'" | "`" | "-" | null = null;
-        let tagOpenPosition: number | null = null;
+        interface LongTextTagsState {
+            quote: ValidLongTextTags;
+            /** start position */
+            start: number;
+        }
+
+        let longTextTagsState: LongTextTagsState | null = null;
+
         let isEscapingNext = false;
         let unindexedRightText = "";
 
@@ -214,11 +221,12 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             aggregateNextOption(text, textPosition);
         };
 
-        const aggregateTagLongText = (tag: string, start: number, end?: number) => {
+        const aggregateLongTextTag = (tag: string, start: number, end?: number) => {
             const value = content.slice(start, end);
-            tagOpenWith = null;
-            tagOpenPosition = null;
+
+            longTextTagsState = null;
             isRecentlyClosedAnyTag = true;
+
             const reg = localEscapeModes[tag as keyof typeof localEscapeModes];
 
             aggregateNextOption(reg ? sanitizeBackescapes(value, reg, checkNextChar) : value, null);
@@ -260,7 +268,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
             const { tag, value, backescape, named } = groups ?? {};
 
-            if (named && !tagOpenWith) {
+            if (named && !longTextTagsState) {
                 const { hyphens, hyphensname, dots, dotsname } = groups ?? {};
 
                 const [, , backescapes] = match;
@@ -341,23 +349,25 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
                 if (isEscapingNext) {
                     isEscapingNext = false;
-                    if (!tagOpenWith) {
+                    if (!longTextTagsState) {
                         aggregateUnindexedText(index, tag, "/", undefined, undefined, _isRecentlyCosedAnyTag);
                     }
                 } else if (isInvalidTag || isDisabledLongTextTagsInLastOption) {
                     aggregateUnindexedText(index, tag, "", undefined, undefined, _isRecentlyCosedAnyTag);
                     continue;
-                } else if (!tagOpenWith) {
-                    tagOpenWith = tag as unknown as typeof tagOpenWith;
-                    tagOpenPosition = index + 1;
-                } else if (tagOpenWith === tag && tagOpenPosition) {
-                    aggregateTagLongText(tag, tagOpenPosition, index);
+                } else if (!longTextTagsState) {
+                    longTextTagsState = {
+                        quote: tag as ValidLongTextTags,
+                        start: index + 1,
+                    };
+                } else if (longTextTagsState.quote === tag && longTextTagsState.start) {
+                    aggregateLongTextTag(tag, longTextTagsState.start, index);
                 }
 
                 continue;
             }
 
-            if (value && tagOpenWith === null) {
+            if (value && longTextTagsState === null) {
                 const placeIsForLeft = !(_isRecentlyCosedAnyTag || unindexedRightText || spacesRegex.test(content[index - 1]));
 
                 if (placeIsForLeft && lastOptionNameAdded) {
@@ -375,7 +385,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
         if (namedOptionInitialized) {
             aggregateNextNamedOption(content.length);
-        } else if (tagOpenPosition && tagOpenWith) aggregateTagLongText(tagOpenWith, tagOpenPosition);
+        } else if (longTextTagsState) aggregateLongTextTag(longTextTagsState.quote, longTextTagsState.start);
 
         if (choices && config.resolveCommandOptionsChoices !== null) {
             YunaParserOptionsChoicesResolver(commandMetadata, argsResult, config);

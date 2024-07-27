@@ -2,7 +2,7 @@ import type { CommandOption } from "seyfert";
 import type { ApplicationCommandOptionType } from "seyfert/lib/types";
 import { Keys } from "../../things";
 
-type ValidLongTextTags = "'" | '"' | "`";
+export type ValidLongTextTags = "'" | '"' | "`";
 export type ValidNamedOptionSyntax = "-" | "--" | ":";
 export type CommandOptionWithType = CommandOption & { type: ApplicationCommandOptionType };
 
