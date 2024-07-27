@@ -392,7 +392,38 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                         if (longTextTagsState.toEnd !== undefined && longTextTagsState.toEnd + 1 === index && nextCharIsSameQuote) {
                             longTextTagsState.toEnd++;
                         } else {
-                            aggregateLongTextTag(longTextTagsState.end ?? index);
+                            const isCodeBlock =
+                                longTextTagsState.quote === "`" && longTextTagsState.toStart - longTextTagsState.start === 2;
+
+                            const endPosition = longTextTagsState.end ?? index;
+
+                            if (!isCodeBlock) {
+                                aggregateLongTextTag(endPosition);
+                            } else if (
+                                longTextTagsState.end !== undefined &&
+                                longTextTagsState.toEnd !== undefined &&
+                                index - longTextTagsState.end >= 2
+                            ) {
+                                const codeBlockContent = content.slice(longTextTagsState.toStart, endPosition);
+
+                                const lines = codeBlockContent.split("\n");
+
+                                const codeBlockLangLine = lines[0];
+
+                                const hasCodeBlockLang = lines.length > 1 && !/^\s|\s\n?$/.test(codeBlockLangLine);
+
+                                if (hasCodeBlockLang) {
+                                    const canAddLangOption = iterableOptions.length - actualOptionIdx > 1;
+
+                                    if (canAddLangOption) {
+                                        aggregateNextOption(codeBlockLangLine, longTextTagsState.toStart);
+                                    }
+
+                                    longTextTagsState.toStart += codeBlockLangLine.length;
+                                }
+
+                                aggregateLongTextTag(endPosition);
+                            }
                         }
                     }
                 }
