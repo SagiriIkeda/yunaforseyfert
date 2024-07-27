@@ -1,5 +1,5 @@
-import type { ApplicationCommandOptionType } from "discord-api-types/v10";
 import type { CommandOption } from "seyfert";
+import type { ApplicationCommandOptionType } from "seyfert/lib/types";
 import { Keys } from "../../things";
 
 type ValidLongTextTags = "'" | '"' | "`";

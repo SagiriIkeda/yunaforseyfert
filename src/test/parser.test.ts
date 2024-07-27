@@ -1,4 +1,3 @@
-import type { APIUser } from "discord-api-types/v10";
 import {
     Client,
     Command,
@@ -12,6 +11,7 @@ import {
     createUserOption,
 } from "seyfert";
 import { HandleCommand } from "seyfert/lib/commands/handle";
+import type { APIUser } from "seyfert/lib/types";
 import { describe, expect, test } from "vitest";
 import ChoicesNumberTestCommand, { ChoicesTestCommand } from "../bot-test/commands/choicesTest";
 import TestCommand from "../bot-test/commands/test";

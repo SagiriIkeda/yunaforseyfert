@@ -1,5 +1,5 @@
-import { ApplicationCommandType } from "discord-api-types/v10";
 import { type Command, SubCommand, type UsingClient } from "seyfert";
+import { ApplicationCommandType } from "seyfert/lib/types";
 import { type AvailableClients, type Instantiable, Keys, type YunaGroupType, type YunaUsable } from "../../things";
 import { baseResolver } from "./base";
 import { getFallbackCommandName } from "./decorators";

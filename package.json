@@ -6,7 +6,9 @@
   "main": "./build/index.js",
   "types": "./build/index.d.ts",
   "private": true,
-  "files": ["build"],
+  "files": [
+    "build"
+  ],
   "scripts": {
     "bot": "cd src/bot-test && bun .",
     "yuna": "vitest run test && mkdir -p .npm && npm run build && bun src/package/lib/prepublish.ts && cp -r build .npm/build",
@@ -23,7 +25,6 @@
   "author": "SagiriIkeda",
   "license": "ISC",
   "dependencies": {
-    "discord-api-types": "^0.37.90",
     "seyfert": "github:tiramisulabs/seyfert"
   },
   "homepage": "https://github.com/SagiriIkeda/yunaforseyfert#readme",
@@ -44,6 +45,6 @@
     "lint-staged": "^15.2.7",
     "tsup": "^8.1.0",
     "typescript": "^5.0.0",
-    "vitest": "^1.5.2"
+    "vitest": "^2.0.4"
   }
 }

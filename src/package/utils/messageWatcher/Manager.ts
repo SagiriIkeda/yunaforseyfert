@@ -1,5 +1,3 @@
-import type { APIUser, GatewayMessageCreateDispatchData, GatewayMessageUpdateDispatchData } from "discord-api-types/v10";
-
 import {
     type Client,
     type Command,
@@ -16,6 +14,7 @@ import {
 } from "seyfert";
 import { Transformers } from "seyfert/lib/client/transformers";
 import { type MakeRequired, toSnakeCase } from "seyfert/lib/common";
+import type { APIUser, GatewayMessageCreateDispatchData, GatewayMessageUpdateDispatchData } from "seyfert/lib/types";
 import { type WatchersController, createId } from "./Controller";
 import { MessageWatcher } from "./Watcher";
 import type { WatcherOptions } from "./types";

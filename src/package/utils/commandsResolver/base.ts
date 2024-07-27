@@ -1,6 +1,6 @@
-import { ApplicationCommandOptionType, ApplicationCommandType } from "discord-api-types/v10";
 import type { Command, SubCommand } from "seyfert";
 import { IgnoreCommand } from "seyfert";
+import { ApplicationCommandOptionType, ApplicationCommandType } from "seyfert/lib/types";
 import { type AvailableClients, Keys, type YunaUsable } from "../../things";
 import { type GroupLink, ShortcutType, type UseYunaCommandsClient, type YunaGroup } from "./prepare";
 import type { YunaCommandsResolverConfig } from "./resolver";

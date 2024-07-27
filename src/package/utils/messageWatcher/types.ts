@@ -1,6 +1,6 @@
-import type { GatewayMessageUpdateDispatchData } from "discord-api-types/v10";
 import type { Command, CommandContext, OnOptionsReturnObject, OptionsRecord, SubCommand } from "seyfert";
 import type { Awaitable, MakeRequired } from "seyfert/lib/common";
+import type { GatewayMessageUpdateDispatchData } from "seyfert/lib/types";
 import type { YunaUsable } from "../../things";
 import type { MessageWatcher } from "./Watcher";
 

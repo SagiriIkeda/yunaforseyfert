@@ -1,5 +1,5 @@
-import { ApplicationCommandOptionType } from "discord-api-types/v10";
 import type { CommandOption, SeyfertNumberOption, SeyfertStringOption } from "seyfert";
+import { ApplicationCommandOptionType } from "seyfert/lib/types";
 import { Keys, type YunaUsable } from "../../things";
 import {
     type CommandOptionWithType,

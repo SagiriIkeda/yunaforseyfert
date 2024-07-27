@@ -1,6 +1,6 @@
-import { ApplicationCommandOptionType } from "discord-api-types/v10";
 import type { Command, Message, SubCommand } from "seyfert";
 import type { HandleCommand } from "seyfert/lib/commands/handle";
+import { ApplicationCommandOptionType } from "seyfert/lib/types";
 import type { ArgsResult } from "../../things";
 import { YunaParserCommandMetaData } from "./CommandMetaData";
 import { YunaParserOptionsChoicesResolver } from "./choicesResolver";

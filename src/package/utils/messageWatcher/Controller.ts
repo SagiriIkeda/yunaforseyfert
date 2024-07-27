@@ -1,4 +1,3 @@
-import { GatewayDispatchEvents } from "discord-api-types/v10";
 import type { Client } from "seyfert";
 import {
     type BaseMessage,
@@ -10,6 +9,7 @@ import {
     type UsingClient,
     type WorkerClient,
 } from "seyfert";
+import { GatewayDispatchEvents } from "seyfert/lib/types/index.js";
 import { MessageWatcherManager } from "./Manager.js";
 import type { WatcherOptions } from "./types.js";
 

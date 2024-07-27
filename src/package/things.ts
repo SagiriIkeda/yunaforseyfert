@@ -1,5 +1,5 @@
-import type { LocaleString } from "discord-api-types/v10";
 import type { Client, Command, SubCommand, UsingClient, WorkerClient } from "seyfert";
+import type { LocaleString } from "seyfert/lib/types";
 import type { YunaParserCommandMetaData } from "./utils/parser/CommandMetaData";
 import type { YunaParserCreateOptions } from "./utils/parser/createConfig";
 
