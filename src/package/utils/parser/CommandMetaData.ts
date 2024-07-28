@@ -25,8 +25,6 @@ export class YunaParserCommandMetaData {
 
     regexes?: ReturnType<typeof createRegexes>;
 
-    config?: YunaParserCreateOptions;
-
     globalConfig?: YunaParserCreateOptions;
 
     choices?: [optionName: string, choices: DecoredChoice[]][];
@@ -40,7 +38,6 @@ export class YunaParserCommandMetaData {
 
     constructor(command: YunaUsable) {
         this.command = command;
-        this.config = this.command[Keys.parserConfig];
 
         this.base = command.constructor;
 
@@ -66,20 +63,30 @@ export class YunaParserCommandMetaData {
         }
     }
 
+    getOwnCommandConfig() {
+        return this.command[Keys.parserConfig];
+    }
+
+    config?: YunaParserCreateOptions;
+
     getConfig(globalConfig: YunaParserCreateOptions) {
-        if (!this.config) return globalConfig;
+        const commandConfig = this.getOwnCommandConfig();
 
-        if (this.globalConfig === globalConfig) return this.config;
+        if (!commandConfig) return globalConfig;
 
-        this.config = mergeConfig(globalConfig, this.config);
+        if (this.globalConfig === globalConfig && this.config) return this.config;
+
+        const resultConfig = mergeConfig(globalConfig, commandConfig);
+
+        this.config = resultConfig;
 
         this.globalConfig = globalConfig;
 
-        this.regexes = this.config?.syntax && createRegexes(this.config);
+        this.regexes = resultConfig?.syntax && createRegexes(resultConfig);
 
-        if (this.config.syntax?.namedOptions) this.vns = YunaParserCommandMetaData.getValidNamedOptionSyntaxes(this.config);
+        if (resultConfig.syntax?.namedOptions) this.vns = YunaParserCommandMetaData.getValidNamedOptionSyntaxes(resultConfig);
 
-        return this.config;
+        return resultConfig;
     }
 
     static from(command: YunaUsable) {

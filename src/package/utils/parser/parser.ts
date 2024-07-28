@@ -38,6 +38,8 @@ const backescapesRegex = /\\/;
 
 const spacesRegex = /[\s\x7F\n]/;
 
+const codeBlockQuote = "`";
+
 export const YunaParser = (config: YunaParserCreateOptions = {}) => {
     const globalConfig = createConfig(config);
     const globalRegexes = createRegexes(globalConfig);
@@ -155,7 +157,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
             const isLastOption = actualOptionIdx === iterableOptions.length - 1;
 
-            if (isLastOption && start !== null) {
+            if (isLastOption && start !== null && !longTextTagsState) {
                 lastestLongWord = {
                     start,
                     name: optionAtIndexName,
@@ -355,7 +357,6 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             }
 
             if (tag) {
-                const isDisabledLongTextTagsInLastOption = disableLongTextTagsInLastOption && actualOptionIdx >= iterableOptions.length - 1;
                 const isInvalidTag = InvalidTagsToBeLong.has(tag);
 
                 if (isEscapingNext) {
@@ -363,7 +364,13 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                     if (!longTextTagsState) {
                         aggregateUnindexedText(index, tag, "/", undefined, undefined, _isRecentlyCosedAnyTag);
                     }
-                } else if (isDisabledLongTextTagsInLastOption) {
+                    // isDisabledLongTextTagsInLastOption
+                } else if (
+                    !longTextTagsState &&
+                    disableLongTextTagsInLastOption &&
+                    actualOptionIdx >= iterableOptions.length - 1 &&
+                    !(tag === codeBlockQuote && content[index + 1] === codeBlockQuote && content[index + 2] === codeBlockQuote)
+                ) {
                     aggregateNextOption(tag, index);
                     continue;
                 } else if (isInvalidTag) {
@@ -422,12 +429,10 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                                     lines.length > 1 && !/^\s|\s\n?$/.test(codeBlockLangLine) && codeBlockLangLine !== "";
 
                                 if (hasCodeBlockLang) {
-                                    if (useCodeBlockLangAsAnOption) {
-                                        aggregateNextOption(codeBlockLangLine, longTextTagsState.toStart);
-                                        longTextTagsState.toStart += codeBlockLangLine.length;
-                                    }
+                                    useCodeBlockLangAsAnOption && aggregateNextOption(codeBlockLangLine, longTextTagsState.toStart);
+                                    longTextTagsState.toStart += codeBlockLangLine.length;
                                 } else {
-                                    actualOptionIdx++;
+                                    useCodeBlockLangAsAnOption && actualOptionIdx++;
                                 }
 
                                 const startsWithLineBreak = content[longTextTagsState.toStart] === "\n";
