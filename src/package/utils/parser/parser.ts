@@ -1,20 +1,11 @@
 import type { Command, Message, SubCommand } from "seyfert";
-import type { HandleCommand } from "seyfert/lib/commands/handle";
+import type { CommandOptionWithType, HandleCommand } from "seyfert/lib/commands/handle";
 import { ApplicationCommandOptionType } from "seyfert/lib/types";
 import type { ArgsResult } from "../../things";
 import { YunaParserCommandMetaData } from "./CommandMetaData";
 import { YunaParserOptionsChoicesResolver } from "./choicesResolver";
-import {
-    type CommandOptionWithType,
-    RemoveFromCheckNextChar,
-    RemoveLongCharEscapeMode,
-    RemoveNamedEscapeMode,
-    type ValidLongTextTags,
-    type ValidNamedOptionSyntax,
-    type YunaParserCreateOptions,
-    createConfig,
-    createRegexes,
-} from "./createConfig";
+import type { ValidLongTextTags, ValidNamedOptionSyntax, YunaParserCreateOptions } from "./configTypes";
+import { RemoveFromCheckNextChar, RemoveLongCharEscapeMode, RemoveNamedEscapeMode, createConfig, createRegexes } from "./createConfig";
 
 const InvalidTagsToBeLong = new Set(["-", ":"]);
 
@@ -359,6 +350,11 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             if (tag) {
                 const isInvalidTag = InvalidTagsToBeLong.has(tag);
 
+                type DisableLongTextTagsInLastOptionObject = Exclude<
+                    YunaParserCreateOptions["disableLongTextTagsInLastOption"],
+                    boolean | undefined
+                >;
+
                 if (isEscapingNext) {
                     isEscapingNext = false;
                     if (!longTextTagsState) {
@@ -369,7 +365,9 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                     !longTextTagsState &&
                     disableLongTextTagsInLastOption &&
                     actualOptionIdx >= iterableOptions.length - 1 &&
-                    !(tag === codeBlockQuote && content[index + 1] === codeBlockQuote && content[index + 2] === codeBlockQuote)
+                    ((disableLongTextTagsInLastOption as DisableLongTextTagsInLastOptionObject).excludeCodeBlocks
+                        ? !(tag === codeBlockQuote && content[index + 1] === codeBlockQuote && content[index + 2] === codeBlockQuote)
+                        : true)
                 ) {
                     aggregateNextOption(tag, index);
                     continue;

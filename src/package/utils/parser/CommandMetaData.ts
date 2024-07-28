@@ -1,13 +1,8 @@
 import type { CommandOption, SeyfertNumberOption, SeyfertStringOption } from "seyfert";
 import { ApplicationCommandOptionType } from "seyfert/lib/types";
 import { Keys, type YunaUsable } from "../../things";
-import {
-    type CommandOptionWithType,
-    type ValidNamedOptionSyntax,
-    type YunaParserCreateOptions,
-    createRegexes,
-    mergeConfig,
-} from "./createConfig";
+import type { CommandOptionWithType, ValidNamedOptionSyntax, YunaParserCreateOptions } from "./configTypes";
+import { createRegexes, mergeConfig } from "./createConfig";
 
 const InvalidOptionType = new Set([
     ApplicationCommandOptionType.Attachment,
@@ -19,19 +14,21 @@ type DecoredChoice = [rawName: string, name: string, value: string];
 
 type ValidNamedOptionSyntaxes = Partial<Record<ValidNamedOptionSyntax, true>>;
 export class YunaParserCommandMetaData {
-    command: YunaUsable;
+    readonly command: YunaUsable;
 
-    iterableOptions: CommandOption[] = [];
+    readonly iterableOptions: CommandOption[] = [];
 
     regexes?: ReturnType<typeof createRegexes>;
 
     globalConfig?: YunaParserCreateOptions;
 
-    choices?: [optionName: string, choices: DecoredChoice[]][];
+    readonly choices?: [optionName: string, choices: DecoredChoice[]][];
 
     base: Function;
 
     options = new Map<string, CommandOptionWithType>();
+
+    readonly baseConfig?: YunaParserCreateOptions;
 
     /** ValidNamedOptionSyntaxes */
     vns?: ValidNamedOptionSyntaxes;
@@ -40,6 +37,8 @@ export class YunaParserCommandMetaData {
         this.command = command;
 
         this.base = command.constructor;
+
+        this.baseConfig = command[Keys.parserConfig];
 
         if (command.options?.length) {
             const choices: typeof this.choices = [];
@@ -63,22 +62,16 @@ export class YunaParserCommandMetaData {
         }
     }
 
-    getOwnCommandConfig() {
-        return this.command[Keys.parserConfig];
-    }
-
-    config?: YunaParserCreateOptions;
+    #config?: YunaParserCreateOptions;
 
     getConfig(globalConfig: YunaParserCreateOptions) {
-        const commandConfig = this.getOwnCommandConfig();
+        if (!this.baseConfig) return globalConfig;
 
-        if (!commandConfig) return globalConfig;
+        if (this.globalConfig === globalConfig && this.#config) return this.#config;
 
-        if (this.globalConfig === globalConfig && this.config) return this.config;
+        const resultConfig = mergeConfig(globalConfig, this.baseConfig);
 
-        const resultConfig = mergeConfig(globalConfig, commandConfig);
-
-        this.config = resultConfig;
+        this.#config = resultConfig;
 
         this.globalConfig = globalConfig;
 

@@ -1,6 +1,6 @@
 import type { ArgsResult } from "../../things";
 import type { YunaParserCommandMetaData } from "./CommandMetaData";
-import type { YunaParserCreateOptions } from "./createConfig";
+import type { YunaParserCreateOptions } from "./configTypes";
 
 export const YunaParserOptionsChoicesResolver = (
     metadata: YunaParserCommandMetaData,
