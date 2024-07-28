@@ -14,12 +14,14 @@ import { HandleCommand } from "seyfert/lib/commands/handle";
 import type { APIUser } from "seyfert/lib/types";
 import { describe, expect, test } from "vitest";
 import ChoicesNumberTestCommand, { ChoicesTestCommand } from "../bot-test/commands/choicesTest";
+import EvalCommand from "../bot-test/commands/eval";
 import TestCommand from "../bot-test/commands/test";
 import { ParserRecommendedConfig, Yuna } from "../package/index";
 import type { YunaUsable } from "../package/things";
 import type { YunaParserCreateOptions } from "../package/utils/parser/configTypes";
 
 const testCommand = new TestCommand();
+const evalCommand = new EvalCommand();
 const choicesCommand = new ChoicesTestCommand();
 const choicesNumberCommand = new ChoicesNumberTestCommand();
 
@@ -27,7 +29,7 @@ const client = new Client() as UsingClient;
 
 const testParser = (
     text: string,
-    equalTo: Record<string, string>,
+    equalTo: Record<string, string | undefined>,
     config?: YunaParserCreateOptions,
     command: YunaUsable = testCommand,
     message?: Message,
@@ -166,9 +168,42 @@ describe("RecommendedConfig", () => {
                 console.log(' '.repeat(h - i) + '*'.repeat(2 * i - 1));
             }`;
 
+        const bugCode = '"\\n".length';
+
         testParser('typescript "world" penguin', { first: "typescript", second: '"world" penguin' }, ParserRecommendedConfig.Eval);
         testParser('"typescript" "world" penguin', { first: "typescript", second: '"world" penguin' }, ParserRecommendedConfig.Eval);
         testParser(`"typescript" ${code}`, { first: "typescript", second: code }, ParserRecommendedConfig.Eval);
+
+        testParser(`"typescript" ${bugCode}`, { first: "typescript", second: bugCode }, ParserRecommendedConfig.Eval);
+        testParser(`"typescript" ${bugCode}`, { first: "typescript", second: bugCode }, ParserRecommendedConfig.Eval); // repeated because its bugged
+    });
+});
+
+describe("CodeBlocks", () => {
+    test("common", () => {
+        testParser("typescript ```world```", { first: "typescript", second: "world" });
+        testParser("typescript ```\nworld\n```", { first: "typescript", second: "world" });
+    });
+
+    test("with lang (ignored)", () => {
+        testParser("typescript ```json\nworld\n```", { first: "typescript", second: "world" });
+    });
+
+    test("useCodeBlockLangAsAnOption", () => {
+        testParser("```js\nworld\n```", { first: "js", second: "world" }, { useCodeBlockLangAsAnOption: true });
+        testParser("```\nworld\n```", { first: undefined, second: "world" }, { useCodeBlockLangAsAnOption: true });
+        testParser("```world```", { first: undefined, second: "world" }, { useCodeBlockLangAsAnOption: true });
+        testParser("typescript ```js\nworld\n```", { first: "typescript", second: "js" }, { useCodeBlockLangAsAnOption: true });
+    });
+
+    const EvalRecommendedWithLang = { ...ParserRecommendedConfig.Eval, useCodeBlockLangAsAnOption: true };
+
+    test("RecommendedConfig.Eval", () => {
+        testParser("typescript ```world```", { first: "typescript", second: "world" }, ParserRecommendedConfig.Eval);
+        testParser("typescript ```json\nworld\n```", { first: "typescript", second: "world" }, ParserRecommendedConfig.Eval);
+        testParser("typescript ```json\nworld\n```", { first: "typescript", second: "json" }, EvalRecommendedWithLang);
+        testParser("```json\nworld\n```", { code: "world" }, ParserRecommendedConfig.Eval, evalCommand);
+        testParser("```world```", { code: "world" }, ParserRecommendedConfig.Eval, evalCommand);
     });
 });
 
