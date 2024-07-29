@@ -13,12 +13,6 @@ You can do it using `npm` or another packager manager, i prefer use  `pnpm`
 pnpm add yunaforseyfert
 ```
 
-Or you can use the dev version:
-
-```
-pnpm add https://github.com/SagiriIkeda/yunaforsefyert
-```
-
 # Features
 
 <details>
