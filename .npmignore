@@ -4,6 +4,7 @@ node_modules
 .vscode
 .gitignore
 .npmignore
+docs
 
 package-lock.json
 pnpm-lock.yaml

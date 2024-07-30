@@ -1,1 +1,1 @@
-pnpm lint-staged
+cp ./docs/README.md ./README.md  && pnpm lint-staged
