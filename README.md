@@ -15,44 +15,18 @@ pnpm add yunaforseyfert
 
 # Features
 
-<details>
-  <summary>
-    <h2 style="display: inline">YunaParser</h2>
-    <br/>
-    <blockquote style="padding-left:10px;margin-top:10px">
-    <i>An <strong>args parser for text commands</strong>,
-    which adds various syntax for more convenient use.</i>
-    </blockquote>
-  </summary>
-</details>
+## YunaParser
+> *An **args parser for text commands**, which adds various syntax for more convenient use.*  
+> [📖 See Parser docs](https://github.com/SagiriIkeda/yunaforseyfert/blob/main/docs/Parser)
 
-<details>
+## YunaCommandsResolver  
+> *A resolver, which provides some extra functions.*  
+>[📖 See Resolver docs](https://github.com/SagiriIkeda/yunaforseyfert/blob/main/docs/CommandsResolver)
 
-  <summary>
-  <h2 style="display: inline">YunaCommandsResolver</h2>
-  <br/>
+## MessageWatcher
+> *A simple solution to be able to manage when a message is edited and update the command options.*  
+> [📖 See Watcher docs](https://github.com/SagiriIkeda/yunaforseyfert/blob/main/docs/MessageWatcher)
 
-  <blockquote style="padding-left:10px;margin-top:10px">
-  <i>A resolver, which provides some extra functions. </i>
-  </blockquote>
-  </summary>
-
-</details>
-
-<details>
-
-  <summary>
-  <h2 style="display: inline">MessageWatcher</h2>
-  <br/>
-  <blockquote style="padding-left:10px;margin-top:10px">
-  <i>A simple solution to be able to manage when a message is edited and update the command options. </i>
-  </blockquote>
-  </summary>
-
-
-</details>
-
-<br/>
 
 And more **features** coming soon! ***(not so soon)*** 🐧
 
