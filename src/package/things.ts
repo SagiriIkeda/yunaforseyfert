@@ -23,10 +23,16 @@ export type AvailableClients = UsingClient | Client | WorkerClient;
 export type ArgsResult = Record<string, string>;
 
 export type YunaUsable<T extends Command | SubCommand = Command | SubCommand> = T & {
-    [Keys.parserMetadata]?: YunaParserCommandMetaData;
+    // [Keys.parserMetadata]?: YunaParserCommandMetaData;
     [Keys.parserConfig]?: YunaParserCreateOptions;
     [Keys.resolverSubCommands]?: { fallback?: Instantiable<SubCommand> | null; fallbackName?: string } | null;
     [Keys.resolverIsShortcut]?: boolean;
+
+    constructor: {
+        prototype: {
+            [Keys.parserMetadata]?: YunaParserCommandMetaData;
+        };
+    };
 };
 
 export type YunaGroupType = {

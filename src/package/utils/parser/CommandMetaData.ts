@@ -27,9 +27,7 @@ export class YunaParserCommandMetaData {
 
     readonly choices?: [optionName: string, choices: DecoredChoice[]][];
 
-    base: Function;
-
-    options = new Map<string, CommandOptionWithType>();
+    readonly options = new Map<string, CommandOptionWithType>();
 
     readonly baseConfig?: YunaParserCreateOptions;
 
@@ -38,8 +36,6 @@ export class YunaParserCommandMetaData {
 
     constructor(command: YunaUsable) {
         this.command = command;
-
-        this.base = command.constructor;
 
         this.baseConfig = command[Keys.parserConfig];
 
@@ -88,15 +84,15 @@ export class YunaParserCommandMetaData {
     }
 
     static from(command: YunaUsable) {
-        const InCommandMetadata = command[Keys.parserMetadata];
+        const classPrototype = command.constructor.prototype;
 
-        const base = command.constructor;
+        const InCommandMetadata = classPrototype[Keys.parserMetadata];
 
-        if (InCommandMetadata && InCommandMetadata?.base === base) return InCommandMetadata;
+        if (InCommandMetadata) return InCommandMetadata;
 
         const metadata = new YunaParserCommandMetaData(command);
 
-        command[Keys.parserMetadata] = metadata;
+        classPrototype[Keys.parserMetadata] = metadata;
 
         return metadata;
     }

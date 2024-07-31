@@ -105,6 +105,8 @@ export const createRegexes = ({ syntax }: YunaParserCreateOptions) => {
         syntaxes.push("(?<backescape>\\\\+)");
     }
 
+    syntaxes.push("(?<lnb>\\n+)"); // line break
+
     return {
         elementsRegex: RegExp(syntaxes.join("|"), "g"),
         escapeModes: escapeModes,

@@ -103,7 +103,7 @@ export interface YunaParserCreateOptions {
     useCodeBlockLangAsAnOption?: boolean;
     /**
      * This will cause options with the named syntax to only accept one value instead of all the remaining content.
-     * which can be useful with flags.
+     * which can be useful with flags at the start.
      * For example:
      * ```sh
      * --named its value

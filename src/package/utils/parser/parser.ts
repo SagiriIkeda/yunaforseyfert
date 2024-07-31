@@ -49,7 +49,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
         const { iterableOptions, flagOptions, options, choices } = commandMetadata;
 
-        if (!iterableOptions.length) return {};
+        if (!options.size) return {};
 
         const config = commandMetadata.getConfig(globalConfig);
 
@@ -494,9 +494,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                     continue;
                 }
 
-                const aggregated = aggregateNextOption(value, index);
-
-                if (!aggregated) break;
+                aggregateNextOption(value, index);
             }
         }
 
