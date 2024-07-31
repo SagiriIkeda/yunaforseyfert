@@ -12,7 +12,8 @@
                 "noConfusingVoidType": "off",
                 "noGlobalIsFinite": "off",
                 "noGlobalIsNan": "off",
-                "noEmptyBlockStatements": "off"
+                "noEmptyBlockStatements": "off",
+                "noConsoleLog": "error"
             },
             "style": {
                 "noNonNullAssertion": "off",
@@ -49,7 +50,12 @@
     },
     "files": {
         "ignoreUnknown": true,
-        "ignore": [".vscode", "node_modules", "dist", "build"]
+        "ignore": [
+            ".vscode",
+            "node_modules",
+            "dist",
+            "build"
+        ]
     },
     "json": {
         "formatter": {

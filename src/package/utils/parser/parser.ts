@@ -55,7 +55,6 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
         let actualIterableOptionsIdx = 0;
         let actualFlagOptionsIdx = 0;
-        let NamedOptionsConsumed = 0;
 
         const argsResult: ArgsResult = {};
 
@@ -132,6 +131,8 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
         let lastOptionNameAdded: string | undefined;
         let isRecentlyClosedAnyTag = false;
 
+        let isAlreadyLatestLongWordAggregated = false;
+
         const hasBackescapes = backescapesRegex.test(content);
 
         const sanitizeBackescapes = (text: string, regx: RegExp | undefined, regexToCheckNextChar: RegExp | undefined) =>
@@ -145,7 +146,6 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
         const incNamedOptionsCount = (name: string) => {
             if (argsResult[name] === undefined && options.has(name)) {
-                NamedOptionsConsumed++;
                 if (flagOptions.has(name)) actualFlagOptionsIdx++;
                 else actualIterableOptionsIdx++;
             }
@@ -214,6 +214,9 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                 unindexedRightText +
                 (canUseAsLiterally ? slicedContent : sanitizeBackescapes(slicedContent, localEscapeModes.All, checkNextChar) + postText)
             ).trim();
+
+            isAlreadyLatestLongWordAggregated = true;
+
             return;
         };
 
@@ -359,10 +362,8 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             const isInNamedSingleValueMode =
                 namedOptionState && (useNamedWithSingleValue || namedOptionState?.optionData?.useNamedWithSingleValue);
 
-            if (isInNamedSingleValueMode && lnb) {
+            if (isInNamedSingleValueMode && lnb && longTextTagsState === null && !lastestLongWord) {
                 aggregateNextNamedOption(namedOptionState!.start);
-                console.log(actualIterableOptionsIdx + actualFlagOptionsIdx, options.size);
-                console.log(namedOptionState);
                 continue;
             }
 
@@ -370,7 +371,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
             if (backescape) {
                 const isDisabledLongTextTagsInLastOption =
-                    disableLongTextTagsInLastOption && actualIterableOptionsIdx >= iterableOptions.length - 1;
+                    disableLongTextTagsInLastOption && namedOptionState === null && actualIterableOptionsIdx >= iterableOptions.length - 1;
 
                 const { length } = backescape;
 
@@ -402,6 +403,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                     }
                     // isDisabledLongTextTagsInLastOption
                 } else if (
+                    namedOptionState === null &&
                     longTextTagsState === null &&
                     disableLongTextTagsInLastOption &&
                     actualIterableOptionsIdx >= iterableOptions.length - 1 &&
@@ -489,6 +491,8 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
                 continue;
             }
+
+            if (isInNamedSingleValueMode && isAlreadyLatestLongWordAggregated) continue;
 
             if (value && longTextTagsState === null) {
                 const placeIsForLeft = !(_isRecentlyCosedAnyTag || unindexedRightText || spacesRegex.test(content[index - 1]));
