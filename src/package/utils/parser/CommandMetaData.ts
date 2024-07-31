@@ -1,5 +1,6 @@
 import type { CommandOption, SeyfertNumberOption, SeyfertStringOption } from "seyfert";
 import { ApplicationCommandOptionType } from "seyfert/lib/types";
+import type { ExtendedOption } from "../../seyfert";
 import { Keys, type YunaUsable } from "../../things";
 import type { CommandOptionWithType, ValidNamedOptionSyntax, YunaParserCreateOptions } from "./configTypes";
 import { createRegexes, mergeConfig } from "./createConfig";
@@ -17,6 +18,8 @@ export class YunaParserCommandMetaData {
     readonly command: YunaUsable;
 
     readonly iterableOptions: CommandOption[] = [];
+
+    readonly flagOptions: Map<string, CommandOption> = new Map();
 
     regexes?: ReturnType<typeof createRegexes>;
 
@@ -42,12 +45,14 @@ export class YunaParserCommandMetaData {
 
         if (command.options?.length) {
             const choices: typeof this.choices = [];
-            type OptionType = (SeyfertStringOption | SeyfertNumberOption) & CommandOptionWithType;
+            type OptionType = (SeyfertStringOption | SeyfertNumberOption) & CommandOptionWithType & ExtendedOption;
 
             for (const option of command.options as OptionType[]) {
                 if (InvalidOptionType.has(option.type)) continue;
 
-                this.iterableOptions.push(option);
+                if (option.flag) this.flagOptions.set(option.name, option);
+                else this.iterableOptions.push(option);
+
                 this.options.set(option.name, option);
 
                 if (!option.choices?.length) continue;

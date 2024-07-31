@@ -46,13 +46,15 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
     return function (this: HandleCommand, content: string, command: Command | SubCommand, message?: Message): Record<string, string> {
         const commandMetadata = YunaParserCommandMetaData.from(command);
 
-        const { iterableOptions, options, choices } = commandMetadata;
+        const { iterableOptions, flagOptions, options, choices } = commandMetadata;
 
         if (!iterableOptions.length) return {};
 
         const config = commandMetadata.getConfig(globalConfig);
 
-        let actualOptionIdx = 0;
+        let actualIterableOptionsIdx = 0;
+        let actualFlagOptionsIdx = 0;
+
         const argsResult: ArgsResult = {};
 
         const aggregateUserFromMessageReference = (() => {
@@ -64,15 +66,15 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                     message?.mentions.users[0]?.id !== reference.author.id)
             )
                 return;
-            const option = iterableOptions[actualOptionIdx] as CommandOptionWithType | undefined;
+            const option = iterableOptions[actualIterableOptionsIdx] as CommandOptionWithType | undefined;
             if (option?.type !== ApplicationCommandOptionType.User) return;
 
             argsResult[option.name] = reference.author.id;
-            actualOptionIdx++;
+            actualIterableOptionsIdx++;
             return true;
         })();
 
-        if (aggregateUserFromMessageReference && actualOptionIdx >= iterableOptions.length) {
+        if (aggregateUserFromMessageReference && actualIterableOptionsIdx >= iterableOptions.length) {
             config.logResult && logResult(this, argsResult);
             return argsResult;
         }
@@ -142,11 +144,11 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                 aggregateNextOption(savedUnindexedText, null);
             }
 
-            const optionAtIndexName = iterableOptions[actualOptionIdx]?.name;
+            const optionAtIndexName = iterableOptions[actualIterableOptionsIdx]?.name;
 
             if (!optionAtIndexName) return;
 
-            const isLastOption = actualOptionIdx === iterableOptions.length - 1;
+            const isLastOption = actualIterableOptionsIdx === iterableOptions.length - 1;
 
             if (isLastOption && start !== null && !longTextTagsState) {
                 lastestLongWord = {
@@ -159,7 +161,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             argsResult[optionAtIndexName] = unindexedRightText + value;
             unindexedRightText = "";
 
-            actualOptionIdx++;
+            actualIterableOptionsIdx++;
 
             lastOptionNameAdded = optionAtIndexName;
 
@@ -247,7 +249,10 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
             namedOptionInitialized = null;
 
-            if (argsResult[name] === undefined) actualOptionIdx++;
+            if (argsResult[name] === undefined) {
+                if (flagOptions.has(name)) actualFlagOptionsIdx++;
+                else actualIterableOptionsIdx++;
+            }
 
             argsResult[name] = dotted
                 ? value
@@ -263,7 +268,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
         for (const match of matches) {
             if (!match.groups) break;
-            if (actualOptionIdx >= iterableOptions.length && breakSearchOnConsumeAllOptions) break;
+            if (actualIterableOptionsIdx + actualFlagOptionsIdx >= options.size && breakSearchOnConsumeAllOptions) break;
 
             const _isRecentlyCosedAnyTag = isRecentlyClosedAnyTag;
             isRecentlyClosedAnyTag = false;
@@ -328,7 +333,8 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             if (lastestLongWord || namedOptionInitialized) continue;
 
             if (backescape) {
-                const isDisabledLongTextTagsInLastOption = disableLongTextTagsInLastOption && actualOptionIdx >= iterableOptions.length - 1;
+                const isDisabledLongTextTagsInLastOption =
+                    disableLongTextTagsInLastOption && actualIterableOptionsIdx >= iterableOptions.length - 1;
 
                 const { length } = backescape;
 
@@ -364,7 +370,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                 } else if (
                     !longTextTagsState &&
                     disableLongTextTagsInLastOption &&
-                    actualOptionIdx >= iterableOptions.length - 1 &&
+                    actualIterableOptionsIdx >= iterableOptions.length - 1 &&
                     ((disableLongTextTagsInLastOption as DisableLongTextTagsInLastOptionObject).excludeCodeBlocks
                         ? !(tag === codeBlockQuote && content[index + 1] === codeBlockQuote && content[index + 2] === codeBlockQuote)
                         : true)
@@ -430,7 +436,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                                     useCodeBlockLangAsAnOption && aggregateNextOption(codeBlockLangLine, longTextTagsState.toStart);
                                     longTextTagsState.toStart += codeBlockLangLine.length;
                                 } else {
-                                    useCodeBlockLangAsAnOption && actualOptionIdx++;
+                                    useCodeBlockLangAsAnOption && actualIterableOptionsIdx++;
                                 }
 
                                 const startsWithLineBreak = content[longTextTagsState.toStart] === "\n";

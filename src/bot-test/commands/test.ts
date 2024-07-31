@@ -11,6 +11,7 @@ const options = {
     second: createStringOption({
         description: "Do you know i love penguins?",
         required: true,
+        flag: true,
     }),
 };
 
