@@ -1,8 +1,5 @@
 import { Command, type CommandContext, Declare, Embed, Options, createStringOption } from "seyfert";
-
-function codeBlock(lang: string, code: string) {
-    return `\`\`\`${lang}\n${code}\n\`\`\``;
-}
+import { codeBlock } from "./eval";
 
 const options = {
     lang: createStringOption({

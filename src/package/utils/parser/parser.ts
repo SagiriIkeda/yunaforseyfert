@@ -144,7 +144,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                 : text;
 
         const incNamedOptionsCount = (name: string) => {
-            if (argsResult[name] === undefined) {
+            if (argsResult[name] === undefined && options.has(name)) {
                 NamedOptionsConsumed++;
                 if (flagOptions.has(name)) actualFlagOptionsIdx++;
                 else actualIterableOptionsIdx++;
@@ -156,7 +156,6 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                 const { name } = namedOptionState;
 
                 namedOptionState = null;
-                namedOptionTagUsed = undefined;
 
                 argsResult[name] = value;
 
@@ -172,7 +171,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                 aggregateNextOption(savedUnindexedText, null);
             }
 
-            const optionAtIndexName = iterableOptions[actualIterableOptionsIdx - NamedOptionsConsumed]?.name;
+            const optionAtIndexName = iterableOptions[actualIterableOptionsIdx]?.name;
 
             if (!optionAtIndexName) return;
 
@@ -296,13 +295,14 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             if (actualIterableOptionsIdx + actualFlagOptionsIdx >= options.size && breakSearchOnConsumeAllOptions) break;
 
             const _isRecentlyCosedAnyTag = isRecentlyClosedAnyTag;
+
             isRecentlyClosedAnyTag = false;
 
             const { index = 0, groups } = match;
 
-            const { tag, value, backescape, named } = groups ?? {};
+            const { tag, value, backescape, named, lnb } = groups ?? {};
 
-            if (named && !longTextTagsState) {
+            if (named && longTextTagsState === null) {
                 const { hyphens, hyphensname, dots, dotsname } = groups ?? {};
 
                 const [, , backescapes] = match;
@@ -356,11 +356,17 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                 continue;
             }
 
-            if (
-                (lastestLongWord || namedOptionState) &&
-                !(useNamedWithSingleValue || namedOptionState?.optionData?.useNamedWithSingleValue)
-            )
+            const isInNamedSingleValueMode =
+                namedOptionState && (useNamedWithSingleValue || namedOptionState?.optionData?.useNamedWithSingleValue);
+
+            if (isInNamedSingleValueMode && lnb) {
+                aggregateNextNamedOption(namedOptionState!.start);
+                console.log(actualIterableOptionsIdx + actualFlagOptionsIdx, options.size);
+                console.log(namedOptionState);
                 continue;
+            }
+
+            if (lastestLongWord || (namedOptionState && !isInNamedSingleValueMode)) continue;
 
             if (backescape) {
                 const isDisabledLongTextTagsInLastOption =
@@ -384,8 +390,6 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             }
 
             if (tag) {
-                const isInvalidTag = InvalidTagsToBeLong.has(tag);
-
                 type DisableLongTextTagsInLastOptionObject = Exclude<
                     YunaParserCreateOptions["disableLongTextTagsInLastOption"],
                     boolean | undefined
@@ -393,12 +397,12 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
                 if (isEscapingNext) {
                     isEscapingNext = false;
-                    if (!longTextTagsState) {
+                    if (longTextTagsState === null) {
                         aggregateUnindexedText(index, tag, "/", undefined, undefined, _isRecentlyCosedAnyTag);
                     }
                     // isDisabledLongTextTagsInLastOption
                 } else if (
-                    !longTextTagsState &&
+                    longTextTagsState === null &&
                     disableLongTextTagsInLastOption &&
                     actualIterableOptionsIdx >= iterableOptions.length - 1 &&
                     ((disableLongTextTagsInLastOption as DisableLongTextTagsInLastOptionObject).excludeCodeBlocks
@@ -407,10 +411,10 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                 ) {
                     aggregateNextOption(tag, index);
                     continue;
-                } else if (isInvalidTag) {
+                } else if (InvalidTagsToBeLong.has(tag)) {
                     aggregateUnindexedText(index, tag, "", undefined, undefined, _isRecentlyCosedAnyTag);
                     continue;
-                } else if (!longTextTagsState) {
+                } else if (longTextTagsState === null) {
                     longTextTagsState = {
                         quote: tag as ValidLongTextTags,
                         start: index + 1,

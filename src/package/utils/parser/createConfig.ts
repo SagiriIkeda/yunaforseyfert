@@ -179,22 +179,34 @@ export const createConfig = (config: YunaParserCreateOptions, isFull = true) => 
     return newConfig;
 };
 
-export const mergeConfig = (c1: YunaParserCreateOptions, c2: YunaParserCreateOptions) => {
-    const result: YunaParserCreateOptions = { ...c1, ...c2 };
+export const mergeConfig = <T extends YunaParserCreateOptions, A extends YunaParserCreateOptions>(target: T, assing: A) => {
+    const result = { ...target, ...assing };
 
-    if (c2.syntax) {
-        result.syntax = { ...(c1.syntax ?? {}), ...c2.syntax };
+    if (assing.syntax) {
+        result.syntax = { ...(target.syntax ?? {}), ...assing.syntax };
     }
-    if (c2.resolveCommandOptionsChoices !== undefined) {
+    if (assing.resolveCommandOptionsChoices !== undefined) {
         result.resolveCommandOptionsChoices =
-            c2.resolveCommandOptionsChoices === null
+            assing.resolveCommandOptionsChoices === null
                 ? null
-                : { ...(c1.resolveCommandOptionsChoices ?? {}), ...c2.resolveCommandOptionsChoices };
+                : { ...(target.resolveCommandOptionsChoices ?? {}), ...assing.resolveCommandOptionsChoices };
     }
 
-    if (c2.useRepliedUserAsAnOption !== undefined) {
+    if (assing.disableLongTextTagsInLastOption !== undefined) {
+        result.disableLongTextTagsInLastOption =
+            typeof assing.disableLongTextTagsInLastOption === "boolean"
+                ? assing.disableLongTextTagsInLastOption
+                : {
+                      ...(typeof target.disableLongTextTagsInLastOption === "object" ? target.disableLongTextTagsInLastOption : {}),
+                      ...assing.disableLongTextTagsInLastOption,
+                  };
+    }
+
+    if (assing.useRepliedUserAsAnOption !== undefined) {
         result.useRepliedUserAsAnOption =
-            c2.useRepliedUserAsAnOption === null ? null : { ...(c1.useRepliedUserAsAnOption ?? {}), ...c2.useRepliedUserAsAnOption };
+            assing.useRepliedUserAsAnOption === null
+                ? null
+                : { ...(target.useRepliedUserAsAnOption ?? {}), ...assing.useRepliedUserAsAnOption };
     }
 
     return result;

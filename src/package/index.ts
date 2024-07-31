@@ -6,6 +6,7 @@ import { YunaParser } from "./utils/parser/parser.js";
 
 import { YunaWatcherUtils } from "./utils/messageWatcher/watcherUtils.js";
 import type { YunaParserCreateOptions } from "./utils/parser/configTypes.js";
+import { mergeConfig } from "./utils/parser/createConfig.js";
 
 export { Watch } from "./utils/messageWatcher/watcherUtils.js";
 export { DeclareParserConfig } from "./utils/parser/createConfig.js";
@@ -77,6 +78,8 @@ class BaseYuna {
      * ```
      */
     resolver = YunaCommandsResolver;
+
+    mergeParserConfig = mergeConfig;
 
     commands = {
         prepare: prepareCommands,
