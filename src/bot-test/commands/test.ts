@@ -9,15 +9,9 @@ const options = {
         required: true,
     }),
 
-    third: createStringOption({
-        description: "Penguins are life",
-        required: true,
-    }),
-
     second: createStringOption({
         description: "Do you know i love penguins?",
         required: true,
-        useNamedWithSingleValue: true,
     }),
 };
 

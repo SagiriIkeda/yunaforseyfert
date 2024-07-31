@@ -276,7 +276,6 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             const value = sanitizeBackescapes(content.slice(start, end), escapeMode, checkNextChar).trim();
 
             namedOptionState = null;
-            namedOptionTagUsed = undefined;
 
             incNamedOptionsCount(name);
 
