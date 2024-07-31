@@ -1,6 +1,7 @@
 import type { Command, Message, SubCommand } from "seyfert";
 import type { CommandOptionWithType, HandleCommand } from "seyfert/lib/commands/handle";
 import { ApplicationCommandOptionType } from "seyfert/lib/types";
+import type { ExtendedOption } from "../../seyfert";
 import type { ArgsResult } from "../../things";
 import { YunaParserCommandMetaData } from "./CommandMetaData";
 import { YunaParserOptionsChoicesResolver } from "./choicesResolver";
@@ -114,6 +115,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             name: string;
             start: number;
             dotted: boolean;
+            optionData?: ExtendedOption;
         }
 
         let longTextTagsState: LongTextTagsState | null = null;
@@ -150,7 +152,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
         };
 
         const aggregateNextOption = (value: string, start: number | null) => {
-            if (namedOptionState && useNamedWithSingleValue) {
+            if (namedOptionState && (useNamedWithSingleValue || namedOptionState.optionData?.useNamedWithSingleValue)) {
                 const { name } = namedOptionState;
 
                 namedOptionState = null;
@@ -349,12 +351,17 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                     name: tagName,
                     start: index + named.length,
                     dotted: dotsname !== undefined,
+                    optionData: options.get(tagName),
                 };
 
                 continue;
             }
 
-            if ((lastestLongWord || namedOptionState) && !useNamedWithSingleValue) continue;
+            if (
+                (lastestLongWord || namedOptionState) &&
+                !(useNamedWithSingleValue || namedOptionState?.optionData?.useNamedWithSingleValue)
+            )
+                continue;
 
             if (backescape) {
                 const isDisabledLongTextTagsInLastOption =
@@ -456,11 +463,13 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                                 const hasCodeBlockLang =
                                     lines.length > 1 && !/^\s|\s\n?$/.test(codeBlockLangLine) && codeBlockLangLine !== "";
 
+                                const canAddLangOption = useCodeBlockLangAsAnOption && !namedOptionState;
+
                                 if (hasCodeBlockLang) {
-                                    useCodeBlockLangAsAnOption && aggregateNextOption(codeBlockLangLine, longTextTagsState.toStart);
+                                    canAddLangOption && aggregateNextOption(codeBlockLangLine, longTextTagsState.toStart);
                                     longTextTagsState.toStart += codeBlockLangLine.length;
                                 } else {
-                                    useCodeBlockLangAsAnOption && actualIterableOptionsIdx++;
+                                    canAddLangOption && actualIterableOptionsIdx++;
                                 }
 
                                 const startsWithLineBreak = content[longTextTagsState.toStart] === "\n";

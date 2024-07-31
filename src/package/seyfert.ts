@@ -21,6 +21,17 @@ export type ExtendedOption = {
      * @requires {YunaParser}
      */
     flag?: boolean;
+    /**
+     * This will cause options with the named syntax to only accept one value instead of all the remaining content.
+     * which can be useful with flags.
+     * For example:
+     * ```sh
+     * --named its value
+     * ```
+     * named option only take "its", and "value" will be taken whichever option is next in the count.
+     * @default {false}
+     */
+    useNamedWithSingleValue?: boolean;
 } & CommandBaseOption;
 
 type Extended<O> = O & ExtendedOption;

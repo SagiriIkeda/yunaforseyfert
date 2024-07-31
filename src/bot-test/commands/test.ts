@@ -8,10 +8,16 @@ const options = {
         description: "Penguins are life",
         required: true,
     }),
+
+    third: createStringOption({
+        description: "Penguins are life",
+        required: true,
+    }),
+
     second: createStringOption({
         description: "Do you know i love penguins?",
         required: true,
-        flag: true,
+        useNamedWithSingleValue: true,
     }),
 };
 
