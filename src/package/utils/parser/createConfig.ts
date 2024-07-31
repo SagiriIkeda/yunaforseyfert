@@ -137,12 +137,18 @@ export const createConfig = (config: YunaParserCreateOptions, isFull = true) => 
             newConfig.syntax.namedOptions = removeDuplicates(config?.syntax?.namedOptions ?? ["-", "--", ":"]);
     }
 
-    if (isFull || "useCodeBlockLangAsAnOption" in config) newConfig.useCodeBlockLangAsAnOption = config.useCodeBlockLangAsAnOption === true;
     if (isFull || "breakSearchOnConsumeAllOptions" in config)
         newConfig.breakSearchOnConsumeAllOptions = config.breakSearchOnConsumeAllOptions === true;
+
+    if (isFull || "useCodeBlockLangAsAnOption" in config) newConfig.useCodeBlockLangAsAnOption = config.useCodeBlockLangAsAnOption === true;
+
+    if (isFull || "useNamedWithSingleValue" in config) newConfig.useNamedWithSingleValue = config.useNamedWithSingleValue === true;
+
     if (isFull || "useUniqueNamedSyntaxAtSameTime" in config)
         newConfig.useUniqueNamedSyntaxAtSameTime = config.useUniqueNamedSyntaxAtSameTime === true;
+
     if (isFull || "logResult" in config) newConfig.logResult = config.logResult === true;
+
     if (isFull || "disableLongTextTagsInLastOption" in config)
         newConfig.disableLongTextTagsInLastOption =
             config.disableLongTextTagsInLastOption === undefined

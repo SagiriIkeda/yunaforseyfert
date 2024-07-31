@@ -54,6 +54,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
         let actualIterableOptionsIdx = 0;
         let actualFlagOptionsIdx = 0;
+        let NamedOptionsConsumed = 0;
 
         const argsResult: ArgsResult = {};
 
@@ -92,6 +93,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             useUniqueNamedSyntaxAtSameTime,
             disableLongTextTagsInLastOption,
             useCodeBlockLangAsAnOption,
+            useNamedWithSingleValue,
         } = config;
 
         const localEscapeModes = { ...__realEscapeModes };
@@ -108,6 +110,12 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             toEnd?: number;
         }
 
+        interface NamedOptionState {
+            name: string;
+            start: number;
+            dotted: boolean;
+        }
+
         let longTextTagsState: LongTextTagsState | null = null;
 
         let isEscapingNext = false;
@@ -115,11 +123,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
         let namedOptionTagUsed: string | undefined;
 
-        let namedOptionInitialized: {
-            name: string;
-            start: number;
-            dotted: boolean;
-        } | null = null;
+        let namedOptionState: NamedOptionState | null = null;
 
         let lastestLongWord: { start: number; name: string; unindexedRightText: string } | undefined;
 
@@ -137,14 +141,36 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                   })
                 : text;
 
+        const incNamedOptionsCount = (name: string) => {
+            if (argsResult[name] === undefined) {
+                NamedOptionsConsumed++;
+                if (flagOptions.has(name)) actualFlagOptionsIdx++;
+                else actualIterableOptionsIdx++;
+            }
+        };
+
         const aggregateNextOption = (value: string, start: number | null) => {
+            if (namedOptionState && useNamedWithSingleValue) {
+                const { name } = namedOptionState;
+
+                namedOptionState = null;
+                namedOptionTagUsed = undefined;
+
+                argsResult[name] = value;
+
+                incNamedOptionsCount(name);
+
+                lastOptionNameAdded = name;
+                return name;
+            }
+
             if (start === null && unindexedRightText) {
                 const savedUnindexedText = unindexedRightText;
                 unindexedRightText = "";
                 aggregateNextOption(savedUnindexedText, null);
             }
 
-            const optionAtIndexName = iterableOptions[actualIterableOptionsIdx]?.name;
+            const optionAtIndexName = iterableOptions[actualIterableOptionsIdx - NamedOptionsConsumed]?.name;
 
             if (!optionAtIndexName) return;
 
@@ -198,7 +224,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             enableRight = true,
             isRecentlyClosedAnyTag = false,
         ) => {
-            if (namedOptionInitialized) return;
+            if (namedOptionState) return;
 
             const backPosition = textPosition - (precedentText.length + 1);
             const nextPosition = textPosition + realText.length;
@@ -239,20 +265,18 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
         };
 
         const aggregateNextNamedOption = (end: number) => {
-            if (!namedOptionInitialized) return;
-            const { name, start, dotted } = namedOptionInitialized;
+            if (!namedOptionState) return;
+            const { name, start, dotted } = namedOptionState;
 
             const escapeModeType = dotted ? "forNamedDotted" : "forNamed";
             const escapeMode = localEscapeModes[escapeModeType];
 
             const value = sanitizeBackescapes(content.slice(start, end), escapeMode, checkNextChar).trim();
 
-            namedOptionInitialized = null;
+            namedOptionState = null;
+            namedOptionTagUsed = undefined;
 
-            if (argsResult[name] === undefined) {
-                if (flagOptions.has(name)) actualFlagOptionsIdx++;
-                else actualIterableOptionsIdx++;
-            }
+            incNamedOptionsCount(name);
 
             argsResult[name] = dotted
                 ? value
@@ -321,7 +345,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
                 if (lastestLongWord) aggregateLastestLongWord(index, backescapesStrRepresentation);
 
-                namedOptionInitialized = {
+                namedOptionState = {
                     name: tagName,
                     start: index + named.length,
                     dotted: dotsname !== undefined,
@@ -330,7 +354,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                 continue;
             }
 
-            if (lastestLongWord || namedOptionInitialized) continue;
+            if ((lastestLongWord || namedOptionState) && !useNamedWithSingleValue) continue;
 
             if (backescape) {
                 const isDisabledLongTextTagsInLastOption =
@@ -470,7 +494,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
         aggregateLastestLongWord();
 
-        if (namedOptionInitialized) {
+        if (namedOptionState) {
             aggregateNextNamedOption(content.length);
         } else if (longTextTagsState) aggregateLongTextTag();
 

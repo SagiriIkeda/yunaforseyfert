@@ -23,6 +23,7 @@ class YunaCommandHandle extends HandleCommand {
         useRepliedUserAsAnOption: {
             requirePing: false,
         },
+        useNamedWithSingleValue: true,
         // useCodeBlockLangAsAnOption: true,
     });
 }
