@@ -27,6 +27,7 @@ const evaluateBackescapes = (
 };
 
 const backescapesRegex = /\\/;
+const codeBlockLangRegex = /^([^\s]+)\n/;
 
 const spacesRegex = /[\s\x7F\n]/;
 
@@ -152,7 +153,11 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
         };
 
         const aggregateNextOption = (value: string, start: number | null) => {
-            if (namedOptionState && (useNamedWithSingleValue || namedOptionState.optionData?.useNamedWithSingleValue)) {
+            if (
+                namedOptionState &&
+                ((useNamedWithSingleValue && namedOptionState?.optionData?.useNamedWithSingleValue !== false) ||
+                    namedOptionState.optionData?.useNamedWithSingleValue)
+            ) {
                 const { name } = namedOptionState;
 
                 namedOptionState = null;
@@ -268,7 +273,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             aggregateNextOption(reg ? sanitizeBackescapes(value, reg, checkNextChar) : value, null);
         };
 
-        const aggregateNextNamedOption = (end: number) => {
+        const aggregateNextNamedOption = (end?: number) => {
             if (!namedOptionState) return;
             const { name, start, dotted } = namedOptionState;
 
@@ -360,7 +365,9 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             }
 
             const isInNamedSingleValueMode =
-                namedOptionState && (useNamedWithSingleValue || namedOptionState?.optionData?.useNamedWithSingleValue);
+                namedOptionState &&
+                ((useNamedWithSingleValue && namedOptionState?.optionData?.useNamedWithSingleValue !== false) ||
+                    namedOptionState?.optionData?.useNamedWithSingleValue);
 
             if (isInNamedSingleValueMode && lnb && longTextTagsState === null && !lastestLongWord) {
                 aggregateNextNamedOption(namedOptionState!.start);
@@ -461,18 +468,13 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                             ) {
                                 const codeBlockContent = content.slice(longTextTagsState.toStart, endPosition);
 
-                                const lines = codeBlockContent.split("\n");
-
-                                const codeBlockLangLine = lines[0];
-
-                                const hasCodeBlockLang =
-                                    lines.length > 1 && !/^\s|\s\n?$/.test(codeBlockLangLine) && codeBlockLangLine !== "";
+                                const codeBlockLangMatch = codeBlockContent.match(codeBlockLangRegex);
 
                                 const canAddLangOption = useCodeBlockLangAsAnOption && !namedOptionState;
 
-                                if (hasCodeBlockLang) {
-                                    canAddLangOption && aggregateNextOption(codeBlockLangLine, longTextTagsState.toStart);
-                                    longTextTagsState.toStart += codeBlockLangLine.length;
+                                if (codeBlockLangMatch) {
+                                    canAddLangOption && aggregateNextOption(codeBlockLangMatch[1], longTextTagsState.toStart);
+                                    longTextTagsState.toStart += codeBlockLangMatch[0].length;
                                 } else {
                                     canAddLangOption && actualIterableOptionsIdx++;
                                 }
@@ -507,10 +509,8 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
         }
 
         aggregateLastestLongWord();
-
-        if (namedOptionState) {
-            aggregateNextNamedOption(content.length);
-        } else if (longTextTagsState) aggregateLongTextTag();
+        aggregateNextNamedOption();
+        aggregateLongTextTag();
 
         if (choices && config.resolveCommandOptionsChoices !== null) {
             YunaParserOptionsChoicesResolver(commandMetadata, argsResult, config);

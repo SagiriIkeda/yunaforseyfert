@@ -1,1 +1,1 @@
-cp ./docs/README.md ./README.md && git add . && pnpm lint-staged
+pnpm lint-staged
