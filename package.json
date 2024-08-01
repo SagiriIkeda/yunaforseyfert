@@ -4,13 +4,14 @@
   "description": "Yunathings for seyfert",
   "type": "commonjs",
   "main": "./build/index.js",
+  "private": true,
   "types": "./build/index.d.ts",
   "files": [
     "build"
   ],
   "scripts": {
     "bot": "cd src/bot-test && bun .",
-    "yuna": "vitest run test && mkdir -p .npm && npm run build && bun src/package/lib/prepublish.ts && cp -r build .npm/build",
+    "pkg:pack": "vitest run test && npm run build && bun src/package/lib/prepublish.mts && echo pkg:pack done",
     "prepare": "npm run build && npx husky",
     "build": "npx tsup --config tsup.config.json",
     "lint": "biome lint --write ./src",

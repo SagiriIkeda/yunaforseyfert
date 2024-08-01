@@ -23,7 +23,8 @@
         "stripInternal": true,
     },
     "exclude": [
-        "node_modules"
+        "node_modules",
+        "src/package/lib/prepublish.mts",
     ],
     "include": [
         "src/**/*"

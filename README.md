@@ -17,15 +17,15 @@ pnpm add yunaforseyfert
 
 ## YunaParser
 > *An **args parser for text commands**, which adds various syntax for more convenient use.*  
-> [📖 See Parser docs](https://github.com/SagiriIkeda/yunaforseyfert/blob/main/docs/Parser.md)
+> [📖 See Parser docs](./docs/Parser.md)
 
 ## YunaCommandsResolver  
 > *A resolver, which provides some extra functions.*  
->[📖 See Resolver docs](https://github.com/SagiriIkeda/yunaforseyfert/blob/main/docs/CommandsResolver.md)
+>[📖 See Resolver docs](./docs/CommandsResolver.md)
 
 ## MessageWatcher
 > *A simple solution to be able to manage when a message is edited and update the command options.*  
-> [📖 See Watcher docs](https://github.com/SagiriIkeda/yunaforseyfert/blob/main/docs/MessageWatcher.md)
+> [📖 See Watcher docs](./docs/MessageWatcher.md)
 
 
 And more **features** coming soon! ***(not so soon)*** 🐧
