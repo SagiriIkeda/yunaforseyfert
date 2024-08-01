@@ -28,6 +28,8 @@ const evaluateBackescapes = (
 
 const backescapesRegex = /\\/;
 const codeBlockLangRegex = /^([^\s]+)\n/;
+const symbolEqualBackEscapesRegex = /^(\\+)\=/;
+const symbolEqualRegex = /=/;
 
 const spacesRegex = /[\s\x7F\n]/;
 
@@ -76,7 +78,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             return true;
         })();
 
-        if (aggregateUserFromMessageReference && actualIterableOptionsIdx >= iterableOptions.length) {
+        if (aggregateUserFromMessageReference && actualIterableOptionsIdx >= options.size) {
             config.logResult && logResult(this, argsResult);
             return argsResult;
         }
@@ -107,8 +109,8 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             start: number;
             /** position with more left quotes */
             toStart: number;
-            end?: number;
             toEnd?: number;
+            end?: number;
         }
 
         interface NamedOptionState {
@@ -280,7 +282,19 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             const escapeModeType = dotted ? "forNamedDotted" : "forNamed";
             const escapeMode = localEscapeModes[escapeModeType];
 
-            const value = sanitizeBackescapes(content.slice(start, end), escapeMode, checkNextChar).trim();
+            let symbolEqualRightValue = "";
+
+            let contentSlice = content.slice(start, end);
+
+            if (dotted === false) {
+                contentSlice = contentSlice.replace(symbolEqualBackEscapesRegex, (_, backescapes) => {
+                    const { strRepresentation } = evaluateBackescapes(backescapes, "=", symbolEqualRegex, false);
+                    symbolEqualRightValue = `${strRepresentation}=`;
+                    return "";
+                });
+            }
+
+            const value = symbolEqualRightValue + sanitizeBackescapes(contentSlice, escapeMode, checkNextChar).trim();
 
             namedOptionState = null;
 
@@ -443,28 +457,28 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
                         const nextCharIsSameQuote = nextChar === tag;
 
-                        const isPossiblyEndSequentially = nextCharIsSameQuote && longTextTagsState.end === undefined;
+                        const isPossiblyEndSequentially = nextCharIsSameQuote && longTextTagsState.toEnd === undefined;
 
                         if (isPossiblyEndSequentially) {
-                            longTextTagsState.end = index;
                             longTextTagsState.toEnd = index;
+                            longTextTagsState.end = index;
                             continue;
                         }
 
-                        if (longTextTagsState.toEnd !== undefined && longTextTagsState.toEnd + 1 === index && nextCharIsSameQuote) {
-                            longTextTagsState.toEnd++;
+                        if (longTextTagsState.end !== undefined && longTextTagsState.end + 1 === index && nextCharIsSameQuote) {
+                            longTextTagsState.end++;
                         } else {
                             const isCodeBlock =
                                 longTextTagsState.quote === "`" && longTextTagsState.toStart - longTextTagsState.start === 2;
 
-                            const endPosition = longTextTagsState.end ?? index;
+                            const endPosition = longTextTagsState.toEnd ?? index;
 
                             if (!isCodeBlock) {
                                 aggregateLongTextTag(endPosition);
                             } else if (
-                                longTextTagsState.end !== undefined &&
                                 longTextTagsState.toEnd !== undefined &&
-                                index - longTextTagsState.end >= 2
+                                longTextTagsState.end !== undefined &&
+                                index - longTextTagsState.toEnd >= 2
                             ) {
                                 const codeBlockContent = content.slice(longTextTagsState.toStart, endPosition);
 
@@ -480,12 +494,12 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                                 }
 
                                 const startsWithLineBreak = content[longTextTagsState.toStart] === "\n";
-                                const endWithLineBreak = content[longTextTagsState.end - 1] === "\n";
+                                const endWithLineBreak = content[longTextTagsState.toEnd - 1] === "\n";
 
                                 if (startsWithLineBreak) longTextTagsState.toStart++;
-                                if (endWithLineBreak) longTextTagsState.end--;
+                                if (endWithLineBreak) longTextTagsState.toEnd--;
 
-                                aggregateLongTextTag(longTextTagsState.end ?? index);
+                                aggregateLongTextTag(longTextTagsState.toEnd ?? index);
                             }
                         }
                     }
