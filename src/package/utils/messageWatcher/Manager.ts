@@ -21,7 +21,7 @@ import type { WatcherOptions } from "./types";
 
 type RawMessageUpdated = MakeRequired<GatewayMessageUpdateDispatchData, "content">;
 
-const createFakeAPIUser = (user: User) => {
+const createFakeApiUser = (user: User) => {
     const created: Record<string, any> = {};
 
     for (const [key, value] of Object.entries(user)) {
@@ -35,7 +35,7 @@ const createFakeAPIUser = (user: User) => {
 type EventKeys<O extends OptionsRecord> = Extract<keyof MessageWatcher<O>, `on${string}Event`>;
 type EventParams<O extends OptionsRecord, E extends EventKeys<O>> = Parameters<OmitThisParameter<NonNullable<MessageWatcher<O>[E]>>>;
 
-export class MessageWatcherManager<const O extends OptionsRecord = any> {
+export class MessageWatcherManager<const O extends OptionsRecord = any, C = any> {
     message: Message;
     /** key where this is stored */
     readonly id: string;
@@ -46,10 +46,12 @@ export class MessageWatcherManager<const O extends OptionsRecord = any> {
     command: Command | SubCommand;
     shardId: number;
 
+    declare context: C;
+
     originCtx?: CommandContext<O>;
     ctx?: CommandContext<O>;
 
-    watchers = new Set<MessageWatcher<O>>();
+    watchers = new Set<MessageWatcher<O, C>>();
 
     constructor(
         controller: WatchersController,
@@ -71,7 +73,7 @@ export class MessageWatcherManager<const O extends OptionsRecord = any> {
 
         this.id = createId(message);
 
-        this.__fakeUser = createFakeAPIUser(this.message.author);
+        this.__fakeUser = createFakeApiUser(this.message.author);
         this.__fakeMessage = this.__createFakeAPIMessage();
     }
 
@@ -125,7 +127,7 @@ export class MessageWatcherManager<const O extends OptionsRecord = any> {
 
         const self = client as UsingClient;
 
-        const fakeAPIMessage: GatewayMessageCreateDispatchData = {
+        const fakeApiMessage: GatewayMessageCreateDispatchData = {
             ...this.__fakeMessage,
             ...message,
             author: this.__fakeUser,
@@ -134,7 +136,7 @@ export class MessageWatcherManager<const O extends OptionsRecord = any> {
             mention_channels: message.mention_channels ?? this.message.mentionChannels?.map(toSnakeCase) ?? [],
         };
 
-        const newMessage = Transformers.Message(self, fakeAPIMessage);
+        const newMessage = Transformers.Message(self, fakeApiMessage);
 
         const { handleCommand } = client;
 
@@ -148,7 +150,7 @@ export class MessageWatcherManager<const O extends OptionsRecord = any> {
 
         if (slicedContent === this.#oldContent) return;
 
-        const { argsContent, command, parent } = handleCommand.resolveCommandFromContent(slicedContent, prefix, fakeAPIMessage);
+        const { argsContent, command, parent } = handleCommand.resolveCommandFromContent(slicedContent, prefix, fakeApiMessage);
 
         if (command !== this.command) return this.emit("onUsageErrorEvent", "CommandChanged", command);
 
@@ -164,7 +166,7 @@ export class MessageWatcherManager<const O extends OptionsRecord = any> {
             attachments: {},
         };
 
-        const { options: resolverOptions, errors } = await handleCommand.argsOptionsParser(command, fakeAPIMessage, args, resolved);
+        const { options: resolverOptions, errors } = await handleCommand.argsOptionsParser(command, fakeApiMessage, args, resolved);
 
         if (errors.length) {
             const errorsObject: OnOptionsReturnObject = Object.fromEntries(

@@ -10,8 +10,10 @@ import {
     type WorkerClient,
 } from "seyfert";
 import { GatewayDispatchEvents } from "seyfert/lib/types/index.js";
+import type { YunaUsable } from "../../things.js";
 import { MessageWatcherManager } from "./Manager.js";
 import type { WatcherOptions } from "./types.js";
+import type { WatcherContext } from "./watcherUtils.js";
 
 export function createId(message: string, channelId: string): string;
 export function createId(message: BaseMessage): string;
@@ -27,20 +29,39 @@ export interface YunaMessageWatcherControllerConfig {
     cache?: WatchersManagersCacheAdapter;
 }
 
-export type FindWatcherQuery =
-    | {
-          messageId?: string;
-          channelId?: string;
-          guildId?: string;
-          userId?: string;
-          command?: Command | SubCommand;
-      }
-    | ((watcher: MessageWatcherManager) => boolean);
+type BaseFindWatcherQuery = {
+    messageId?: string;
+    channelId?: string;
+    guildId?: string;
+    userId?: string;
+    command?: Command | SubCommand;
+};
+
+export type FindWatcherQuery = BaseFindWatcherQuery | ((watcher: MessageWatcherManager) => boolean);
+
+type InferCommandCtx<C extends YunaUsable> = C extends YunaUsable ? Parameters<NonNullable<C["run"]>>[0] : never;
+export type InferCommandOptionsFromCtx<C> = C extends CommandContext<infer R> ? R : never;
+
+export type InferWatcherFromQuery<
+    Query extends FindWatcherQuery,
+    C = Query extends BaseFindWatcherQuery ? Query["command"] : never,
+    O = C extends Command ? InferCommandOptionsFromCtx<InferCommandCtx<C>> : never,
+> = O extends OptionsRecord ? (C extends Command ? MessageWatcherManager<O, InferWatcherContext<C>> : never) : never;
 
 export type WatcherCreateData = Pick<CommandContext, "client" | "command" | "message" | "shardId">;
 
-export type inferOptionsFromCtx<C> = C extends CommandContext<infer R> ? R : never;
-export type inferWatcherFromCtx<C> = MessageWatcherManager<inferOptionsFromCtx<C>>;
+export type InferWatcherContext<C extends YunaUsable | undefined> = C extends YunaUsable
+    ? Extract<InferPromise<ReturnType<NonNullable<C["run"]>>>, WatcherContext<any>> extends WatcherContext<infer V>
+        ? V
+        : never
+    : never;
+
+type InferPromise<P> = P extends Promise<infer T> ? T : never;
+
+export type InferWatcherFromCtx<C, Command extends YunaUsable> = MessageWatcherManager<
+    InferCommandOptionsFromCtx<C>,
+    InferWatcherContext<Command>
+>;
 
 export class WatchersController {
     /** watchers managers cache */
@@ -152,13 +173,13 @@ export class WatchersController {
         return watcher;
     }
 
-    getWatcherFromContext<C extends CommandContext>({ message }: C) {
+    getWatcherFromContext<const Ctx extends CommandContext, const Command extends YunaUsable>({ message }: Ctx, _command?: Command) {
         if (!message) return;
         const id = createId(message);
-        return this.managers.get(id) as inferWatcherFromCtx<C> | undefined;
+        return this.managers.get(id) as InferWatcherFromCtx<Ctx, Command> | undefined;
     }
 
-    #baseSearch(query: Exclude<FindWatcherQuery, Function>, watcher: MessageWatcherManager) {
+    #baseSearch(query: BaseFindWatcherQuery, watcher: MessageWatcherManager) {
         if (query.guildId && watcher.message.guildId !== query.guildId) return false;
         if (query.channelId && watcher.message.channelId !== query.channelId) return false;
         if (query.messageId && watcher.message.id !== query.messageId) return false;
@@ -167,23 +188,25 @@ export class WatchersController {
         return true;
     }
 
-    *#findWatchers(query: FindWatcherQuery): Generator<MessageWatcherManager> {
-        const searchFn = typeof query === "function" ? query : this.#baseSearch.bind(this, query);
+    *#findWatchers<const Query extends FindWatcherQuery>(query: Query) {
+        const searchFn = typeof query === "function" ? (query as Extract<FindWatcherQuery, Function>) : this.#baseSearch.bind(this, query);
 
         for (const value of this.managers.values()) {
             const watcher = (value as Exclude<typeof value, MessageWatcherManager<any>>).value ?? value;
 
             if (!watcher || searchFn(watcher) === false) continue;
 
-            yield watcher;
+            yield watcher as InferWatcherFromQuery<Query>;
         }
+
+        return;
     }
 
-    findWatcher(query: FindWatcherQuery): MessageWatcherManager | undefined {
-        return this.#findWatchers(query).next().value;
+    findWatcher<Query extends FindWatcherQuery>(query: Query) {
+        return this.#findWatchers(query).next().value as InferWatcherFromQuery<Query> | undefined;
     }
 
-    findManyWatchers(query: FindWatcherQuery) {
+    findManyWatchers<Query extends FindWatcherQuery>(query: Query): InferWatcherFromQuery<Query>[] {
         return Array.from(this.#findWatchers(query));
     }
 }

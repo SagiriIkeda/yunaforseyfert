@@ -14,8 +14,10 @@ export { Shortcut } from "./utils/commandsResolver/decorators.js";
 
 export { createWatcher } from "./utils/messageWatcher/controllerUtils.js";
 
-export { MessageWatcherManager } from "./utils/messageWatcher/Manager.js";
-export { MessageWatcher } from "./utils/messageWatcher/Watcher.js";
+export type { MessageWatcherManager } from "./utils/messageWatcher/Manager.js";
+export type { MessageWatcher } from "./utils/messageWatcher/Watcher.js";
+
+export type { InferWatcherContext } from "./utils/messageWatcher/Controller.js";
 
 export type {
     WatcherOnChangeEvent,
@@ -28,6 +30,7 @@ export type {
 
 export const ParserRecommendedConfig = {
     /** things that I consider necessary in an Eval command. */
+    // biome-ignore lint/style/useNamingConvention: i want Eval :)
     Eval: {
         breakSearchOnConsumeAllOptions: true,
         disableLongTextTagsInLastOption: {

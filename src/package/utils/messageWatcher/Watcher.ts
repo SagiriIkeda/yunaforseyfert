@@ -9,7 +9,7 @@ import type {
     WatcherOptions,
 } from "./types";
 
-export class MessageWatcher<const O extends OptionsRecord = any> {
+export class MessageWatcher<const O extends OptionsRecord = any, C = any> {
     readonly options: WatcherOptions;
 
     #idle?: NodeJS.Timeout;
@@ -17,10 +17,15 @@ export class MessageWatcher<const O extends OptionsRecord = any> {
 
     message: Message;
     controller: WatchersController;
-    manager: MessageWatcherManager<O>;
+    manager: MessageWatcherManager<O, C>;
     client: Client | WorkerClient;
     command: Command | SubCommand;
     shardId: number;
+
+    /** context of the watcher manager */
+    get context() {
+        return this.manager.context as C;
+    }
 
     constructor(manager: MessageWatcherManager<O>, options: WatcherOptions = {}) {
         this.options = options;

@@ -16,6 +16,8 @@ export class Keys {
     static readonly clientResolverMetadata = Symbol("ResolverMetadata");
     static readonly clientResolverAlreadyModdedEvents = Symbol("YunaMessageWatcherController");
     static readonly clientWatcherController = Symbol("YunaMessageWatcherController");
+
+    static readonly watcherBreak = Symbol("WatcherBreak");
 }
 
 export type Instantiable<C> = { new (...args: any[]): C };

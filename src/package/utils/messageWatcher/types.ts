@@ -30,7 +30,7 @@ export type WatcherOnUsageErrorEvent<M extends MessageWatcher> = <E extends keyo
     ...params: WatcherUsageErrorEvents[E]
 ) => any;
 
-export interface DecoratorWatchOptions<C extends YunaUsable, O extends OptionsRecord> extends WatcherOptions {
+export interface DecoratorWatchOptions<C extends YunaUsable, O extends OptionsRecord, Context> extends WatcherOptions {
     /**
      * It will be emitted before creating the watcher,
      * if you return `false` it will not be created.
@@ -38,8 +38,8 @@ export interface DecoratorWatchOptions<C extends YunaUsable, O extends OptionsRe
     beforeCreate?(this: C, ctx: CommandContext<O>): Awaitable<boolean> | void;
     /** filters the execution of the `onChange` event */
     filter?(...args: Parameters<WatcherOnChangeEvent<MessageWatcher<O>, O>>): boolean;
-    onStop?: WatcherOnStopEvent<MessageWatcher<O>>;
-    onChange?: WatcherOnChangeEvent<MessageWatcher<O>, O>;
-    onUsageError?: WatcherOnUsageErrorEvent<MessageWatcher<O>>;
-    onOptionsError?: WatcherOnOptionsErrorEvent<MessageWatcher<O>>;
+    onStop?: WatcherOnStopEvent<MessageWatcher<O, Context>>;
+    onChange?: WatcherOnChangeEvent<MessageWatcher<O, Context>, O>;
+    onUsageError?: WatcherOnUsageErrorEvent<MessageWatcher<O, Context>>;
+    onOptionsError?: WatcherOnOptionsErrorEvent<MessageWatcher<O, Context>>;
 }
