@@ -246,6 +246,7 @@ const NoboAndJusto: APIUser = {
     id: "391283181665517568",
     username: "/**@時間*/ M",
     discriminator: "0",
+    // biome-ignore lint/style/useNamingConvention: 🐧
     global_name: "pengu",
     avatar: "penguin",
 };
@@ -253,6 +254,7 @@ const NoboAndJusto: APIUser = {
 const Sagiwin: APIUser = {
     id: "388415190225518602",
     username: "sagiwin",
+    // biome-ignore lint/style/useNamingConvention: 🐧
     global_name: "pengu",
     discriminator: "0",
     avatar: "penguin",
@@ -260,6 +262,7 @@ const Sagiwin: APIUser = {
 
 const message = new Message(client, {
     author: NoboAndJusto,
+    // biome-ignore lint/style/useNamingConvention: 🐧
     referenced_message: {
         author: Sagiwin,
     } as unknown as MessageData,

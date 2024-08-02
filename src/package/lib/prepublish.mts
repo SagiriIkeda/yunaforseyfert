@@ -1,5 +1,5 @@
 import { copyFile, cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
-import packageJSON from "../../../package.json";
+import packageJson from "../../../package.json";
 
 await rm(".npm", { recursive: true, force: true });
 await mkdir(".npm").catch(() => null);
@@ -9,10 +9,10 @@ const {
     "lint-staged": _l,
     private: _p,
     devDependencies: _d,
-    ...newPackageJSON
-} = packageJSON as typeof packageJSON & { private: boolean };
+    ...newPackageJson
+} = packageJson as typeof packageJson & { private: boolean };
 
-await writeFile(".npm/package.json", JSON.stringify(newPackageJSON, null, 4), "utf-8");
+await writeFile(".npm/package.json", JSON.stringify(newPackageJson, null, 4), "utf-8");
 
 const ReadmeFileContent = await readFile("./README.md", "utf-8");
 
@@ -20,7 +20,7 @@ const branch = "main";
 
 const githubUrl = `https://github.com/SagiriIkeda/yunaforseyfert/blob/${branch}/`;
 
-const newReadmeFileContent = ReadmeFileContent.replace(/(?<=\[.*?\]\()\.\/(?=.*?\))/g, `${githubUrl}`)
+const newReadmeFileContent = ReadmeFileContent.replace(/(?<=\[.*?\]\()\.\/(?=.*?\))/g, `${githubUrl}`);
 
 await writeFile(".npm/README.md", newReadmeFileContent, "utf-8");
 

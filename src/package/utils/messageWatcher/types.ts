@@ -20,7 +20,9 @@ export type WatcherOnStopEvent<M extends MessageWatcher> = (this: M, reason: str
 export type WatcherOnOptionsErrorEvent<M extends MessageWatcher> = (this: M, data: OnOptionsReturnObject) => any;
 
 interface WatcherUsageErrorEvents {
+    // biome-ignore lint/style/useNamingConvention: 🐧
     UnspecifiedPrefix: [];
+    // biome-ignore lint/style/useNamingConvention: 🐧
     CommandChanged: [newCommand: Command | SubCommand | undefined];
 }
 

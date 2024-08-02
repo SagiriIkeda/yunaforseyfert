@@ -39,7 +39,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
     const globalConfig = createConfig(config);
     const globalRegexes = createRegexes(globalConfig);
 
-    const globalVNS = YunaParserCommandMetaData.getValidNamedOptionSyntaxes(globalConfig);
+    const globalVns = YunaParserCommandMetaData.getValidNamedOptionSyntaxes(globalConfig);
 
     const logResult = (self: HandleCommand, argsResult: ArgsResult) =>
         self.client.logger.debug("[Yuna.parser]", {
@@ -89,7 +89,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
         let { checkNextChar } = regexes;
 
-        const validNamedOptionSyntaxes = commandMetadata.vns ?? globalVNS;
+        const validNamedOptionSyntaxes = commandMetadata.vns ?? globalVns;
 
         const {
             breakSearchOnConsumeAllOptions,

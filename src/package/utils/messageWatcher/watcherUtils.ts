@@ -139,7 +139,7 @@ export const YunaWatcherUtils: WatchUtils = {
 export const Watch = DecoratorWatcher as typeof DecoratorWatcher & WatchUtils;
 
 type UtilsDescriptor = {
-    [k in keyof WatchUtils]: { value: WatchUtils[k] };
+    [K in keyof WatchUtils]: { value: WatchUtils[K] };
 };
 
 Object.defineProperties(Watch, {

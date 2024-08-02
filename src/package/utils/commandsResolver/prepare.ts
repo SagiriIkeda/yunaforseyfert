@@ -14,6 +14,7 @@ export type UseYunaCommandsClient = UsingClient & {
 };
 
 export const ShortcutType = {
+    // biome-ignore lint/style/useNamingConvention: i want
     Group: Symbol(),
 };
 export type YunaGroup = YunaGroupType & {

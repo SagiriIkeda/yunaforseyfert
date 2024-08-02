@@ -74,24 +74,27 @@ export class MessageWatcherManager<const O extends OptionsRecord = any, C = any>
         this.id = createId(message);
 
         this.__fakeUser = createFakeApiUser(this.message.author);
-        this.__fakeMessage = this.__createFakeAPIMessage();
+        this.__fakeMessage = this.__createFakeApiMessage();
     }
 
     /** @internal */
     __fakeUser: APIUser;
 
     /** @internal */
-    __fakeMessage: ReturnType<MessageWatcherManager<O>["__createFakeAPIMessage"]>;
+    __fakeMessage: ReturnType<MessageWatcherManager<O>["__createFakeApiMessage"]>;
     /** @internal */
-    __createFakeAPIMessage(): Omit<GatewayMessageCreateDispatchData, "mentions" | `mention_${string}`> {
+    __createFakeApiMessage(): Omit<GatewayMessageCreateDispatchData, "mentions" | `mention_${string}`> {
         const { message } = this;
 
         return {
             id: message.id,
             content: message.content,
+            // biome-ignore lint/style/useNamingConvention: api
             channel_id: message.channelId,
+            // biome-ignore lint/style/useNamingConvention: api
             guild_id: message.guildId,
             timestamp: message.timestamp?.toString() ?? "",
+            // biome-ignore lint/style/useNamingConvention: api
             edited_timestamp: message.editedTimestamp!,
             tts: message.tts,
             embeds: message.embeds.map((embed) => embed.toJSON()),
@@ -131,8 +134,11 @@ export class MessageWatcherManager<const O extends OptionsRecord = any, C = any>
             ...this.__fakeMessage,
             ...message,
             author: this.__fakeUser,
+            // biome-ignore lint/style/useNamingConvention: api
             mention_everyone: message.mention_everyone ?? this.message.mentionEveryone,
+            // biome-ignore lint/style/useNamingConvention: api
             mention_roles: message.mention_roles ?? this.message.mentionRoles,
+            // biome-ignore lint/style/useNamingConvention: api
             mention_channels: message.mention_channels ?? this.message.mentionChannels?.map(toSnakeCase) ?? [],
         };
 
