@@ -22,7 +22,11 @@ export class Keys {
 
 export type Instantiable<C> = { new (...args: any[]): C };
 export type AvailableClients = UsingClient | Client | WorkerClient;
-export type ArgsResult = Record<string, string>;
+export type ArgValue = string & {
+    // :)
+    position?: [number, number];
+};
+export type ArgsResult = Record<string, ArgValue>;
 
 export type YunaUsable<T extends Command | SubCommand = Command | SubCommand> = T & {
     // [Keys.parserMetadata]?: YunaParserCommandMetaData;

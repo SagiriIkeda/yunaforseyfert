@@ -28,8 +28,9 @@ const evaluateBackescapes = (
 
 const backescapesRegex = /\\/;
 const codeBlockLangRegex = /^([^\s]+)\n/;
-const symbolEqualBackEscapesRegex = /^(\\+)\=/;
-const symbolEqualRegex = /=/;
+
+const flagNextSymbolBackEscapesRegex = /^(\\+)([\=\:])/;
+const flagNextSymbolRegex = /[\=\:]/;
 
 const spacesRegex = /[\s\x7F\n]/;
 
@@ -287,9 +288,9 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             let contentSlice = content.slice(start, end);
 
             if (dotted === false) {
-                contentSlice = contentSlice.replace(symbolEqualBackEscapesRegex, (_, backescapes) => {
-                    const { strRepresentation } = evaluateBackescapes(backescapes, "=", symbolEqualRegex, false);
-                    symbolEqualRightValue = `${strRepresentation}=`;
+                contentSlice = contentSlice.replace(flagNextSymbolBackEscapesRegex, (_, backescapes, symbol) => {
+                    const { strRepresentation } = evaluateBackescapes(backescapes, symbol, flagNextSymbolRegex, false);
+                    symbolEqualRightValue = `${strRepresentation}${symbol}`;
                     return "";
                 });
             }

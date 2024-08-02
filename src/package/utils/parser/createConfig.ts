@@ -85,7 +85,7 @@ export const createRegexes = ({ syntax }: YunaParserCreateOptions) => {
             has1HaphenSyntax && HaphenLength.push(1);
             has2HaphenSyntax && HaphenLength.push(2);
 
-            namedSyntaxes.push(`(?<hyphens>-{${HaphenLength.join(",")}})(?<hyphensname>[a-zA-Z_][a-zA-Z_\\d]*)=?`);
+            namedSyntaxes.push(`(?<hyphens>-{${HaphenLength.join(",")}})(?<hyphensname>[a-zA-Z_][a-zA-Z_\\d]*)[\\=\\:]?`);
             escapeModes.forNamed = /(\\+)([\:\s\-]|$)/g;
         } else {
             RemoveNamedEscapeMode(escapeModes, "\\-");

@@ -8,5 +8,6 @@
                 "tsup.config.json"
             ]
         }
-    ]
+    ],
+    "vscord.status.image.large.editing.key": "https://i.imgur.com/pb3hQ4P.png"
 }
