@@ -11,17 +11,17 @@ import { RemoveFromCheckNextChar, RemoveLongCharEscapeMode, RemoveNamedEscapeMod
 const InvalidTagsToBeLong = new Set(["-", ":"]);
 
 const evaluateBackescapes = (
-    backspaces: string,
+    backescapes: string,
     nextChar: string,
     regexToCheckNextChar: RegExp | undefined,
     isDisabledLongTextTagsInLastOption?: boolean,
 ) => {
-    const isJustPair = backspaces.length % 2 === 0;
+    const isJustPair = backescapes.length % 2 === 0;
 
     const isPossiblyEscapingNext =
         !isJustPair && (/["'`]/.test(nextChar) && isDisabledLongTextTagsInLastOption ? false : regexToCheckNextChar?.test(nextChar));
 
-    const strRepresentation = "\\".repeat(Math.floor(backspaces.length / 2)) + (isJustPair || isPossiblyEscapingNext ? "" : "\\");
+    const strRepresentation = "\\".repeat(Math.floor(backescapes.length / 2)) + (isJustPair || isPossiblyEscapingNext ? "" : "\\");
 
     return { isPossiblyEscapingNext, strRepresentation };
 };
@@ -30,7 +30,6 @@ const backescapesRegex = /\\/;
 const codeBlockLangRegex = /^([^\s]+)\n/;
 
 const flagNextSymbolBackEscapesRegex = /^(\\+)([\=\:])/;
-const flagNextSymbolRegex = /[\=\:]/;
 
 const spacesRegex = /[\s\x7F\n]/;
 
@@ -283,19 +282,20 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             const escapeModeType = dotted ? "forNamedDotted" : "forNamed";
             const escapeMode = localEscapeModes[escapeModeType];
 
-            let symbolEqualRightValue = "";
+            let nextSymbolLeftValue = "";
 
             let contentSlice = content.slice(start, end);
 
             if (dotted === false) {
                 contentSlice = contentSlice.replace(flagNextSymbolBackEscapesRegex, (_, backescapes, symbol) => {
-                    const { strRepresentation } = evaluateBackescapes(backescapes, symbol, flagNextSymbolRegex, false);
-                    symbolEqualRightValue = `${strRepresentation}${symbol}`;
+                    const strRepresentation = "\\".repeat(Math.floor(backescapes.length / 2));
+
+                    nextSymbolLeftValue = `${strRepresentation}${symbol}`;
                     return "";
                 });
             }
 
-            const value = symbolEqualRightValue + sanitizeBackescapes(contentSlice, escapeMode, checkNextChar).trim();
+            const value = nextSymbolLeftValue + sanitizeBackescapes(contentSlice, escapeMode, checkNextChar).trim();
 
             namedOptionState = null;
 
@@ -509,7 +509,8 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                 continue;
             }
 
-            if (isInNamedSingleValueMode && isAlreadyLatestLongWordAggregated) continue;
+            if (isInNamedSingleValueMode && (isAlreadyLatestLongWordAggregated || actualIterableOptionsIdx >= iterableOptions.length))
+                continue;
 
             if (value && longTextTagsState === null) {
                 const placeIsForLeft = !(_isRecentlyCosedAnyTag || unindexedRightText || spacesRegex.test(content[index - 1]));

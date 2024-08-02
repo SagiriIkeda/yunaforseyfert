@@ -14,7 +14,8 @@ import { HandleCommand } from "seyfert/lib/commands/handle";
 import type { APIUser } from "seyfert/lib/types";
 import { describe, expect, test } from "vitest";
 import ChoicesNumberTestCommand, { ChoicesTestCommand } from "../bot-test/commands/choicesTest";
-import EvalCommand from "../bot-test/commands/eval";
+import EvalCommand, { codeBlock } from "../bot-test/commands/eval";
+import Eval2Command from "../bot-test/commands/eval2";
 import TestCommand from "../bot-test/commands/test";
 import { ParserRecommendedConfig, Yuna } from "../package/index";
 import type { YunaUsable } from "../package/things";
@@ -307,5 +308,101 @@ describe("aggregateUserFromMessageReference", () => {
             UserCommand,
             new Message(client, { author: NoboAndJusto, embeds: [] } as unknown as MessageData),
         );
+    });
+});
+
+@Options({
+    text: createBooleanOption({
+        description: "pengu",
+        required: true,
+    }),
+    val: createBooleanOption({
+        description: "pengu",
+        required: true,
+        flag: true,
+    }),
+})
+class __FlagCommand extends Command {}
+
+const FlagCommand = new __FlagCommand();
+
+const eval2Command = new Eval2Command();
+
+describe("flags", () => {
+    test("common", () => {
+        testParser("hello --val hola", { text: "hello", val: "hola" }, undefined, FlagCommand);
+        testParser("hello ya --val hola", { text: "hello ya", val: "hola" }, undefined, FlagCommand);
+        testParser("hello ya --val hola no", { text: "hello ya", val: "hola no" }, undefined, FlagCommand);
+    });
+});
+
+describe("useNamedWithSingleValue", () => {
+    test("common", () => {
+        testParser("--val hola hello", { text: "hello", val: "hola" }, { useNamedWithSingleValue: true }, FlagCommand);
+        testParser("--val hola hello pengu", { text: "hello pengu", val: "hola" }, { useNamedWithSingleValue: true }, FlagCommand);
+    });
+    test("with quotes", () => {
+        testParser("--val 'hola ya' hello pengu", { text: "hello pengu", val: "hola ya" }, { useNamedWithSingleValue: true }, FlagCommand);
+        testParser(
+            "--val 'hola ya' \"hello pengu\"",
+            { text: "hello pengu", val: "hola ya" },
+            { useNamedWithSingleValue: true },
+            FlagCommand,
+        );
+    });
+    test("eval example", () => {
+        testParser(
+            `--async \n ${codeBlock("", "console.log")}  `,
+            { async: "true", code: "console.log" },
+            { useNamedWithSingleValue: true },
+            eval2Command,
+        );
+    });
+    test("at final", () => {
+        testParser(
+            `${codeBlock("", "console.log")} --async `,
+            { async: "true", code: "console.log" },
+            { useNamedWithSingleValue: true },
+            eval2Command,
+        );
+        testParser(
+            `${codeBlock("", "console.log")} --val coso`,
+            { val: "coso", text: "console.log" },
+            { useNamedWithSingleValue: true },
+            FlagCommand,
+        );
+        testParser(
+            `${codeBlock("", "console.log")} --val coso long text`,
+            { val: "coso long text", text: "console.log" },
+            { useNamedWithSingleValue: true },
+            FlagCommand,
+        );
+        testParser(
+            `${codeBlock("", "console.log")} --val "coso" long text`,
+            { val: "coso", text: "console.log" },
+            { useNamedWithSingleValue: true },
+            FlagCommand,
+        );
+    });
+});
+
+describe("= or : symbol in named options", () => {
+    test("common =", () => {
+        testParser("pengu things --val=hello pengu", { text: "pengu things", val: "hello pengu" }, undefined, FlagCommand);
+    });
+    test("common :", () => {
+        testParser("pengu things --val:hello pengu", { text: "pengu things", val: "hello pengu" }, undefined, FlagCommand);
+    });
+    test("escaping :", () => {
+        testParser("pengu things --val\\:hello pengu", { text: "pengu things", val: ":hello pengu" }, undefined, FlagCommand);
+        testParser("pengu things --val\\\\:hello pengu", { text: "pengu things", val: "\\:hello pengu" }, undefined, FlagCommand);
+        testParser("pengu things --val\\\\\\:hello pengu", { text: "pengu things", val: "\\:hello pengu" }, undefined, FlagCommand);
+        testParser("pengu things --val\\\\\\\\:hello pengu", { text: "pengu things", val: "\\\\:hello pengu" }, undefined, FlagCommand);
+    });
+    test("escaping =", () => {
+        testParser("pengu things --val\\=hello pengu", { text: "pengu things", val: "=hello pengu" }, undefined, FlagCommand);
+        testParser("pengu things --val\\\\=hello pengu", { text: "pengu things", val: "\\=hello pengu" }, undefined, FlagCommand);
+        testParser("pengu things --val\\\\\\=hello pengu", { text: "pengu things", val: "\\=hello pengu" }, undefined, FlagCommand);
+        testParser("pengu things --val\\\\\\\\=hello pengu", { text: "pengu things", val: "\\\\=hello pengu" }, undefined, FlagCommand);
     });
 });

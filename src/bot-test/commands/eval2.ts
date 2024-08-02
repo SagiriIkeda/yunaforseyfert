@@ -1,4 +1,4 @@
-import { Command, type CommandContext, Declare, Embed, Options, createStringOption } from "seyfert";
+import { Command, type CommandContext, Declare, Embed, Options, createBooleanOption, createStringOption } from "seyfert";
 import { DeclareParserConfig, ParserRecommendedConfig, Yuna } from "../../package";
 import { codeBlock } from "./eval";
 
@@ -7,7 +7,7 @@ const options = {
         description: "code",
         required: true,
     }),
-    async: createStringOption({
+    async: createBooleanOption({
         description: "async",
         flag: true,
     }),
@@ -24,7 +24,7 @@ const config = Yuna.mergeParserConfig(ParserRecommendedConfig.Eval, {
 
 @Options(options)
 @DeclareParserConfig(config)
-export default class RunCommand extends Command {
+export default class Eval2Command extends Command {
     async run(ctx: CommandContext<typeof options>) {
         const { code } = ctx.options;
 
@@ -33,8 +33,7 @@ export default class RunCommand extends Command {
                 new Embed().setTitle("Test Eval").addFields([
                     {
                         name: "isAsync",
-                        // value: codeBlock("", ctx.options.async ? "true" : "false"),
-                        value: codeBlock("", ctx.options.async!),
+                        value: codeBlock("", String(ctx.options.async)),
                     },
                     {
                         name: "Code",
