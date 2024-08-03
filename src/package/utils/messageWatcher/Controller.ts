@@ -46,21 +46,22 @@ export type InferWatcherFromQuery<
     Query extends FindWatcherQuery,
     C = Query extends BaseFindWatcherQuery ? Query["command"] : never,
     O = C extends Command ? InferCommandOptionsFromCtx<InferCommandCtx<C>> : never,
-> = O extends OptionsRecord ? (C extends Command ? MessageWatcherManager<O, InferWatcherContext<C>> : never) : never;
+> = O extends OptionsRecord ? (C extends Command ? MessageWatcherManager<O, InferWatcherContext<C>, C> : never) : never;
 
 export type WatcherCreateData = Pick<CommandContext, "client" | "command" | "message" | "shardId">;
 
+type ExtracPromiseValue<P> = P extends Promise<infer T> ? T : P;
+
 export type InferWatcherContext<C extends YunaUsable | undefined> = C extends YunaUsable
-    ? Extract<InferPromise<ReturnType<NonNullable<C["run"]>>>, WatcherContext<any>> extends WatcherContext<infer V>
+    ? Extract<ExtracPromiseValue<ReturnType<NonNullable<C["run"]>>>, WatcherContext<any>> extends WatcherContext<infer V>
         ? V
         : never
     : never;
 
-type InferPromise<P> = P extends Promise<infer T> ? T : never;
-
 export type InferWatcherFromCtx<C, Command extends YunaUsable> = MessageWatcherManager<
     InferCommandOptionsFromCtx<C>,
-    InferWatcherContext<Command>
+    InferWatcherContext<Command>,
+    Command
 >;
 
 export class WatchersController {

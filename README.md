@@ -25,6 +25,9 @@ pnpm add yunaforseyfert
 
 ## MessageWatcher
 > *A simple solution to be able to manage when a message is edited and update the command options.*  
+> 
+> <img src="https://i.imgur.com/Yp6tSkM.gif" width="100%"  style="border-radius: 10px;"/>
+>
 > [📖 See Watcher docs](./docs/MessageWatcher.md)
 
 

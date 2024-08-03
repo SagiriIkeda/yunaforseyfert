@@ -1,4 +1,5 @@
-import type { Client, Command, CommandContext, Message, OptionsRecord, SubCommand, WorkerClient } from "seyfert";
+import type { Client, Message, OptionsRecord, WorkerClient } from "seyfert";
+import type { CommandUsable } from "../../things";
 import type { WatchersController } from "./Controller";
 import type { MessageWatcherManager } from "./Manager";
 import type {
@@ -9,7 +10,7 @@ import type {
     WatcherOptions,
 } from "./types";
 
-export class MessageWatcher<const O extends OptionsRecord = any, C = any> {
+export class MessageWatcher<const O extends OptionsRecord = any, Context = any, __Command extends CommandUsable = any> {
     readonly options: WatcherOptions;
 
     #idle?: NodeJS.Timeout;
@@ -17,14 +18,14 @@ export class MessageWatcher<const O extends OptionsRecord = any, C = any> {
 
     message: Message;
     controller: WatchersController;
-    manager: MessageWatcherManager<O, C>;
+    manager: MessageWatcherManager<O, Context, __Command>;
     client: Client | WorkerClient;
-    command: Command | SubCommand;
+    command: __Command;
     shardId: number;
 
     /** context of the watcher manager */
     get context() {
-        return this.manager.context as C;
+        return this.manager.context as Context;
     }
 
     constructor(manager: MessageWatcherManager<O>, options: WatcherOptions = {}) {
@@ -33,7 +34,7 @@ export class MessageWatcher<const O extends OptionsRecord = any, C = any> {
         this.manager = manager;
         this.controller = manager.controller;
         this.client = manager.client;
-        this.command = manager.command;
+        this.command = manager.command as __Command;
         this.shardId = manager.shardId;
 
         this.refreshTimers();
@@ -54,11 +55,11 @@ export class MessageWatcher<const O extends OptionsRecord = any, C = any> {
         return null;
     }
 
-    get ctx(): CommandContext<O> | undefined {
+    get ctx() {
         return this.manager.ctx;
     }
 
-    get originCtx(): CommandContext<O> | undefined {
+    get originCtx() {
         return this.manager.originCtx;
     }
     refreshTimers(all = false) {
@@ -114,6 +115,8 @@ export class MessageWatcher<const O extends OptionsRecord = any, C = any> {
         this.onStopEvent = callback.bind(this);
         return this;
     }
+
+    readonly endReason?: string;
 
     /** stop this watcher */
     stop(reason: string) {

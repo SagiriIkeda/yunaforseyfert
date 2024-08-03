@@ -15,6 +15,7 @@ import {
 import { Transformers } from "seyfert/lib/client/transformers";
 import { type MakeRequired, toSnakeCase } from "seyfert/lib/common";
 import type { APIUser, GatewayMessageCreateDispatchData, GatewayMessageUpdateDispatchData } from "seyfert/lib/types";
+import type { CommandUsable } from "../../things";
 import { type WatchersController, createId } from "./Controller";
 import { MessageWatcher } from "./Watcher";
 import type { WatcherOptions } from "./types";
@@ -35,7 +36,9 @@ const createFakeApiUser = (user: User) => {
 type EventKeys<O extends OptionsRecord> = Extract<keyof MessageWatcher<O>, `on${string}Event`>;
 type EventParams<O extends OptionsRecord, E extends EventKeys<O>> = Parameters<OmitThisParameter<NonNullable<MessageWatcher<O>[E]>>>;
 
-export class MessageWatcherManager<const O extends OptionsRecord = any, C = any> {
+export type MakeCommand<C> = { command: C };
+
+export class MessageWatcherManager<const O extends OptionsRecord = any, Context = any, __Command extends CommandUsable = any> {
     message: Message;
     /** key where this is stored */
     readonly id: string;
@@ -43,15 +46,15 @@ export class MessageWatcherManager<const O extends OptionsRecord = any, C = any>
     controller: WatchersController;
 
     client: Client | WorkerClient;
-    command: Command | SubCommand;
+    command: __Command;
     shardId: number;
 
-    declare context: C;
+    declare context: Context;
 
     originCtx?: CommandContext<O>;
-    ctx?: CommandContext<O>;
+    ctx?: CommandContext<O> & MakeCommand<__Command>;
 
-    watchers = new Set<MessageWatcher<O, C>>();
+    watchers = new Set<MessageWatcher<O, Context, __Command>>();
 
     constructor(
         controller: WatchersController,
@@ -62,12 +65,12 @@ export class MessageWatcherManager<const O extends OptionsRecord = any, C = any>
         ctx?: CommandContext<O>,
     ) {
         this.originCtx = ctx;
-        this.ctx = ctx;
+        this.ctx = ctx as CommandContext<O> & MakeCommand<__Command>;
 
         this.client = client;
         this.shardId = shardId ?? 1;
         this.controller = controller;
-        this.command = command;
+        this.command = command as __Command;
 
         this.message = message;
 
@@ -204,10 +207,15 @@ export class MessageWatcherManager<const O extends OptionsRecord = any, C = any>
         ctx.messageResponse = this.originCtx?.messageResponse;
 
         Object.assign(ctx, client.options.context?.(newMessage));
-        this.ctx = ctx;
+        this.ctx = ctx as CommandContext<O> & MakeCommand<__Command>;
 
-        this.emit("onChangeEvent", ctx, message as RawMessageUpdated);
+        for (const watcher of this.watchers) {
+            watcher.refreshTimers();
+            watcher.onChangeEvent?.(ctx, message as RawMessageUpdated);
+        }
     }
+
+    readonly endReason?: string;
 
     /** @internal */
     stopWatcher(watcher: MessageWatcher<O>, reason: string) {
@@ -217,6 +225,8 @@ export class MessageWatcherManager<const O extends OptionsRecord = any, C = any>
         watcher.stopTimers();
         watcher.onStopEvent?.(reason);
 
+        Reflect.set(watcher, "endReason", reason);
+
         if (this.watchers.size) return;
 
         this.controller.managers.delete(this.id);
@@ -224,14 +234,15 @@ export class MessageWatcherManager<const O extends OptionsRecord = any, C = any>
 
     /** stop this and all watchers in this manager */
     stop(reason: string) {
-        for (const observer of this.watchers) this.stopWatcher(observer, reason);
+        Reflect.set(this, "endReason", reason);
+        for (const watcher of this.watchers) this.stopWatcher(watcher, reason);
     }
 
     watch(options: WatcherOptions = {}) {
-        const observer = new MessageWatcher(this, options);
+        const watcher = new MessageWatcher(this, options);
 
-        this.watchers.add(observer);
+        this.watchers.add(watcher);
 
-        return observer;
+        return watcher;
     }
 }

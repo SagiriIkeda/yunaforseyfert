@@ -28,7 +28,9 @@ export type ArgValue = string & {
 };
 export type ArgsResult = Record<string, ArgValue>;
 
-export type YunaUsable<T extends Command | SubCommand = Command | SubCommand> = T & {
+export type CommandUsable = Command | SubCommand;
+
+export type YunaUsable<T extends CommandUsable = CommandUsable> = T & {
     // [Keys.parserMetadata]?: YunaParserCommandMetaData;
     [Keys.parserConfig]?: YunaParserCreateOptions;
     [Keys.resolverSubCommands]?: { fallback?: Instantiable<SubCommand> | null; fallbackName?: string } | null;
