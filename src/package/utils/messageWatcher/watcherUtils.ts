@@ -17,28 +17,34 @@ function DecoratorWatcher<
         if (run !== commandRun) return run;
 
         descriptor.value = async (ctx: CommandContext<O>) => {
-            const firstRun = run.call(target, ctx);
+            const firstRun = await run.call(target, ctx);
 
-            if ((firstRun && firstRun[Keys.watcherBreak] === true) || !(ctx.message && ctx.command.options?.length)) return;
+            if ((firstRun && firstRun[Keys.watcherStop] === true) || !(ctx.message && ctx.command.options?.length)) return;
 
             if ((await options.beforeCreate?.call(ctx.command as C, ctx)) === false) return;
 
             const watcher = createWatcher(ctx, options);
 
+            const assingMessageResponse = (ctx: CommandContext) => {
+                ctx.messageResponse && watcher.watchMessageResponseDelete(ctx.messageResponse);
+            };
+
+            assingMessageResponse(ctx);
+
             const addContext = (result: any) => {
                 if (result instanceof WatcherContext) watcher.manager.context = result.value;
             };
 
-            const handleBreak = (result: WatcherBreakPayload) => {
-                if (result && result[Keys.watcherBreak] === true) {
-                    watcher.stop(result.reason ?? "WatcherBreak");
+            const handleStop = (result: WatcherStopPayload) => {
+                if (result && result[Keys.watcherStop] === true) {
+                    watcher.stop(result.reason ?? "WatcherStop");
                     return true;
                 }
                 return false;
             };
 
             const handle = (result: any) => {
-                if (handleBreak(result)) return;
+                if (handleStop(result)) return;
                 addContext(result);
             };
 
@@ -48,6 +54,7 @@ function DecoratorWatcher<
                 if (options.filter?.(ctx, msg) === false) return;
 
                 const result = await run.call(target, ctx, msg);
+                assingMessageResponse(ctx);
 
                 handle(result);
 
@@ -66,6 +73,7 @@ function DecoratorWatcher<
             options.onUsageError && watcher.onUsageError(decorate(options.onUsageError));
             options.onStop && watcher.onStop(options.onStop);
             options.onOptionsError && watcher.onOptionsError(decorate(options.onOptionsError));
+            options.onMessageResponseDelete && watcher.onMessageResponseDelete(decorate(options.onMessageResponseDelete));
         };
     };
 }
@@ -78,8 +86,8 @@ export class WatcherContext<const V> {
     }
 }
 
-interface WatcherBreakPayload {
-    [Keys.watcherBreak]: true;
+interface WatcherStopPayload {
+    [Keys.watcherStop]: true;
     reason?: string;
 }
 
@@ -105,7 +113,7 @@ export interface WatchUtils {
 
     context<V>(value: V): WatcherContext<V>;
 
-    break(reason?: string): WatcherBreakPayload;
+    stop(reason?: string): WatcherStopPayload;
 }
 
 export const YunaWatcherUtils: WatchUtils = {
@@ -128,9 +136,9 @@ export const YunaWatcherUtils: WatchUtils = {
         return new WatcherContext(value);
     },
 
-    break(reason = "WatcherBreak"): WatcherBreakPayload {
+    stop(reason = "WatcherStop"): WatcherStopPayload {
         return {
-            [Keys.watcherBreak]: true,
+            [Keys.watcherStop]: true,
             reason,
         };
     },
@@ -151,5 +159,5 @@ Object.defineProperties(Watch, {
     findMany: { value: YunaWatcherUtils.findMany },
     isWatching: { value: YunaWatcherUtils.isWatching.bind(YunaWatcherUtils) },
     context: { value: YunaWatcherUtils.context },
-    break: { value: YunaWatcherUtils.break },
+    stop: { value: YunaWatcherUtils.stop },
 } satisfies UtilsDescriptor);

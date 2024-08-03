@@ -4,6 +4,7 @@ import type { WatchersController } from "./Controller";
 import type { MessageWatcherManager } from "./Manager";
 import type {
     WatcherOnChangeEvent,
+    WatcherOnMessageResponseDelete,
     WatcherOnOptionsErrorEvent,
     WatcherOnStopEvent,
     WatcherOnUsageErrorEvent,
@@ -109,6 +110,25 @@ export class MessageWatcher<const O extends OptionsRecord = any, Context = any, 
         return this;
     }
     /** @internal */
+    onMessageResponseDeleteEvent?: WatcherOnMessageResponseDelete<this>;
+
+    onMessageResponseDelete(callback: WatcherOnMessageResponseDelete<this>) {
+        this.onMessageResponseDeleteEvent = callback.bind(this);
+        return this;
+    }
+
+    get messageResponses() {
+        return this.manager.messageResponses;
+    }
+    get watchMessageResponseDelete() {
+        return this.manager.watchMessageResponseDelete.bind(this.manager);
+    }
+
+    get createId() {
+        return this.manager.createId.bind(this.manager);
+    }
+
+    /** @internal */
     onStopEvent?: WatcherOnStopEvent<this>;
 
     onStop(callback: WatcherOnStopEvent<this>) {
@@ -121,5 +141,9 @@ export class MessageWatcher<const O extends OptionsRecord = any, Context = any, 
     /** stop this watcher */
     stop(reason: string) {
         return this.manager.stopWatcher(this, reason);
+    }
+    /** literally stop, but without emitting the `onStop` event */
+    break() {
+        return this.manager.stopWatcher(this, "WatcherBreak", false);
     }
 }

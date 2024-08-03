@@ -107,8 +107,13 @@ export class WatchersController {
         };
 
         const deleteByMessage = (messageId: string, channelId: string, reason: string) => {
-            const watcher = get(messageId, channelId);
-            watcher?.stop(reason);
+            const id = createId(messageId, channelId);
+            const watcher = cache.get(id);
+            if (!watcher) return;
+            const isMessageResponse = watcher.messageResponses.has(id);
+            if (isMessageResponse) return watcher.onMessageResponseDeleteEvent({ id: messageId, channelId }, id);
+
+            watcher.stop(reason);
         };
 
         client.collectors.create({
@@ -192,10 +197,10 @@ export class WatchersController {
     *#findWatchers<const Query extends FindWatcherQuery>(query: Query) {
         const searchFn = typeof query === "function" ? (query as Extract<FindWatcherQuery, Function>) : this.#baseSearch.bind(this, query);
 
-        for (const value of this.managers.values()) {
+        for (const [key, value] of this.managers.entries()) {
             const watcher = (value as Exclude<typeof value, MessageWatcherManager<any>>).value ?? value;
 
-            if (!watcher || searchFn(watcher) === false) continue;
+            if ((key !== watcher.id && !watcher) || searchFn(watcher) === false) continue;
 
             yield watcher as InferWatcherFromQuery<Query>;
         }

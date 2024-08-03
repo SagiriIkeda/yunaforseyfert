@@ -14,7 +14,7 @@ import {
 } from "seyfert";
 import { Transformers } from "seyfert/lib/client/transformers";
 import { type MakeRequired, toSnakeCase } from "seyfert/lib/common";
-import type { APIUser, GatewayMessageCreateDispatchData, GatewayMessageUpdateDispatchData } from "seyfert/lib/types";
+import type { APIMessage, APIUser, GatewayMessageCreateDispatchData, GatewayMessageUpdateDispatchData } from "seyfert/lib/types";
 import type { CommandUsable } from "../../things";
 import { type WatchersController, createId } from "./Controller";
 import { MessageWatcher } from "./Watcher";
@@ -36,6 +36,8 @@ const createFakeApiUser = (user: User) => {
 type EventKeys<O extends OptionsRecord> = Extract<keyof MessageWatcher<O>, `on${string}Event`>;
 type EventParams<O extends OptionsRecord, E extends EventKeys<O>> = Parameters<OmitThisParameter<NonNullable<MessageWatcher<O>[E]>>>;
 
+type MessageResolvable = Pick<Message, "id" | "channelId"> | Pick<APIMessage, "id" | "channel_id"> | string;
+
 export type MakeCommand<C> = { command: C };
 
 export class MessageWatcherManager<const O extends OptionsRecord = any, Context = any, __Command extends CommandUsable = any> {
@@ -51,7 +53,7 @@ export class MessageWatcherManager<const O extends OptionsRecord = any, Context 
 
     declare context: Context;
 
-    originCtx?: CommandContext<O>;
+    originCtx?: CommandContext<O> & MakeCommand<__Command>;
     ctx?: CommandContext<O> & MakeCommand<__Command>;
 
     watchers = new Set<MessageWatcher<O, Context, __Command>>();
@@ -64,7 +66,7 @@ export class MessageWatcherManager<const O extends OptionsRecord = any, Context 
         shardId?: number,
         ctx?: CommandContext<O>,
     ) {
-        this.originCtx = ctx;
+        this.originCtx = ctx as CommandContext<O> & MakeCommand<__Command>;
         this.ctx = ctx as CommandContext<O> & MakeCommand<__Command>;
 
         this.client = client;
@@ -204,7 +206,7 @@ export class MessageWatcherManager<const O extends OptionsRecord = any, Context 
 
         this.#oldContent = slicedContent;
 
-        ctx.messageResponse = this.originCtx?.messageResponse;
+        ctx.messageResponse = this.ctx?.messageResponse;
 
         Object.assign(ctx, client.options.context?.(newMessage));
         this.ctx = ctx as CommandContext<O> & MakeCommand<__Command>;
@@ -218,24 +220,57 @@ export class MessageWatcherManager<const O extends OptionsRecord = any, Context 
     readonly endReason?: string;
 
     /** @internal */
-    stopWatcher(watcher: MessageWatcher<O>, reason: string) {
+    stopWatcher(watcher: MessageWatcher<O>, reason: string, emit = true) {
         const isDeleted = this.watchers.delete(watcher);
         if (!isDeleted) return;
 
         watcher.stopTimers();
-        watcher.onStopEvent?.(reason);
+        emit && watcher.onStopEvent?.(reason);
 
         Reflect.set(watcher, "endReason", reason);
 
         if (this.watchers.size) return;
 
         this.controller.managers.delete(this.id);
+        for (const id of this.messageResponses.keys()) this.controller.managers.delete(id);
     }
 
     /** stop this and all watchers in this manager */
     stop(reason: string) {
         Reflect.set(this, "endReason", reason);
         for (const watcher of this.watchers) this.stopWatcher(watcher, reason);
+    }
+
+    messageResponses = new Map<string, boolean>();
+    /**
+     *
+     */
+    watchMessageResponseDelete(message: MessageResolvable) {
+        const isString = typeof message === "string";
+
+        const id = isString ? message : message.id;
+        const channelId = isString ? this.message.channelId : (message as APIMessage).channel_id ?? (message as Message).channelId;
+
+        if (id === this.message.id && channelId === this.message.channelId) return;
+
+        const cacheId = createId(id, channelId);
+
+        if (this.messageResponses.has(cacheId)) return;
+
+        this.messageResponses.set(cacheId, false);
+
+        this.controller.managers.set(cacheId, this);
+    }
+
+    createId(messageId: string, channelId?: string) {
+        return createId(messageId, channelId ?? this.message.channelId);
+    }
+
+    /** @internal */
+    onMessageResponseDeleteEvent(message: Pick<Message, "id" | "channelId">, rawId: string) {
+        this.messageResponses.set(rawId, true);
+        this.controller.managers.delete(rawId);
+        this.emit("onMessageResponseDeleteEvent", message);
     }
 
     watch(options: WatcherOptions = {}) {

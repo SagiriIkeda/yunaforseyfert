@@ -1,4 +1,4 @@
-import type { Command, CommandContext, OnOptionsReturnObject, OptionsRecord, SubCommand } from "seyfert";
+import type { Command, CommandContext, Message, OnOptionsReturnObject, OptionsRecord, SubCommand } from "seyfert";
 import type { Awaitable, MakeRequired } from "seyfert/lib/common";
 import type { GatewayMessageUpdateDispatchData } from "seyfert/lib/types";
 import type { YunaUsable } from "../../things";
@@ -17,6 +17,7 @@ export type WatcherOnChangeEvent<M extends MessageWatcher, O extends OptionsReco
     rawMessage: RawMessageUpdated,
 ) => any;
 
+export type WatcherOnMessageResponseDelete<M extends MessageWatcher> = (this: M, message: Pick<Message, "id" | "channelId">) => any;
 export type WatcherOnStopEvent<M extends MessageWatcher> = (this: M, reason: string) => any;
 export type WatcherOnOptionsErrorEvent<M extends MessageWatcher> = (this: M, data: OnOptionsReturnObject) => any;
 
@@ -50,4 +51,5 @@ export interface DecoratorWatchOptions<
     onChange?: WatcherOnChangeEvent<M, O>;
     onUsageError?: WatcherOnUsageErrorEvent<M>;
     onOptionsError?: WatcherOnOptionsErrorEvent<M>;
+    onMessageResponseDelete?: WatcherOnMessageResponseDelete<M>;
 }

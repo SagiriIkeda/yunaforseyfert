@@ -22,15 +22,25 @@ export default class SayCommand extends Command {
             return oldWatcher?.stop("New execution");
         },
         onStop(reason) {
-            const { command } = this;
+            const { command, ctx } = this;
+            if (!ctx?.messageResponse) return;
             const { text } = this.context; // get the text from the context
-            this.ctx?.editOrReply({ embeds: [command.embed(text, reason)] }); // edit the message with end reason
+
+            ctx?.editOrReply({ embeds: [command.embed(text, reason)] }); // edit the message with end reason
+        },
+        async onMessageResponseDelete(message) {
+            if (!this.ctx) return;
+            this.refreshTimers();
+
+            await this.ctx.write({ content: `Message response deleted ${message.channelId}.${message.id}` });
+
+            this.watchMessageResponseDelete(this.ctx.messageResponse!);
         },
     })
-    run(ctx: CommandContext<typeof options>) {
+    async run(ctx: CommandContext<typeof options>) {
         const { text } = ctx.options;
 
-        ctx.editOrReply({ embeds: [this.embed(text)] });
+        await ctx.editOrReply({ embeds: [this.embed(text)] });
 
         return Watch.context({ text }); // save actual text in context to reuse it in the onStop event
     }
