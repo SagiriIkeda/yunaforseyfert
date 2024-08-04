@@ -232,7 +232,7 @@ export class MessageWatcherManager<const O extends OptionsRecord = any, Context 
         if (this.watchers.size) return;
 
         this.controller.managers.delete(this.id);
-        for (const id of this.responses.keys()) this.controller.managers.delete(id);
+        for (const id of this.responses.keys()) this.controller.responsesManagers.delete(id);
     }
 
     /** stop this and all watchers in this manager */
@@ -257,7 +257,7 @@ export class MessageWatcherManager<const O extends OptionsRecord = any, Context 
 
         this.responses.set(cacheId, false);
 
-        this.controller.managers.set(cacheId, this);
+        this.controller.responsesManagers.set(cacheId, this);
     }
 
     createId(messageId: string, channelId?: string) {
@@ -267,7 +267,7 @@ export class MessageWatcherManager<const O extends OptionsRecord = any, Context 
     /** @internal */
     onResponseDeleteEvent(message: Pick<Message, "id" | "channelId">, rawId: string) {
         this.responses.set(rawId, true);
-        this.controller.managers.delete(rawId);
+        this.controller.responsesManagers.delete(rawId);
         this.emit("onResponseDeleteEvent", message);
     }
 

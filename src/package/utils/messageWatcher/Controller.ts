@@ -68,6 +68,8 @@ export class WatchersController {
     /** watchers managers cache */
     managers: WatchersManagersCacheAdapter = new Map<string, MessageWatcherManager>();
 
+    responsesManagers: WatchersManagersCacheAdapter = new Map<string, MessageWatcherManager>();
+
     watching = false;
 
     client: UsingClient;
@@ -108,18 +110,23 @@ export class WatchersController {
 
         const deleteByMessage = (messageId: string, channelId: string, reason: string) => {
             const id = createId(messageId, channelId);
-            const watcher = cache.get(id);
-            if (!watcher) return;
-            const isMessageResponse = watcher.responses.has(id);
-            if (isMessageResponse) return watcher.onResponseDeleteEvent({ id: messageId, channelId }, id);
 
-            watcher.stop(reason);
+            const inResponses = this.responsesManagers.get(id);
+            if (inResponses) return inResponses.onResponseDeleteEvent({ id: messageId, channelId }, id);
+
+            const watcher = cache.get(id);
+
+            watcher?.stop(reason);
         };
+
+        const self = this;
 
         client.collectors.create({
             event: "RAW",
             filter: () => true,
             run({ t: event, d: data }) {
+                if (self.managers.size === 0) return;
+
                 switch (event) {
                     case GatewayDispatchEvents.GuildDelete:
                         deleteBy({ guildId: data.id });
@@ -197,10 +204,10 @@ export class WatchersController {
     *#findWatchers<const Query extends FindWatcherQuery>(query: Query) {
         const searchFn = typeof query === "function" ? (query as Extract<FindWatcherQuery, Function>) : this.#baseSearch.bind(this, query);
 
-        for (const [key, value] of this.managers.entries()) {
+        for (const value of this.managers.values()) {
             const watcher = (value as Exclude<typeof value, MessageWatcherManager<any>>).value ?? value;
 
-            if ((key !== watcher.id && !watcher) || searchFn(watcher) === false) continue;
+            if (!watcher || searchFn(watcher) === false) continue;
 
             yield watcher as InferWatcherFromQuery<Query>;
         }
