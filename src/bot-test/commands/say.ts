@@ -28,13 +28,13 @@ export default class SayCommand extends Command {
 
             ctx?.editOrReply({ embeds: [command.embed(text, reason)] }); // edit the message with end reason
         },
-        async onMessageResponseDelete(message) {
+        async onResponseDelete(message) {
             if (!this.ctx) return;
             this.refreshTimers();
 
             await this.ctx.write({ content: `Message response deleted ${message.channelId}.${message.id}` });
 
-            this.watchMessageResponseDelete(this.ctx.messageResponse!);
+            this.watchResponseDelete(this.ctx.messageResponse!);
         },
     })
     async run(ctx: CommandContext<typeof options>) {

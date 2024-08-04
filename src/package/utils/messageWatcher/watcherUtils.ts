@@ -26,7 +26,7 @@ function DecoratorWatcher<
             const watcher = createWatcher(ctx, options);
 
             const assingMessageResponse = (ctx: CommandContext) => {
-                ctx.messageResponse && watcher.watchMessageResponseDelete(ctx.messageResponse);
+                ctx.messageResponse && watcher.watchResponseDelete(ctx.messageResponse);
             };
 
             assingMessageResponse(ctx);
@@ -73,7 +73,7 @@ function DecoratorWatcher<
             options.onUsageError && watcher.onUsageError(decorate(options.onUsageError));
             options.onStop && watcher.onStop(options.onStop);
             options.onOptionsError && watcher.onOptionsError(decorate(options.onOptionsError));
-            options.onMessageResponseDelete && watcher.onMessageResponseDelete(decorate(options.onMessageResponseDelete));
+            options.onResponseDelete && watcher.onResponseDelete(decorate(options.onResponseDelete));
         };
     };
 }

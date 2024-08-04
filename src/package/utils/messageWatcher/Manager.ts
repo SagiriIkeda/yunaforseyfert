@@ -232,7 +232,7 @@ export class MessageWatcherManager<const O extends OptionsRecord = any, Context 
         if (this.watchers.size) return;
 
         this.controller.managers.delete(this.id);
-        for (const id of this.messageResponses.keys()) this.controller.managers.delete(id);
+        for (const id of this.responses.keys()) this.controller.managers.delete(id);
     }
 
     /** stop this and all watchers in this manager */
@@ -241,11 +241,9 @@ export class MessageWatcherManager<const O extends OptionsRecord = any, Context 
         for (const watcher of this.watchers) this.stopWatcher(watcher, reason);
     }
 
-    messageResponses = new Map<string, boolean>();
-    /**
-     *
-     */
-    watchMessageResponseDelete(message: MessageResolvable) {
+    responses = new Map<string, boolean>();
+
+    watchResponseDelete(message: MessageResolvable) {
         const isString = typeof message === "string";
 
         const id = isString ? message : message.id;
@@ -255,9 +253,9 @@ export class MessageWatcherManager<const O extends OptionsRecord = any, Context 
 
         const cacheId = createId(id, channelId);
 
-        if (this.messageResponses.has(cacheId)) return;
+        if (this.responses.has(cacheId)) return;
 
-        this.messageResponses.set(cacheId, false);
+        this.responses.set(cacheId, false);
 
         this.controller.managers.set(cacheId, this);
     }
@@ -267,10 +265,10 @@ export class MessageWatcherManager<const O extends OptionsRecord = any, Context 
     }
 
     /** @internal */
-    onMessageResponseDeleteEvent(message: Pick<Message, "id" | "channelId">, rawId: string) {
-        this.messageResponses.set(rawId, true);
+    onResponseDeleteEvent(message: Pick<Message, "id" | "channelId">, rawId: string) {
+        this.responses.set(rawId, true);
         this.controller.managers.delete(rawId);
-        this.emit("onMessageResponseDeleteEvent", message);
+        this.emit("onResponseDeleteEvent", message);
     }
 
     watch(options: WatcherOptions = {}) {

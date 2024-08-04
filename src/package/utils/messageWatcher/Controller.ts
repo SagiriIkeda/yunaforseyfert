@@ -110,8 +110,8 @@ export class WatchersController {
             const id = createId(messageId, channelId);
             const watcher = cache.get(id);
             if (!watcher) return;
-            const isMessageResponse = watcher.messageResponses.has(id);
-            if (isMessageResponse) return watcher.onMessageResponseDeleteEvent({ id: messageId, channelId }, id);
+            const isMessageResponse = watcher.responses.has(id);
+            if (isMessageResponse) return watcher.onResponseDeleteEvent({ id: messageId, channelId }, id);
 
             watcher.stop(reason);
         };

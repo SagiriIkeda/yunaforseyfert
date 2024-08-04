@@ -4,8 +4,8 @@ import type { WatchersController } from "./Controller";
 import type { MessageWatcherManager } from "./Manager";
 import type {
     WatcherOnChangeEvent,
-    WatcherOnMessageResponseDelete,
     WatcherOnOptionsErrorEvent,
+    WatcherOnResponseDelete,
     WatcherOnStopEvent,
     WatcherOnUsageErrorEvent,
     WatcherOptions,
@@ -110,18 +110,18 @@ export class MessageWatcher<const O extends OptionsRecord = any, Context = any, 
         return this;
     }
     /** @internal */
-    onMessageResponseDeleteEvent?: WatcherOnMessageResponseDelete<this>;
+    onResponseDeleteEvent?: WatcherOnResponseDelete<this>;
 
-    onMessageResponseDelete(callback: WatcherOnMessageResponseDelete<this>) {
-        this.onMessageResponseDeleteEvent = callback.bind(this);
+    onResponseDelete(callback: WatcherOnResponseDelete<this>) {
+        this.onResponseDeleteEvent = callback.bind(this);
         return this;
     }
 
-    get messageResponses() {
-        return this.manager.messageResponses;
+    get responses() {
+        return this.manager.responses;
     }
-    get watchMessageResponseDelete() {
-        return this.manager.watchMessageResponseDelete.bind(this.manager);
+    get watchResponseDelete() {
+        return this.manager.watchResponseDelete.bind(this.manager);
     }
 
     get createId() {
