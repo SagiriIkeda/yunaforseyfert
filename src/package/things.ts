@@ -18,15 +18,22 @@ export class Keys {
     static readonly clientWatcherController = Symbol("YunaMessageWatcherController");
 
     static readonly watcherStop = Symbol("WatcherStop");
+
+    static readonly messageArgsResult = Symbol();
 }
 
 export type Instantiable<C> = { new (...args: any[]): C };
 export type AvailableClients = UsingClient | Client | WorkerClient;
-export type ArgValue = string & {
-    // :)
-    position?: [number, number];
-};
-export type ArgsResult = Record<string, ArgValue>;
+
+export type ArgPosition = [number, number];
+export type ArgsResultPositions = Record<string, ArgPosition>;
+export type ArgsResult = Record<string, string>;
+
+export interface ArgsResultMetadata {
+    content: string;
+    result: ArgsResult;
+    positions: ArgsResultPositions;
+}
 
 export type CommandUsable = Command | SubCommand;
 

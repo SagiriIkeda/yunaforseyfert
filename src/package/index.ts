@@ -4,6 +4,8 @@ import { getCommandsMetadata, prepareCommands, resolve } from "./utils/commandsR
 import { YunaCommandsResolver } from "./utils/commandsResolver/resolver.js";
 import { YunaParser } from "./utils/parser/parser.js";
 
+import { CommandContext, type Message } from "seyfert";
+import { Keys } from "./things.js";
 import { YunaWatcherUtils } from "./utils/messageWatcher/watcherUtils.js";
 import type { YunaParserCreateOptions } from "./utils/parser/configTypes.js";
 import { mergeConfig } from "./utils/parser/createConfig.js";
@@ -18,6 +20,7 @@ export type { MessageWatcherManager } from "./utils/messageWatcher/Manager.js";
 export type { MessageWatcher } from "./utils/messageWatcher/Watcher.js";
 
 export type { InferWatcherContext } from "./utils/messageWatcher/Controller.js";
+export type { ArgsResult, ArgsResultMetadata, ArgPosition } from "./things.js";
 
 export type {
     WatcherOnChangeEvent,
@@ -94,6 +97,11 @@ class BaseYuna {
         fullNameOf,
         getMetadata: getCommandsMetadata,
     };
+
+    getArgsResult(resolvable?: CommandContext | Message) {
+        const message = resolvable instanceof CommandContext ? resolvable.message : resolvable;
+        return message?.[Keys.messageArgsResult];
+    }
 
     watchers = YunaWatcherUtils;
 }

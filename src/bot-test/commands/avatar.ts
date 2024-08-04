@@ -20,7 +20,7 @@ export default class AvatarCommand extends Command {
         await ctx.write({
             embeds: [
                 new Embed()
-                    .setTitle(`Avatar of ${user!.globalName}`)
+                    .setTitle(`Avatar of ${user!.tag}`)
                     .setDescription(message)
                     .setImage(user!.avatarURL({ size: 1024, extension: "png" })),
             ],

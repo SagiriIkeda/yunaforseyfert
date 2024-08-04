@@ -12,7 +12,7 @@ import type {
     SeyfertUserOption,
 } from "seyfert";
 import type { ApplicationCommandOptionType } from "seyfert/lib/types";
-import type { Instantiable, YunaGroupType } from "./things";
+import { type ArgsResultMetadata, type Instantiable, Keys, type YunaGroupType } from "./things";
 
 export type ExtendedOption = {
     /**
@@ -100,4 +100,8 @@ declare module "seyfert" {
     };
 
     export function Groups(groups: Record<string, YunaGroupType>): <T extends Instantiable<any>>(target: T) => T;
+
+    export interface Message {
+        [Keys.messageArgsResult]?: ArgsResultMetadata;
+    }
 }

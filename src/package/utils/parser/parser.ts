@@ -2,7 +2,7 @@ import type { Command, Message, SubCommand } from "seyfert";
 import type { CommandOptionWithType, HandleCommand } from "seyfert/lib/commands/handle";
 import { ApplicationCommandOptionType } from "seyfert/lib/types";
 import type { ExtendedOption } from "../../seyfert";
-import type { ArgsResult } from "../../things";
+import { type ArgPosition, type ArgsResult, type ArgsResultPositions, Keys } from "../../things";
 import { YunaParserCommandMetaData } from "./CommandMetaData";
 import { YunaParserOptionsChoicesResolver } from "./choicesResolver";
 import type { ValidLongTextTags, ValidNamedOptionSyntax, YunaParserCreateOptions } from "./configTypes";
@@ -41,11 +41,6 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
     const globalVns = YunaParserCommandMetaData.getValidNamedOptionSyntaxes(globalConfig);
 
-    const logResult = (self: HandleCommand, argsResult: ArgsResult) =>
-        self.client.logger.debug("[Yuna.parser]", {
-            argsResult,
-        });
-
     // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: omitting this rule the life is better
     return function (this: HandleCommand, content: string, command: Command | SubCommand, message?: Message): Record<string, string> {
         const commandMetadata = YunaParserCommandMetaData.from(command);
@@ -60,6 +55,21 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
         let actualFlagOptionsIdx = 0;
 
         const argsResult: ArgsResult = {};
+        const argsResultPosition: ArgsResultPositions = {};
+
+        const endResult = () => {
+            if (message)
+                message[Keys.messageArgsResult] = {
+                    content,
+                    result: argsResult,
+                    positions: argsResultPosition,
+                };
+
+            config.logResult &&
+                this.client.logger.debug("[Yuna.parser]", {
+                    argsResult,
+                });
+        };
 
         const aggregateUserFromMessageReference = (() => {
             const reference = message?.referencedMessage;
@@ -79,7 +89,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
         })();
 
         if (aggregateUserFromMessageReference && actualIterableOptionsIdx >= options.size) {
-            config.logResult && logResult(this, argsResult);
+            endResult();
             return argsResult;
         }
 
@@ -116,6 +126,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
         interface NamedOptionState {
             name: string;
             start: number;
+            nameStart: number;
             dotted: boolean;
             optionData?: ExtendedOption;
         }
@@ -154,7 +165,9 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             }
         };
 
-        const aggregateNextOption = (value: string, start: number | null) => {
+        const aggregateNextOption = (value: string, position: ArgPosition, isLongTextTag = false) => {
+            const [start, end] = position;
+
             if (
                 namedOptionState &&
                 ((useNamedWithSingleValue && namedOptionState?.optionData?.useNamedWithSingleValue !== false) ||
@@ -165,6 +178,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                 namedOptionState = null;
 
                 argsResult[name] = value;
+                argsResultPosition[name] = position;
 
                 incNamedOptionsCount(name);
 
@@ -172,10 +186,10 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                 return name;
             }
 
-            if (start === null && unindexedRightText) {
+            if (isLongTextTag === true && unindexedRightText) {
                 const savedUnindexedText = unindexedRightText;
                 unindexedRightText = "";
-                aggregateNextOption(savedUnindexedText, null);
+                aggregateNextOption(savedUnindexedText, [start - savedUnindexedText.length, start], true);
             }
 
             const optionAtIndexName = iterableOptions[actualIterableOptionsIdx]?.name;
@@ -184,7 +198,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
             const isLastOption = actualIterableOptionsIdx === iterableOptions.length - 1;
 
-            if (isLastOption && start !== null && !longTextTagsState) {
+            if (isLastOption && isLongTextTag === false && !longTextTagsState) {
                 lastestLongWord = {
                     start,
                     name: optionAtIndexName,
@@ -193,6 +207,8 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             }
 
             argsResult[optionAtIndexName] = unindexedRightText + value;
+            argsResultPosition[optionAtIndexName] = [start - unindexedRightText.length, end];
+
             unindexedRightText = "";
 
             actualIterableOptionsIdx++;
@@ -202,7 +218,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             return lastOptionNameAdded;
         };
 
-        const aggregateLastestLongWord = (end: number = content.length, postText = "") => {
+        const aggregateLastestLongWord = (end = content.length, postText = "") => {
             if (!lastestLongWord) return;
 
             const { name, start, unindexedRightText } = lastestLongWord;
@@ -221,6 +237,8 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                 unindexedRightText +
                 (canUseAsLiterally ? slicedContent : sanitizeBackescapes(slicedContent, localEscapeModes.All, checkNextChar) + postText)
             ).trim();
+
+            argsResultPosition[name] = [start - unindexedRightText.length, end];
 
             isAlreadyLatestLongWordAggregated = true;
 
@@ -259,11 +277,13 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                 return;
             }
 
-            aggregateNextOption(text, textPosition);
+            aggregateNextOption(text, [textPosition, textPosition + text.length]);
         };
 
-        const aggregateLongTextTag = (end?: number) => {
+        const aggregateLongTextTag = (end = content.length) => {
             if (!longTextTagsState) return;
+
+            const position: ArgPosition = [longTextTagsState.toStart, end];
 
             const value = content.slice(longTextTagsState.toStart, end);
 
@@ -272,12 +292,12 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             longTextTagsState = null;
             isRecentlyClosedAnyTag = true;
 
-            aggregateNextOption(reg ? sanitizeBackescapes(value, reg, checkNextChar) : value, null);
+            aggregateNextOption(reg ? sanitizeBackescapes(value, reg, checkNextChar) : value, position, true);
         };
 
-        const aggregateNextNamedOption = (end?: number) => {
+        const aggregateNextNamedOption = (end = content.length) => {
             if (!namedOptionState) return;
-            const { name, start, dotted } = namedOptionState;
+            const { name, start, dotted, nameStart } = namedOptionState;
 
             const escapeModeType = dotted ? "forNamedDotted" : "forNamed";
             const escapeMode = localEscapeModes[escapeModeType];
@@ -301,13 +321,19 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
             incNamedOptionsCount(name);
 
-            argsResult[name] = dotted
-                ? value
+            const isVoidBooleanOption = dotted
+                ? false
                 : value.trimStart()
-                  ? value
-                  : options.get(name)?.type === ApplicationCommandOptionType.Boolean
-                    ? "true"
-                    : value;
+                  ? false
+                  : options.get(name)?.type === ApplicationCommandOptionType.Boolean;
+
+            if (isVoidBooleanOption) {
+                argsResult[name] = "true";
+                argsResultPosition[name] = [nameStart, start];
+            } else {
+                argsResult[name] = value;
+                argsResultPosition[name] = [start, end];
+            }
 
             lastOptionNameAdded = name;
             return name;
@@ -372,6 +398,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                 namedOptionState = {
                     name: tagName,
                     start: index + named.length,
+                    nameStart: index + (backescape?.length ?? 0),
                     dotted: dotsname !== undefined,
                     optionData: options.get(tagName),
                 };
@@ -433,7 +460,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                         ? !(tag === codeBlockQuote && content[index + 1] === codeBlockQuote && content[index + 2] === codeBlockQuote)
                         : true)
                 ) {
-                    aggregateNextOption(tag, index);
+                    aggregateNextOption(tag, [index, index + match[0].length]);
                     continue;
                 } else if (InvalidTagsToBeLong.has(tag)) {
                     aggregateUnindexedText(index, tag, "", undefined, undefined, _isRecentlyCosedAnyTag);
@@ -488,8 +515,13 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                                 const canAddLangOption = useCodeBlockLangAsAnOption && !namedOptionState;
 
                                 if (codeBlockLangMatch) {
-                                    canAddLangOption && aggregateNextOption(codeBlockLangMatch[1], longTextTagsState.toStart);
-                                    longTextTagsState.toStart += codeBlockLangMatch[0].length;
+                                    const codeBlockLength = codeBlockLangMatch[0].length;
+                                    canAddLangOption &&
+                                        aggregateNextOption(codeBlockLangMatch[1], [
+                                            longTextTagsState.toStart,
+                                            longTextTagsState.toStart + codeBlockLength,
+                                        ]);
+                                    longTextTagsState.toStart += codeBlockLength;
                                 } else {
                                     canAddLangOption && actualIterableOptionsIdx++;
                                 }
@@ -515,12 +547,16 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             if (value && longTextTagsState === null) {
                 const placeIsForLeft = !(_isRecentlyCosedAnyTag || unindexedRightText || spacesRegex.test(content[index - 1]));
 
+                const endPosition = index + match[0].length;
+
                 if (placeIsForLeft && lastOptionNameAdded) {
                     argsResult[lastOptionNameAdded] += value;
+                    const oldPosition = argsResultPosition[lastOptionNameAdded];
+                    if (oldPosition) oldPosition[1] = endPosition;
                     continue;
                 }
 
-                aggregateNextOption(value, index);
+                aggregateNextOption(value, [index, endPosition]);
             }
         }
 
@@ -532,7 +568,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             YunaParserOptionsChoicesResolver(commandMetadata, argsResult, config);
         }
 
-        config.logResult && logResult(this, argsResult);
+        endResult();
 
         return argsResult;
     };
