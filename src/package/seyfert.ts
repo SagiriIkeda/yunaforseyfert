@@ -14,7 +14,7 @@ import type {
 import type { ApplicationCommandOptionType } from "seyfert/lib/types";
 import { type ArgsResultMetadata, type Instantiable, Keys, type YunaGroupType } from "./things";
 
-export type ExtendedOption = {
+type BaseExtendedOption = {
     /**
      * with this, you can only use this option as a namedOption and not in a normal way
      *
@@ -32,9 +32,11 @@ export type ExtendedOption = {
      * @default {false}
      */
     useNamedWithSingleValue?: boolean;
-} & CommandBaseOption;
+};
 
-type Extended<O> = O & ExtendedOption;
+export type ExtendedOption = BaseExtendedOption & CommandBaseOption;
+
+type Extended<O> = O & BaseExtendedOption;
 
 // hate this
 type ExtendedStringOption = Extended<SeyfertStringOption>;

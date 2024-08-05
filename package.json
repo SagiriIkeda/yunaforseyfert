@@ -1,52 +1,44 @@
 {
-  "name": "yunaforseyfert",
-  "version": "1.0.0",
-  "description": "Yunathings for seyfert",
-  "type": "commonjs",
-  "main": "./build/index.js",
-  "private": true,
-  "types": "./build/index.d.ts",
-  "files": [
-    "build"
-  ],
-  "scripts": {
-    "bot": "cd src/bot-test && bun .",
-    "pkg:pack": "vitest run test && npm run build && bun src/package/lib/prepublish.mts && echo pkg:pack done",
-    "prepare": "npm run build && npx husky",
-    "build": "npx tsup --config tsup.config.json",
-    "lint": "biome lint --write ./src",
-    "format": "biome check --write ./src",
-    "test": "vitest",
-    "esbuild": "esbuild src/**/*.ts --outdir=dist --sourcemap=inline --platform=node --format=cjs --target=es2022"
-  },
-  "keywords": [
-    "parser",
-    "penguin"
-  ],
-  "author": "SagiriIkeda",
-  "license": "ISC",
-  "dependencies": {
-    "seyfert": "github:tiramisulabs/seyfert"
-  },
-  "homepage": "https://github.com/SagiriIkeda/yunaforseyfert#readme",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/SagiriIkeda/yunaforseyfert.git"
-  },
-  "lint-staged": {
-    "*.ts": [
-      "biome check --write",
-      "biome format --write"
-    ]
-  },
-  "devDependencies": {
-    "@biomejs/biome": "1.8.0",
-    "@types/node": "^20.14.2",
-    "esbuild": "^0.23.0",
-    "husky": "^9.0.11",
-    "lint-staged": "^15.2.7",
-    "tsup": "^8.1.0",
-    "typescript": "^5.0.0",
-    "vitest": "^2.0.4"
-  }
+    "name": "yunaforseyfert",
+    "version": "1.0.0",
+    "description": "Yunathings for seyfert",
+    "type": "commonjs",
+    "main": "./build/index.js",
+    "private": true,
+    "types": "./build/index.d.ts",
+    "files": ["build"],
+    "scripts": {
+        "bot": "cd src/bot-test && bun .",
+        "pkg:pack": "vitest run test && npm run build && bun src/package/lib/prepublish.mts && cd .npm && npm pack &&echo pkg:pack done",
+        "prepare": "npm run build && npx husky",
+        "build": "npx tsup --config tsup.config.json",
+        "lint": "biome lint --write ./src",
+        "format": "biome check --write ./src",
+        "test": "vitest",
+        "esbuild": "esbuild src/**/*.ts --outdir=dist --sourcemap=inline --platform=node --format=cjs --target=es2022"
+    },
+    "keywords": ["parser", "penguin"],
+    "author": "SagiriIkeda",
+    "license": "ISC",
+    "dependencies": {
+        "seyfert": "github:tiramisulabs/seyfert"
+    },
+    "homepage": "https://github.com/SagiriIkeda/yunaforseyfert#readme",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/SagiriIkeda/yunaforseyfert.git"
+    },
+    "lint-staged": {
+        "*.ts": ["biome check --write", "biome format --write"]
+    },
+    "devDependencies": {
+        "@biomejs/biome": "1.8.0",
+        "@types/node": "^20.14.2",
+        "esbuild": "^0.23.0",
+        "husky": "^9.0.11",
+        "lint-staged": "^15.2.7",
+        "tsup": "^8.1.0",
+        "typescript": "^5.0.0",
+        "vitest": "^2.0.4"
+    }
 }
