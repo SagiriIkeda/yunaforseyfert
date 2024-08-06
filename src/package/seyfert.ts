@@ -1,6 +1,5 @@
 import type {
     Command,
-    CommandBaseOption,
     SeyfertAttachmentOption,
     SeyfertBooleanOption,
     SeyfertChannelOption,
@@ -11,10 +10,11 @@ import type {
     SeyfertStringOption,
     SeyfertUserOption,
 } from "seyfert";
+import type { CommandOptionWithType } from "seyfert/lib/commands/handle";
 import type { ApplicationCommandOptionType } from "seyfert/lib/types";
 import { type ArgsResultMetadata, type Instantiable, Keys, type YunaGroupType } from "./things";
 
-type BaseExtendedOption = {
+interface BaseExtendedOption {
     /**
      * with this, you can only use this option as a namedOption and not in a normal way
      *
@@ -32,9 +32,9 @@ type BaseExtendedOption = {
      * @default {false}
      */
     useNamedWithSingleValue?: boolean;
-};
+}
 
-export type ExtendedOption = BaseExtendedOption & CommandBaseOption;
+export type ExtendedOption = BaseExtendedOption & CommandOptionWithType;
 
 type Extended<O> = O & BaseExtendedOption;
 

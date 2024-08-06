@@ -33,7 +33,7 @@ const flagNextSymbolBackEscapesRegex = /^(\\+)([\=\:])/;
 
 const spacesRegex = /[\s\x7F\n]/;
 
-const codeBlockQuote = "`";
+const backtick = "`";
 
 export const YunaParser = (config: YunaParserCreateOptions = {}) => {
     const globalConfig = createConfig(config);
@@ -297,7 +297,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
         const aggregateNextNamedOption = (end = content.length) => {
             if (!namedOptionState) return;
-            const { name, start, dotted, nameStart } = namedOptionState;
+            const { name, start, dotted, nameStart, optionData } = namedOptionState;
 
             const escapeModeType = dotted ? "forNamedDotted" : "forNamed";
             const escapeMode = localEscapeModes[escapeModeType];
@@ -325,7 +325,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                 ? false
                 : value.trimStart()
                   ? false
-                  : options.get(name)?.type === ApplicationCommandOptionType.Boolean;
+                  : optionData?.type === ApplicationCommandOptionType.Boolean;
 
             if (isVoidBooleanOption) {
                 argsResult[name] = "true";
@@ -334,6 +334,8 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                 argsResult[name] = value;
                 argsResultPosition[name] = [start, end];
             }
+
+            isRecentlyClosedAnyTag = true;
 
             lastOptionNameAdded = name;
             return name;
@@ -457,7 +459,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                     disableLongTextTagsInLastOption &&
                     actualIterableOptionsIdx >= iterableOptions.length - 1 &&
                     ((disableLongTextTagsInLastOption as DisableLongTextTagsInLastOptionObject).excludeCodeBlocks
-                        ? !(tag === codeBlockQuote && content[index + 1] === codeBlockQuote && content[index + 2] === codeBlockQuote)
+                        ? !(tag === backtick && content[index + 1] === backtick && content[index + 2] === backtick)
                         : true)
                 ) {
                     aggregateNextOption(tag, [index, index + match[0].length]);
@@ -497,7 +499,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                             longTextTagsState.end++;
                         } else {
                             const isCodeBlock =
-                                longTextTagsState.quote === "`" && longTextTagsState.toStart - longTextTagsState.start === 2;
+                                longTextTagsState.quote === backtick && longTextTagsState.toStart - longTextTagsState.start === 2;
 
                             const endPosition = longTextTagsState.toEnd ?? index;
 
