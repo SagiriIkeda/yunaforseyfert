@@ -179,6 +179,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
                 argsResult[name] = value;
                 argsResultPosition[name] = position;
+                isRecentlyClosedAnyTag = true;
 
                 incNamedOptionsCount(name);
 
