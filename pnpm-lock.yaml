@@ -10,7 +10,7 @@ importers:
     dependencies:
       seyfert:
         specifier: github:tiramisulabs/seyfert
-        version: https://codeload.github.com/tiramisulabs/seyfert/tar.gz/97cd39eb10219c3a0c373e26e2fb665a99e26abc
+        version: https://codeload.github.com/tiramisulabs/seyfert/tar.gz/d6ff9767a114dcb825e8d16b802b38e0c95f029e
     devDependencies:
       '@biomejs/biome':
         specifier: 1.8.0
@@ -1032,8 +1032,8 @@ packages:
   run-parallel@1.2.0:
     resolution: {integrity: sha512-5l4VyZR86LZ/lDxZTR6jqL8AFE2S0IFLMP26AbjsLVADxHdhB/c0GUsH+y39UfCi3dzz8OlQuPmnaJOMoDHQBA==}
 
-  seyfert@https://codeload.github.com/tiramisulabs/seyfert/tar.gz/97cd39eb10219c3a0c373e26e2fb665a99e26abc:
-    resolution: {tarball: https://codeload.github.com/tiramisulabs/seyfert/tar.gz/97cd39eb10219c3a0c373e26e2fb665a99e26abc}
+  seyfert@https://codeload.github.com/tiramisulabs/seyfert/tar.gz/d6ff9767a114dcb825e8d16b802b38e0c95f029e:
+    resolution: {tarball: https://codeload.github.com/tiramisulabs/seyfert/tar.gz/d6ff9767a114dcb825e8d16b802b38e0c95f029e}
     version: 1.5.0
 
   shebang-command@2.0.0:
@@ -1275,18 +1275,6 @@ packages:
   wrap-ansi@9.0.0:
     resolution: {integrity: sha512-G8ura3S+3Z2G+mkgNRq8dqaFZAuxfsxpBB8OCTGRTCtp+l/v9nbFNmCUP1BZMts3G1142MsZfn6eeUKrr4PD1Q==}
     engines: {node: '>=18'}
-
-  ws@8.18.0:
-    resolution: {integrity: sha512-8VbfWfHLbbwu3+N6OKsOMpBdT4kXPDDB9cJk2bJ6mh9ucxdlnNvH1e+roYkKmN9Nxw2yjz7VzeO9oOz2zJ04Pw==}
-    engines: {node: '>=10.0.0'}
-    peerDependencies:
-      bufferutil: ^4.0.1
-      utf-8-validate: '>=5.0.2'
-    peerDependenciesMeta:
-      bufferutil:
-        optional: true
-      utf-8-validate:
-        optional: true
 
   yaml@2.4.5:
     resolution: {integrity: sha512-aBx2bnqDzVOyNKfsysjA2ms5ZlnjSAW2eG3/L5G/CSujfjLJTJsEw1bGw8kCf04KodQWk1pxlGnZ56CRxiawmg==}
@@ -2128,19 +2116,16 @@ snapshots:
     dependencies:
       queue-microtask: 1.2.3
 
-  seyfert@https://codeload.github.com/tiramisulabs/seyfert/tar.gz/97cd39eb10219c3a0c373e26e2fb665a99e26abc:
+  seyfert@https://codeload.github.com/tiramisulabs/seyfert/tar.gz/d6ff9767a114dcb825e8d16b802b38e0c95f029e:
     dependencies:
       magic-bytes.js: 1.10.0
-      ws: 8.18.0
     optionalDependencies:
       chokidar: 3.6.0
       ioredis: 5.4.1
       tweetnacl: 1.0.3
       uWebSockets.js: https://codeload.github.com/uNetworking/uWebSockets.js/tar.gz/f40213ec0a97d0d8721d9d32d92d6eb6ddcd22e7
     transitivePeerDependencies:
-      - bufferutil
       - supports-color
-      - utf-8-validate
 
   shebang-command@2.0.0:
     dependencies:
@@ -2378,7 +2363,5 @@ snapshots:
       ansi-styles: 6.2.1
       string-width: 7.2.0
       strip-ansi: 7.1.0
-
-  ws@8.18.0: {}
 
   yaml@2.4.5: {}

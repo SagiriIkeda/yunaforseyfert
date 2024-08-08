@@ -10,18 +10,20 @@ export interface YunaCommandsResolverConfig {
      * use a specified default one or the first one you have.
      */
     useFallbackSubCommand?: boolean;
-
+    logResult?: boolean;
     afterPrepare?(this: AvailableClients, metadata: ReturnType<typeof getCommandsMetadata>): any;
 }
 
 export function YunaCommandsResolver({
     client,
     useFallbackSubCommand = false,
+    logResult = false,
     afterPrepare,
 }: YunaCommandsResolverConfig & { client: AvailableClients }) {
     const config = {
         useFallbackSubCommand,
         afterPrepare,
+        logResult,
     };
 
     addCommandsEvents(client);
@@ -34,11 +36,19 @@ export function YunaCommandsResolver({
 
         const argsContent = content.slice(endPad).trimStart();
 
-        return {
+        const result = {
             parent: parent,
             command: command,
             fullCommandName: (command && fullNameOf(command)) ?? "",
             argsContent,
         };
+
+        if (config.logResult === true) {
+            client.logger.debug("[Yuna.resolver]", {
+                resolverResult: result,
+            });
+        }
+
+        return result;
     };
 }
