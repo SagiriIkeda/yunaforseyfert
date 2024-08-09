@@ -5,11 +5,11 @@ import { type AvailableClients, Keys, type YunaUsable } from "../../things";
 import { type GroupLink, ShortcutType, type UseYunaCommandsClient, type YunaGroup } from "./prepare";
 import type { YunaCommandsResolverConfig } from "./resolver";
 
-type UsableCommand = Command | SubCommand;
+type UseableCommand = Command | SubCommand;
 
 interface YunaCommandsResolverData {
     parent?: Command;
-    command: UsableCommand;
+    command: UseableCommand;
     endPad?: number;
 }
 
@@ -32,13 +32,13 @@ const getMatches = (query: string) => {
 };
 
 export function baseResolver(client: AvailableClients, query: string | string[], config: Config): YunaCommandsResolverData | undefined;
-export function baseResolver(client: AvailableClients, query: string | string[], config?: undefined): UsableCommand | undefined;
+export function baseResolver(client: AvailableClients, query: string | string[], config?: undefined): UseableCommand | undefined;
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: 🐧
 export function baseResolver(
     client: AvailableClients,
     query: string | string[],
     config?: Config,
-): UsableCommand | YunaCommandsResolverData | undefined {
+): UseableCommand | YunaCommandsResolverData | undefined {
     const metadata = (client as UseYunaCommandsClient)[Keys.clientResolverMetadata];
 
     const matchsData = typeof query === "string" ? getMatches(query) : undefined;
