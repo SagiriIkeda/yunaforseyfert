@@ -5,7 +5,7 @@
 import { inspect } from "node:util";
 import { Command, type CommandContext, Declare, Embed, Options, createStringOption } from "seyfert";
 import { EmbedColors } from "seyfert/lib/common/index.js";
-import { ParserRecommendedConfig } from "../../package/index.js";
+import { ParserRecommendedConfig, Watch } from "../../package/index.js";
 import { DeclareParserConfig } from "../../package/utils/parser/createConfig";
 
 export const codeBlock = (language: string, code: string) => `\`\`\`${language}\n${code}\n\`\`\``;
@@ -26,6 +26,9 @@ const evalOptions = {
 @Options(evalOptions)
 @DeclareParserConfig(ParserRecommendedConfig.Eval)
 export default class EvalCommand extends Command {
+    @Watch({
+        idle: 1000 * 10,
+    })
     async run(ctx: CommandContext<typeof evalOptions>) {
         if (ctx.author.id !== "388415190225518602") return ctx.write({ content: "you can't use this." });
 
@@ -80,7 +83,7 @@ export default class EvalCommand extends Command {
                     { name: "🐧 Input", value: sliceText(codeBlock("js", code), 1024) },
                 );
 
-            await ctx.write({ embeds: [embed] }).catch(() => {});
+            await ctx.editOrReply({ embeds: [embed] }).catch(() => {});
         } catch (error) {
             const timeExec = Date.now() - timeStart;
 

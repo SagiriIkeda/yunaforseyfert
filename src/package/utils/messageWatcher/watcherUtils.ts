@@ -9,15 +9,13 @@ function DecoratorWatcher<
     O extends Parameters<NonNullable<C["run"]>>[0] extends CommandContext<infer O> ? O : never,
     Context = InferWatcherContext<C>,
 >(options: DecoratorWatchOptions<C, O, Context>) {
-    return (target: C, _propertyKey: "run", descriptor: PropertyDescriptor) => {
-        const commandRun = target.run;
-
+    return (_target: C, _propertyKey: "run", descriptor: PropertyDescriptor) => {
         const run = descriptor.value;
 
-        if (run !== commandRun) return run;
+        if (descriptor.value.name !== "run") return run;
 
-        descriptor.value = async (ctx: CommandContext<O>) => {
-            const firstRun = await run.call(target, ctx);
+        descriptor.value = async function (this: C, ctx: CommandContext<O>) {
+            const firstRun = await run.call(this, ctx);
 
             if ((firstRun && firstRun[Keys.watcherStop] === true) || !(ctx.message && ctx.command.options?.length)) return;
 
@@ -53,7 +51,7 @@ function DecoratorWatcher<
             watcher.onChange(async (ctx, msg) => {
                 if (options.filter?.(ctx, msg) === false) return;
 
-                const result = await run.call(target, ctx, msg);
+                const result = await run.call(this, ctx);
                 assingMessageResponse(ctx);
 
                 handle(result);
