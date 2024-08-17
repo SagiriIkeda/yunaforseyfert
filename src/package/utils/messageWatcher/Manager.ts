@@ -224,10 +224,10 @@ export class MessageWatcherManager<const O extends OptionsRecord = any, Context 
         const isDeleted = this.watchers.delete(watcher);
         if (!isDeleted) return;
 
+        watcher.endReason = reason;
+
         watcher.stopTimers();
         emit && watcher.onStopEvent?.(reason);
-
-        watcher.endReason = reason;
 
         if (this.watchers.size) return;
 
