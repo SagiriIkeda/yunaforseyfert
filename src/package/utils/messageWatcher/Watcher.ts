@@ -17,6 +17,9 @@ export class MessageWatcher<const O extends OptionsRecord = any, Context = any, 
     #idle?: NodeJS.Timeout;
     #timeout?: NodeJS.Timeout;
 
+    #endTimeout = 0;
+    #endIdle = 0;
+
     message: Message;
     controller: WatchersController;
     manager: MessageWatcherManager<O, Context, __Command>;
@@ -56,6 +59,19 @@ export class MessageWatcher<const O extends OptionsRecord = any, Context = any, 
         return null;
     }
 
+    get remaining() {
+        const self = this;
+
+        return {
+            get idle() {
+                return self.#endIdle - Date.now();
+            },
+            get timeout() {
+                return self.#endTimeout - Date.now();
+            },
+        };
+    }
+
     get ctx() {
         return this.manager.ctx;
     }
@@ -69,6 +85,7 @@ export class MessageWatcher<const O extends OptionsRecord = any, Context = any, 
         if (time && (all || !this.#timeout)) {
             clearTimeout(this.#timeout);
             this.#timeout = setTimeout(() => this.stop("timeout"), time);
+            this.#endTimeout = Date.now() + time;
         }
 
         if (!idle) return;
@@ -76,6 +93,7 @@ export class MessageWatcher<const O extends OptionsRecord = any, Context = any, 
         clearTimeout(this.#idle);
 
         this.#idle = setTimeout(() => this.stop("idle"), idle);
+        this.#endIdle = Date.now() + idle;
     }
 
     resetTimers() {
@@ -136,7 +154,7 @@ export class MessageWatcher<const O extends OptionsRecord = any, Context = any, 
         return this;
     }
 
-    readonly endReason?: string;
+    endReason?: string;
 
     /** stop this watcher */
     stop(reason: string) {

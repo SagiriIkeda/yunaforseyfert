@@ -2,6 +2,7 @@ import type { Command, CommandContext, Message, OnOptionsReturnObject, OptionsRe
 import type { Awaitable, MakeRequired } from "seyfert/lib/common";
 import type { GatewayMessageUpdateDispatchData } from "seyfert/lib/types";
 import type { YunaUsable } from "../../things";
+import type { MessageWatcherManager } from "./Manager";
 import type { MessageWatcher } from "./Watcher";
 
 export type WatcherOptions = {
@@ -53,3 +54,8 @@ export interface DecoratorWatchOptions<
     onOptionsError?: WatcherOnOptionsErrorEvent<M>;
     onResponseDelete?: WatcherOnResponseDelete<M>;
 }
+
+export type InferCommandContext<C extends YunaUsable> = Parameters<NonNullable<C["run"]>>[0] extends CommandContext<infer O> ? O : never;
+
+export type InferWatcher<C extends YunaUsable> = MessageWatcher<InferCommandContext<C>, InferCommandContext<C>, C>;
+export type InferWatcherManager<C extends YunaUsable> = MessageWatcherManager<InferCommandContext<C>, InferCommandContext<C>, C>;

@@ -217,7 +217,7 @@ export class MessageWatcherManager<const O extends OptionsRecord = any, Context 
         }
     }
 
-    readonly endReason?: string;
+    endReason?: string;
 
     /** @internal */
     stopWatcher(watcher: MessageWatcher<O>, reason: string, emit = true) {
@@ -227,7 +227,7 @@ export class MessageWatcherManager<const O extends OptionsRecord = any, Context 
         watcher.stopTimers();
         emit && watcher.onStopEvent?.(reason);
 
-        Reflect.set(watcher, "endReason", reason);
+        watcher.endReason = reason;
 
         if (this.watchers.size) return;
 
@@ -237,7 +237,7 @@ export class MessageWatcherManager<const O extends OptionsRecord = any, Context 
 
     /** stop this and all watchers in this manager */
     stop(reason: string) {
-        Reflect.set(this, "endReason", reason);
+        this.endReason = reason;
         for (const watcher of this.watchers) this.stopWatcher(watcher, reason);
     }
 

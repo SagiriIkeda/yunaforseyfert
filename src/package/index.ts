@@ -29,6 +29,8 @@ export type {
     WatcherOnUsageErrorEvent,
     WatcherOptions,
     DecoratorWatchOptions,
+    InferWatcher,
+    InferWatcherManager,
 } from "./utils/messageWatcher/types.js";
 
 export const ParserRecommendedConfig = {
