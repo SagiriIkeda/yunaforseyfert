@@ -13,6 +13,8 @@ function DecoratorWatcher<const C extends YunaUsable, O extends InferCommandOpti
         if (descriptor.value.name !== "run") return run;
 
         descriptor.value = async function (this: C, ctx: CommandContext<O>) {
+            this[Keys.watcherRawCommandRun] ??= run.bind(this);
+
             const firstRun = await run.call(this, ctx);
 
             if ((firstRun && firstRun[Keys.watcherStop] === true) || !(ctx.message && ctx.command.options?.length)) return;

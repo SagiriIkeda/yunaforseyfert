@@ -17,6 +17,8 @@ export class Keys {
     static readonly clientResolverAlreadyModdedEvents = Symbol("YunaMessageWatcherController");
     static readonly clientWatcherController = Symbol("YunaMessageWatcherController");
 
+    static readonly watcherRawCommandRun = Symbol("WatcherRawCommandRun");
+
     static readonly watcherStop = Symbol("WatcherStop");
 
     static readonly messageArgsResult = Symbol();
@@ -35,10 +37,12 @@ export interface ArgsResultMetadata {
     positions: ArgsResultPositions;
 }
 
-export type CommandUsable = Command | SubCommand;
+export type CommandUsable = (Command | SubCommand) & {
+    [Keys.watcherRawCommandRun]?: (Command | SubCommand)["run"];
+};
 
 export type YunaUsable<T extends CommandUsable = CommandUsable> = T & {
-    // [Keys.parserMetadata]?: YunaParserCommandMetaData;
+    [Keys.watcherRawCommandRun]?: T["run"];
     [Keys.parserConfig]?: YunaParserCreateOptions;
     [Keys.resolverSubCommands]?: { fallback?: Instantiable<SubCommand> | null; fallbackName?: string } | null;
     [Keys.resolverIsShortcut]?: boolean;

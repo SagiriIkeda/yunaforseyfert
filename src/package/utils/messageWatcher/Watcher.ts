@@ -59,7 +59,7 @@ export class MessageWatcher<const O extends OptionsRecord = any, Context = any, 
         return null;
     }
 
-    get remaining() {
+    get remainingTime() {
         const self = this;
 
         return {
@@ -70,6 +70,10 @@ export class MessageWatcher<const O extends OptionsRecord = any, Context = any, 
                 return self.#endTimeout - Date.now();
             },
         };
+    }
+    /** Original command.run without being modified by @Watch decorator **/
+    get commandRun() {
+        return this.manager.commandRun;
     }
 
     get ctx() {

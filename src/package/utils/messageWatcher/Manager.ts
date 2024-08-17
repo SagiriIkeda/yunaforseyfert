@@ -15,7 +15,7 @@ import {
 import { Transformers } from "seyfert/lib/client/transformers";
 import { type MakeRequired, toSnakeCase } from "seyfert/lib/common";
 import type { APIMessage, APIUser, GatewayMessageCreateDispatchData, GatewayMessageUpdateDispatchData } from "seyfert/lib/types";
-import type { CommandUsable } from "../../things";
+import { type CommandUsable, Keys } from "../../things";
 import { type WatchersController, createId } from "./Controller";
 import { MessageWatcher } from "./Watcher";
 import type { WatcherOptions } from "./types";
@@ -233,6 +233,11 @@ export class MessageWatcherManager<const O extends OptionsRecord = any, Context 
 
         this.controller.managers.delete(this.id);
         for (const id of this.responses.keys()) this.controller.responsesManagers.delete(id);
+    }
+
+    /** Original command.run without being modified by @Watch decorator **/
+    get commandRun() {
+        return (this.command[Keys.watcherRawCommandRun] ?? this.command.run) as __Command["run"];
     }
 
     /** stop this and all watchers in this manager */
