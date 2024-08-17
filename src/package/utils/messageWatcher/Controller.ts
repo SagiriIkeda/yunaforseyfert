@@ -50,10 +50,8 @@ export type InferWatcherFromQuery<
 
 export type WatcherCreateData = Pick<CommandContext, "client" | "command" | "message" | "shardId">;
 
-type ExtracPromiseValue<P> = P extends Promise<infer T> ? T : P;
-
 export type InferWatcherContext<C extends YunaUsable | undefined> = C extends YunaUsable
-    ? Extract<ExtracPromiseValue<ReturnType<NonNullable<C["run"]>>>, WatcherContext<any>> extends WatcherContext<infer V>
+    ? Extract<Awaited<ReturnType<NonNullable<C["run"]>>>, WatcherContext<any>> extends WatcherContext<infer V>
         ? V
         : never
     : never;

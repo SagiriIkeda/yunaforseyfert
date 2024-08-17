@@ -8,30 +8,18 @@ import {
     OptionResolver,
     type OptionsRecord,
     type SubCommand,
-    type User,
     type UsingClient,
     type WorkerClient,
 } from "seyfert";
 import { Transformers } from "seyfert/lib/client/transformers";
-import { type MakeRequired, toSnakeCase } from "seyfert/lib/common";
-import type { APIMessage, APIUser, GatewayMessageCreateDispatchData, GatewayMessageUpdateDispatchData } from "seyfert/lib/types";
+import type { MakeRequired } from "seyfert/lib/common";
+import type { APIMessage, GatewayMessageUpdateDispatchData } from "seyfert/lib/types";
 import { type CommandUsable, Keys } from "../../things";
 import { type WatchersController, createId } from "./Controller";
 import { MessageWatcher } from "./Watcher";
 import type { WatcherOptions } from "./types";
 
 type RawMessageUpdated = MakeRequired<GatewayMessageUpdateDispatchData, "content">;
-
-const createFakeApiUser = (user: User) => {
-    const created: Record<string, any> = {};
-
-    for (const [key, value] of Object.entries(user)) {
-        if (typeof value === "function" || key === "client") continue;
-        created[key.replace(/[A-Z]+/g, (r) => `_${r.toLowerCase()}`)] = value;
-    }
-
-    return created as APIUser;
-};
 
 type EventKeys<O extends OptionsRecord> = Extract<keyof MessageWatcher<O>, `on${string}Event`>;
 type EventParams<O extends OptionsRecord, E extends EventKeys<O>> = Parameters<OmitThisParameter<NonNullable<MessageWatcher<O>[E]>>>;
@@ -77,37 +65,6 @@ export class MessageWatcherManager<const O extends OptionsRecord = any, Context 
         this.message = message;
 
         this.id = createId(message);
-
-        this.__fakeUser = createFakeApiUser(this.message.author);
-        this.__fakeMessage = this.__createFakeApiMessage();
-    }
-
-    /** @internal */
-    __fakeUser: APIUser;
-
-    /** @internal */
-    __fakeMessage: ReturnType<MessageWatcherManager<O>["__createFakeApiMessage"]>;
-    /** @internal */
-    __createFakeApiMessage(): Omit<GatewayMessageCreateDispatchData, "mentions" | `mention_${string}`> {
-        const { message } = this;
-
-        return {
-            id: message.id,
-            content: message.content,
-            // biome-ignore lint/style/useNamingConvention: api
-            channel_id: message.channelId,
-            // biome-ignore lint/style/useNamingConvention: api
-            guild_id: message.guildId,
-            timestamp: message.timestamp?.toString() ?? "",
-            // biome-ignore lint/style/useNamingConvention: api
-            edited_timestamp: message.editedTimestamp!,
-            tts: message.tts,
-            embeds: message.embeds.map((embed) => embed.toJSON()),
-            pinned: message.pinned,
-            type: this.message.type,
-            attachments: this.message.attachments.map(toSnakeCase),
-            author: this.__fakeUser,
-        };
     }
 
     #oldContent?: string;
@@ -121,33 +78,21 @@ export class MessageWatcherManager<const O extends OptionsRecord = any, Context 
     }
 
     /** @internal */
-    async __handleUpdate(message: GatewayMessageUpdateDispatchData) {
-        if (!message.content) return;
+    async __handleUpdate(apiMessage: GatewayMessageUpdateDispatchData) {
+        if (!apiMessage.content) return;
 
         /**
          * THIS IS BASED ON
          * https://github.com/tiramisulabs/seyfert/blob/main/src/commands/handle.ts
          */
 
-        const content = message.content.trimStart();
+        const content = apiMessage.content.trimStart();
 
         const { client } = this;
 
         const self = client as UsingClient;
 
-        const fakeApiMessage: GatewayMessageCreateDispatchData = {
-            ...this.__fakeMessage,
-            ...message,
-            author: this.__fakeUser,
-            // biome-ignore lint/style/useNamingConvention: api
-            mention_everyone: message.mention_everyone ?? this.message.mentionEveryone,
-            // biome-ignore lint/style/useNamingConvention: api
-            mention_roles: message.mention_roles ?? this.message.mentionRoles,
-            // biome-ignore lint/style/useNamingConvention: api
-            mention_channels: message.mention_channels ?? this.message.mentionChannels?.map(toSnakeCase) ?? [],
-        };
-
-        const newMessage = Transformers.Message(self, fakeApiMessage);
+        const newMessage = Transformers.Message(self, apiMessage);
 
         const { handleCommand } = client;
 
@@ -161,11 +106,13 @@ export class MessageWatcherManager<const O extends OptionsRecord = any, Context 
 
         if (slicedContent === this.#oldContent) return;
 
-        const { argsContent, command, parent } = handleCommand.resolveCommandFromContent(slicedContent, prefix, fakeApiMessage);
+        const { argsContent, command, parent } = handleCommand.resolveCommandFromContent(slicedContent, prefix, apiMessage);
 
         if (command !== this.command) return this.emit("onUsageErrorEvent", "CommandChanged", command);
 
         if (argsContent === undefined) return;
+
+        const oldMessage = this.ctx?.messageResponse;
 
         const args = handleCommand.argsParser(argsContent, command, this.message);
 
@@ -177,7 +124,7 @@ export class MessageWatcherManager<const O extends OptionsRecord = any, Context 
             attachments: {},
         };
 
-        const { options: resolverOptions, errors } = await handleCommand.argsOptionsParser(command, fakeApiMessage, args, resolved);
+        const { options: resolverOptions, errors } = await handleCommand.argsOptionsParser(command, apiMessage, args, resolved);
 
         if (errors.length) {
             const errorsObject: OnOptionsReturnObject = Object.fromEntries(
@@ -206,14 +153,14 @@ export class MessageWatcherManager<const O extends OptionsRecord = any, Context 
 
         this.#oldContent = slicedContent;
 
-        ctx.messageResponse = this.ctx?.messageResponse;
+        ctx.messageResponse = oldMessage;
 
         Object.assign(ctx, client.options.context?.(newMessage));
         this.ctx = ctx as CommandContext<O> & MakeCommand<__Command>;
 
         for (const watcher of this.watchers) {
             watcher.refreshTimers();
-            watcher.onChangeEvent?.(ctx, message as RawMessageUpdated);
+            watcher.onChangeEvent?.(ctx, apiMessage as RawMessageUpdated);
         }
     }
 

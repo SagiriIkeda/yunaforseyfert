@@ -5,7 +5,7 @@ export default config.bot({
     intents: ["Guilds", "GuildMessages", "MessageContent", "GuildMembers"],
     locations: {
         base: ".",
-        output: "../../dist/bot-test",
+        output: ".",
         commands: "commands",
         events: "events",
     },
