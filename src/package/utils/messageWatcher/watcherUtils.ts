@@ -2,9 +2,9 @@ import type { CommandContext } from "seyfert";
 import { type AvailableClients, Keys, type YunaUsable } from "../../things";
 import type { FindWatcherQuery, InferWatcherContext, InferWatcherFromCtx, InferWatcherFromQuery } from "./Controller";
 import { createController, createWatcher, getController } from "./controllerUtils";
-import type { DecoratorWatchOptions, InferCommandContext } from "./types";
+import type { DecoratorWatchOptions, InferCommandOptions } from "./types";
 
-function DecoratorWatcher<const C extends YunaUsable, O extends InferCommandContext<C>, Context = InferWatcherContext<C>>(
+function DecoratorWatcher<const C extends YunaUsable, O extends InferCommandOptions<C>, Context = InferWatcherContext<C>>(
     options: DecoratorWatchOptions<C, O, Context>,
 ) {
     return (_target: C, _propertyKey: "run", descriptor: PropertyDescriptor) => {
