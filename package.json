@@ -1,6 +1,6 @@
 {
     "name": "yunaforseyfert",
-    "version": "1.0.0",
+    "version": "1.0.0-beta.1",
     "description": "Yunathings for seyfert",
     "type": "commonjs",
     "main": "./build/index.js",
@@ -10,6 +10,8 @@
     "scripts": {
         "bot": "cd src/bot-test && tsx watch --env-file=.env .",
         "pkg:pack": "vitest run test && npm run build && bun src/package/lib/prepublish.mts && cd .npm && npm pack &&echo pkg:pack done",
+        "pkg:publish": "cd .npm && npm publish",
+        "pkg:publish-dev": "cd .npm && npm publish --tag dev",
         "prepare": "npm run build && npx husky",
         "build": "npx tsup --config tsup.config.json",
         "lint": "biome lint --write ./src",

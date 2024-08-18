@@ -1,4 +1,4 @@
-import { copyFile, cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, rm, writeFile } from "node:fs/promises";
 import packageJson from "../../../package.json";
 
 await rm(".npm", { recursive: true, force: true });
@@ -14,19 +14,9 @@ const {
 
 await writeFile(".npm/package.json", JSON.stringify(newPackageJson, null, 4), "utf-8");
 
-const ReadmeFileContent = await readFile("./README.md", "utf-8");
 
-const branch = "main";
+const moveFiles = [".npmignore", "README.md", "build"];
 
-const githubUrl = `https://github.com/SagiriIkeda/yunaforseyfert/blob/${branch}/`;
+const move = (src: string) => cp(src, `.npm/${src}`, { recursive: true });
 
-const newReadmeFileContent = ReadmeFileContent.replace(/(?<=\[.*?\]\()\.\/(?=.*?\))/g, `${githubUrl}`);
-
-await writeFile(".npm/README.md", newReadmeFileContent, "utf-8");
-
-const moveFiles = [".npmignore"];
-
-const move = (src: string) => copyFile(src, `.npm/${src}`);
-for (const file of moveFiles) move(file);
-
-await cp("build", ".npm/build", { recursive: true });
+for (const file of moveFiles) await move(file);
