@@ -1,75 +1,5 @@
-import { ApplicationCommandOptionType } from "discord-api-types/v10";
-import type { Command, CommandOption, SeyfertNumberOption, SeyfertStringOption, SubCommand } from "seyfert";
-
-type ValidLongTextTags = "'" | '"' | "`";
-type ValidNamedOptionSyntax = "-" | "--" | ":";
-
-export interface YunaParserCreateOptions {
-    /**
-     * this only show console.log with the options parsed.
-     * @defaulst false */
-    logResult?: boolean;
-
-    enabled?: {
-        /** especify what longText tags you want
-         *
-         * ` " ` => `"penguin life"`
-         *
-         * ` ' ` => `'beautiful sentence'`
-         *
-         * **&#96;** => **\`LiSA『Shouted Serenade』 is a good song\`**
-         *
-         * @default 🐧 all enabled
-         */
-        longTextTags?: [ValidLongTextTags?, ValidLongTextTags?, ValidLongTextTags?];
-        /** especify what named syntax you want
-         *
-         * ` - ` -option content value
-         *
-         * ` -- ` --option content value
-         *
-         * ` : ` option: content value
-         *
-         * @default 🐧 all enabled
-         */
-        namedOptions?: [ValidNamedOptionSyntax?, ValidNamedOptionSyntax?, ValidNamedOptionSyntax?];
-    };
-
-    /**
-     * Turning it on can be useful for when once all the options are obtained,
-     * the last one can take all the remaining content, ignoring any other syntax.
-     * @default {false}
-     */
-    breakSearchOnConsumeAllOptions?: boolean;
-
-    /**
-     * Limit that you can't use named syntax "-" and ":" at the same time,
-     * but only the first one used, sometimes it's useful to avoid confusion.
-     * @default {false}
-     */
-    useUniqueNamedSyntaxAtSameTime?: boolean;
-
-    /**
-     * This disables the use of longTextTags in the last option
-     * @default {false}
-     */
-    disableLongTextTagsInLastOption?: boolean;
-
-    /** Use Yuna's choice resolver instead of the default one, put null if you don't want it,
-     *
-     * YunaChoiceResolver allows you to search through choices regardless of case or lowercase,
-     * as well as allowing direct use of an choice's value,
-     * and not being forced to use only the name.
-     *
-     * @default enabled
-     */
-    resolveCommandOptionsChoices?: {
-        /** Allow you to use the value of a choice directly, not necessarily search by name
-         * @default {true}
-         */
-        canUseDirectlyValue?: boolean;
-    } | null;
-}
+import { Keys } from "../../things";
+import type { YunaParserCreateOptions } from "./configTypes";
 
 type EscapeModeType = Record<string, RegExp | undefined>;
 
@@ -102,9 +32,9 @@ export const RemoveLongCharEscapeMode = (EscapeMode: EscapeModeType) => {
     return EscapeMode;
 };
 
-export const createRegexs = ({ enabled }: YunaParserCreateOptions) => {
-    const hasAnyLongTextTag = (enabled?.longTextTags?.length ?? 0) >= 1;
-    const hasAnyNamedSyntax = (enabled?.namedOptions?.length ?? 0) >= 1;
+export const createRegexes = ({ syntax }: YunaParserCreateOptions) => {
+    const hasAnyLongTextTag = (syntax?.longTextTags?.length ?? 0) >= 1;
+    const hasAnyNamedSyntax = (syntax?.namedOptions?.length ?? 0) >= 1;
 
     const hasAnyEspecialSyntax = hasAnyNamedSyntax || hasAnyLongTextTag;
 
@@ -114,12 +44,12 @@ export const createRegexs = ({ enabled }: YunaParserCreateOptions) => {
 
     const syntaxes: string[] = [];
 
-    const has1HaphenSyntax = enabled?.namedOptions?.includes("-");
-    const has2HaphenSyntax = enabled?.namedOptions?.includes("--");
-    const hasDottedSyntax = enabled?.namedOptions?.includes(":");
+    const has1HaphenSyntax = syntax?.namedOptions?.includes("-");
+    const has2HaphenSyntax = syntax?.namedOptions?.includes("--");
+    const hasDottedSyntax = syntax?.namedOptions?.includes(":");
 
     const escapedLongTextTags =
-        enabled?.longTextTags
+        syntax?.longTextTags
             ?.map((tag) => {
                 escapeModes[tag!] = new RegExp(`(\\\\+)([${tag}\\s]|$)`, "g");
 
@@ -155,7 +85,7 @@ export const createRegexs = ({ enabled }: YunaParserCreateOptions) => {
             has1HaphenSyntax && HaphenLength.push(1);
             has2HaphenSyntax && HaphenLength.push(2);
 
-            namedSyntaxes.push(`(?<hyphens>-{${HaphenLength.join(",")}})(?<hyphensname>[a-zA-Z_\\d]+)`);
+            namedSyntaxes.push(`(?<hyphens>-{${HaphenLength.join(",")}})(?<hyphensname>[a-zA-Z_][a-zA-Z_\\d]*)[\\=\\:]?`);
             escapeModes.forNamed = /(\\+)([\:\s\-]|$)/g;
         } else {
             RemoveNamedEscapeMode(escapeModes, "\\-");
@@ -175,6 +105,8 @@ export const createRegexs = ({ enabled }: YunaParserCreateOptions) => {
         syntaxes.push("(?<backescape>\\\\+)");
     }
 
+    syntaxes.push("(?<lnb>\\n+)"); // line break
+
     return {
         elementsRegex: RegExp(syntaxes.join("|"), "g"),
         escapeModes: escapeModes,
@@ -186,25 +118,50 @@ const removeDuplicates = <A>(arr: A extends Array<infer R> ? R[] : never[]): A =
     return [...new Set(arr)] as A;
 };
 
+export function DeclareParserConfig(config: YunaParserCreateOptions = {}) {
+    return <T extends { new (...args: any[]): {} }>(target: T) => {
+        if (!Object.keys(config).length) return target;
+        return class extends target {
+            [Keys.parserConfig] = createConfig(config, false);
+        };
+    };
+}
+
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: 🐧
 export const createConfig = (config: YunaParserCreateOptions, isFull = true) => {
     const newConfig: YunaParserCreateOptions = {};
 
-    if (isFull || (config.enabled && (config.enabled.longTextTags || config.enabled.namedOptions))) {
-        newConfig.enabled ??= {};
+    if (isFull || (config.syntax && (config.syntax.longTextTags || config.syntax.namedOptions))) {
+        newConfig.syntax ??= {};
 
-        if (isFull || config?.enabled?.longTextTags)
-            newConfig.enabled.longTextTags = removeDuplicates(config?.enabled?.longTextTags ?? ['"', "'", "`"]);
-        if (isFull || config?.enabled?.namedOptions)
-            newConfig.enabled.namedOptions = removeDuplicates(config?.enabled?.namedOptions ?? ["-", "--", ":"]);
+        if (isFull || config?.syntax?.longTextTags)
+            newConfig.syntax.longTextTags = removeDuplicates(config?.syntax?.longTextTags ?? ['"', "'", "`"]);
+        if (isFull || config?.syntax?.namedOptions)
+            newConfig.syntax.namedOptions = removeDuplicates(config?.syntax?.namedOptions ?? ["-", "--", ":"]);
     }
 
     if (isFull || "breakSearchOnConsumeAllOptions" in config)
         newConfig.breakSearchOnConsumeAllOptions = config.breakSearchOnConsumeAllOptions === true;
+
+    if (isFull || "useCodeBlockLangAsAnOption" in config) newConfig.useCodeBlockLangAsAnOption = config.useCodeBlockLangAsAnOption === true;
+
+    if (isFull || "useNamedWithSingleValue" in config) newConfig.useNamedWithSingleValue = config.useNamedWithSingleValue === true;
+
     if (isFull || "useUniqueNamedSyntaxAtSameTime" in config)
         newConfig.useUniqueNamedSyntaxAtSameTime = config.useUniqueNamedSyntaxAtSameTime === true;
+
     if (isFull || "logResult" in config) newConfig.logResult = config.logResult === true;
+
     if (isFull || "disableLongTextTagsInLastOption" in config)
-        newConfig.disableLongTextTagsInLastOption = config.disableLongTextTagsInLastOption === true;
+        newConfig.disableLongTextTagsInLastOption =
+            config.disableLongTextTagsInLastOption === undefined
+                ? false
+                : typeof config.disableLongTextTagsInLastOption === "boolean"
+                  ? config.disableLongTextTagsInLastOption
+                  : {
+                        excludeCodeBlocks: config.disableLongTextTagsInLastOption?.excludeCodeBlocks === true,
+                    };
+
     if (isFull || "resolveCommandOptionsChoices" in config)
         newConfig.resolveCommandOptionsChoices =
             config.resolveCommandOptionsChoices === null
@@ -212,107 +169,46 @@ export const createConfig = (config: YunaParserCreateOptions, isFull = true) => 
                 : {
                       canUseDirectlyValue: !(config.resolveCommandOptionsChoices?.canUseDirectlyValue === false),
                   };
+    if (isFull || "useRepliedUserAsAnOption" in config)
+        newConfig.useRepliedUserAsAnOption =
+            config.useRepliedUserAsAnOption === null
+                ? null
+                : {
+                      requirePing: config.useRepliedUserAsAnOption?.requirePing === true,
+                  };
 
     return newConfig;
 };
 
-export interface CommandYunaMetaDataConfig {
-    options?: CommandOption[];
-    config?: YunaParserCreateOptions;
-    regexes?: ReturnType<typeof createRegexs>;
-    choicesOptions?: {
-        names: string[];
-        decored?: Record<string, [rawName: string, /** in lowercase */ name: string, value: string | number][]>;
-    };
-}
+export const mergeConfig = <T extends YunaParserCreateOptions, A extends YunaParserCreateOptions>(target: T, assing: A) => {
+    const result = { ...target, ...assing };
 
-export const keyMetadata = Symbol("YunaParserMetaData");
-const keyConfig = Symbol("YunaParserConfig");
-
-export type YunaParserUsableCommand = (Command | SubCommand) & {
-    [keyMetadata]?: CommandYunaMetaDataConfig;
-    [keyConfig]?: YunaParserCreateOptions;
-};
-
-export const ParserRecommendedConfig = {
-    /** things that I consider necessary in an Eval command. */
-    Eval: {
-        breakSearchOnConsumeAllOptions: true,
-        disableLongTextTagsInLastOption: true,
-    },
-} satisfies Record<string, YunaParserCreateOptions>;
-
-export function DeclareParserConfig(config: YunaParserCreateOptions = {}) {
-    return <T extends { new (...args: any[]): {} }>(target: T) => {
-        if (!Object.keys(config).length) return target;
-
-        return class extends target {
-            [keyConfig] = createConfig(config, false);
-        };
-    };
-}
-
-type Object = Record<string | number | symbol, any>;
-
-const isObject = (obj: unknown): obj is Object => typeof obj === "object" && obj !== null && !Array.isArray(obj);
-
-const mergeObjects = <A, B>(obj: A, obj2: B): (A & B) | B => {
-    if (!(isObject(obj) && isObject(obj2))) return obj2;
-
-    const merged = { ...obj };
-
-    if (!isObject(obj)) return obj2;
-
-    for (const key of Object.keys(obj2)) {
-        const oldValue = merged[key];
-        const value = obj2[key];
-
-        merged[key as keyof A & B] = mergeObjects(oldValue, value);
+    if (assing.syntax) {
+        result.syntax = { ...(target.syntax ?? {}), ...assing.syntax };
+    }
+    if (assing.resolveCommandOptionsChoices !== undefined) {
+        result.resolveCommandOptionsChoices =
+            assing.resolveCommandOptionsChoices === null
+                ? null
+                : { ...(target.resolveCommandOptionsChoices ?? {}), ...assing.resolveCommandOptionsChoices };
     }
 
-    return merged as A & B;
-};
-
-const InvalidOptionType = new Set([
-    ApplicationCommandOptionType.Attachment,
-    ApplicationCommandOptionType.Subcommand,
-    ApplicationCommandOptionType.SubcommandGroup,
-]);
-
-export const getYunaMetaDataFromCommand = (config: YunaParserCreateOptions, command: YunaParserUsableCommand) => {
-    const InCache = command[keyMetadata];
-    if (InCache) return InCache;
-
-    const metadata: CommandYunaMetaDataConfig = {
-        options: command.options?.filter((option) => "type" in option && !InvalidOptionType.has(option.type)) as
-            | CommandOption[]
-            | undefined,
-    };
-
-    const commandConfig = command[keyConfig];
-
-    if (commandConfig) {
-        const realConfig = mergeObjects(config, commandConfig);
-
-        metadata.config = realConfig;
-        metadata.regexes = createRegexs(realConfig);
+    if (assing.disableLongTextTagsInLastOption !== undefined) {
+        result.disableLongTextTagsInLastOption =
+            typeof assing.disableLongTextTagsInLastOption === "boolean"
+                ? assing.disableLongTextTagsInLastOption
+                : {
+                      ...(typeof target.disableLongTextTagsInLastOption === "object" ? target.disableLongTextTagsInLastOption : {}),
+                      ...assing.disableLongTextTagsInLastOption,
+                  };
     }
 
-    if (metadata.options?.length) {
-        const namesOfOptionsWithChoices: string[] = [];
-
-        for (const option of metadata.options as ((SeyfertStringOption | SeyfertNumberOption) & CommandOption)[]) {
-            if (!option.choices?.length) continue;
-
-            namesOfOptionsWithChoices.push(option.name);
-        }
-
-        metadata.choicesOptions = {
-            names: namesOfOptionsWithChoices,
-        };
+    if (assing.useRepliedUserAsAnOption !== undefined) {
+        result.useRepliedUserAsAnOption =
+            assing.useRepliedUserAsAnOption === null
+                ? null
+                : { ...(target.useRepliedUserAsAnOption ?? {}), ...assing.useRepliedUserAsAnOption };
     }
 
-    command[keyMetadata] = metadata;
-
-    return metadata;
+    return result;
 };

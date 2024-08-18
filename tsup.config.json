@@ -1,0 +1,10 @@
+{
+    "dts": true,
+    "entry": ["./src/package/index.ts"],
+    "splitting": false,
+    "minify": true,
+    "treeshake": true,
+    "outDir": "build",
+    "clean": true,
+    "format": ["cjs"]
+}

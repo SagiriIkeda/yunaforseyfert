@@ -1,118 +1,205 @@
-import type { Command, SubCommand } from "seyfert";
+import type { Command, Message, SubCommand } from "seyfert";
+import type { CommandOptionWithType, HandleCommand } from "seyfert/lib/commands/handle";
+import { ApplicationCommandOptionType } from "seyfert/lib/types";
+import type { ExtendedOption } from "../../seyfert";
+import { type ArgPosition, type ArgsResult, type ArgsResultPositions, Keys } from "../../things";
+import { YunaParserCommandMetaData } from "./CommandMetaData";
 import { YunaParserOptionsChoicesResolver } from "./choicesResolver";
-import {
-    RemoveFromCheckNextChar,
-    RemoveLongCharEscapeMode,
-    RemoveNamedEscapeMode,
-    type YunaParserCreateOptions,
-    createConfig,
-    createRegexs as createRegexes,
-    getYunaMetaDataFromCommand,
-} from "./createConfig";
+import type { ValidLongTextTags, ValidNamedOptionSyntax, YunaParserCreateOptions } from "./configTypes";
+import { RemoveFromCheckNextChar, RemoveLongCharEscapeMode, RemoveNamedEscapeMode, createConfig, createRegexes } from "./createConfig";
 
 const InvalidTagsToBeLong = new Set(["-", ":"]);
 
 const evaluateBackescapes = (
-    backspaces: string,
+    backescapes: string,
     nextChar: string,
     regexToCheckNextChar: RegExp | undefined,
     isDisabledLongTextTagsInLastOption?: boolean,
 ) => {
-    const isJustPair = backspaces.length % 2 === 0;
+    const isJustPair = backescapes.length % 2 === 0;
 
     const isPossiblyEscapingNext =
         !isJustPair && (/["'`]/.test(nextChar) && isDisabledLongTextTagsInLastOption ? false : regexToCheckNextChar?.test(nextChar));
 
-    const strRepresentation = "\\".repeat(Math.floor(backspaces.length / 2)) + (isJustPair || isPossiblyEscapingNext ? "" : "\\");
+    const strRepresentation = "\\".repeat(Math.floor(backescapes.length / 2)) + (isJustPair || isPossiblyEscapingNext ? "" : "\\");
 
     return { isPossiblyEscapingNext, strRepresentation };
 };
 
-const sanitizeBackescapes = (text: string, regx: RegExp | undefined, regexToCheckNextChar: RegExp | undefined) =>
-    regx
-        ? text.replace(regx, (_, backescapes, next) => {
-              const { strRepresentation } = evaluateBackescapes(backescapes, next[0], regexToCheckNextChar);
+const backescapesRegex = /\\/;
+const codeBlockLangRegex = /^([^\s]+)\n/;
 
-              return strRepresentation + next;
-          })
-        : text;
+const flagNextSymbolBackEscapesRegex = /^(\\+)([\=\:])/;
 
 const spacesRegex = /[\s\x7F\n]/;
 
-/**
- * 🐧 
- * @example
- * ```js
- * import { YunaParser } from "yunaforseyfert"
- * 
- * new Client({ 
-       commands: {
-           argsParser: YunaParser()
-       }
-   });
- * ```
- */
+const backtick = "`";
 
 export const YunaParser = (config: YunaParserCreateOptions = {}) => {
-    config = createConfig(config);
+    const globalConfig = createConfig(config);
+    const globalRegexes = createRegexes(globalConfig);
 
-    const globalRegexes = createRegexes(config);
+    const globalVns = YunaParserCommandMetaData.getValidNamedOptionSyntaxes(globalConfig);
 
     // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: omitting this rule the life is better
-    return (content: string, command: Command | SubCommand): Record<string, string> => {
-        const { options, config: commandConfig, regexes: commandRegexes, choicesOptions } = getYunaMetaDataFromCommand(config, command);
+    return function (this: HandleCommand, content: string, command: Command | SubCommand, message?: Message): Record<string, string> {
+        const commandMetadata = YunaParserCommandMetaData.from(command);
 
-        const realConfig = commandConfig ?? config;
+        const { iterableOptions, flagOptions, options, choices } = commandMetadata;
 
-        const regexes = commandRegexes ?? globalRegexes;
+        if (!options.size) return {};
+
+        const config = commandMetadata.getConfig(globalConfig);
+
+        let actualIterableOptionsIdx = 0;
+        let actualFlagOptionsIdx = 0;
+
+        const argsResult: ArgsResult = {};
+        const argsResultPosition: ArgsResultPositions = {};
+
+        const endResult = () => {
+            if (message)
+                message[Keys.messageArgsResult] = {
+                    content,
+                    result: argsResult,
+                    positions: argsResultPosition,
+                };
+
+            config.logResult &&
+                this.client.logger.debug("[Yuna.parser]", {
+                    argsResult,
+                });
+        };
+
+        const aggregateUserFromMessageReference = (() => {
+            const reference = message?.referencedMessage;
+            if (
+                !reference ||
+                (reference.author.id !== message.author.id &&
+                    config.useRepliedUserAsAnOption?.requirePing &&
+                    message?.mentions.users[0]?.id !== reference.author.id)
+            )
+                return;
+            const option = iterableOptions[actualIterableOptionsIdx] as CommandOptionWithType | undefined;
+            if (option?.type !== ApplicationCommandOptionType.User) return;
+
+            argsResult[option.name] = reference.author.id;
+            actualIterableOptionsIdx++;
+            return true;
+        })();
+
+        if (aggregateUserFromMessageReference && actualIterableOptionsIdx >= options.size) {
+            endResult();
+            return argsResult;
+        }
+
+        const regexes = commandMetadata.regexes ?? globalRegexes;
+
         const { elementsRegex, escapeModes: __realEscapeModes } = regexes;
+
         let { checkNextChar } = regexes;
 
-        const validNamedOptionSyntaxes = Object.fromEntries(realConfig.enabled?.namedOptions?.map((t) => [t, true]) ?? []);
+        const validNamedOptionSyntaxes = commandMetadata.vns ?? globalVns;
 
-        const { breakSearchOnConsumeAllOptions, useUniqueNamedSyntaxAtSameTime, disableLongTextTagsInLastOption } = realConfig;
-
-        if (!options) return {};
+        const {
+            breakSearchOnConsumeAllOptions,
+            useUniqueNamedSyntaxAtSameTime,
+            disableLongTextTagsInLastOption,
+            useCodeBlockLangAsAnOption,
+            useNamedWithSingleValue,
+        } = config;
 
         const localEscapeModes = { ...__realEscapeModes };
 
         const matches = content.matchAll(elementsRegex);
 
-        let tagOpenWith: '"' | "'" | "`" | "-" | null = null;
-        let tagOpenPosition: number | null = null;
-        let actualOptionIdx: number = 0;
+        interface LongTextTagsState {
+            quote: ValidLongTextTags;
+            /** start position */
+            start: number;
+            /** position with more left quotes */
+            toStart: number;
+            toEnd?: number;
+            end?: number;
+        }
+
+        interface NamedOptionState {
+            name: string;
+            start: number;
+            nameStart: number;
+            dotted: boolean;
+            optionData?: ExtendedOption;
+        }
+
+        let longTextTagsState: LongTextTagsState | null = null;
+
         let isEscapingNext = false;
         let unindexedRightText = "";
 
         let namedOptionTagUsed: string | undefined;
 
-        let namedOptionInitialized: {
-            name: string;
-            start: number;
-            dotted: boolean;
-        } | null = null;
+        let namedOptionState: NamedOptionState | null = null;
 
         let lastestLongWord: { start: number; name: string; unindexedRightText: string } | undefined;
 
         let lastOptionNameAdded: string | undefined;
         let isRecentlyClosedAnyTag = false;
 
-        const result: Record<string, string> = {};
+        let isAlreadyLatestLongWordAggregated = false;
 
-        const aggregateNextOption = (value: string, start: number | null) => {
-            if (start === null && unindexedRightText) {
-                const savedUnindexedText = unindexedRightText;
-                unindexedRightText = "";
-                aggregateNextOption(savedUnindexedText, null);
+        const hasBackescapes = backescapesRegex.test(content);
+
+        const sanitizeBackescapes = (text: string, regx: RegExp | undefined, regexToCheckNextChar: RegExp | undefined) =>
+            hasBackescapes && regx
+                ? text.replace(regx, (_, backescapes, next) => {
+                      const { strRepresentation } = evaluateBackescapes(backescapes, next[0], regexToCheckNextChar);
+
+                      return strRepresentation + next;
+                  })
+                : text;
+
+        const incNamedOptionsCount = (name: string) => {
+            if (argsResult[name] === undefined && options.has(name)) {
+                if (flagOptions.has(name)) actualFlagOptionsIdx++;
+                else actualIterableOptionsIdx++;
+            }
+        };
+
+        const aggregateNextOption = (value: string, position: ArgPosition, isLongTextTag = false) => {
+            const [start, end] = position;
+
+            if (
+                namedOptionState &&
+                ((useNamedWithSingleValue && namedOptionState?.optionData?.useNamedWithSingleValue !== false) ||
+                    namedOptionState.optionData?.useNamedWithSingleValue)
+            ) {
+                const { name } = namedOptionState;
+
+                namedOptionState = null;
+
+                argsResult[name] = value;
+                argsResultPosition[name] = position;
+                isRecentlyClosedAnyTag = true;
+
+                incNamedOptionsCount(name);
+
+                lastOptionNameAdded = name;
+                return name;
             }
 
-            const optionAtIndexName = options[actualOptionIdx]?.name;
+            if (isLongTextTag === true && unindexedRightText) {
+                const savedUnindexedText = unindexedRightText;
+                unindexedRightText = "";
+                aggregateNextOption(savedUnindexedText, [start - savedUnindexedText.length, start], true);
+            }
+
+            const optionAtIndexName = iterableOptions[actualIterableOptionsIdx]?.name;
 
             if (!optionAtIndexName) return;
 
-            const isLastOption = actualOptionIdx === options.length - 1;
+            const isLastOption = actualIterableOptionsIdx === iterableOptions.length - 1;
 
-            if (isLastOption && start !== null) {
+            if (isLastOption && isLongTextTag === false && !longTextTagsState) {
                 lastestLongWord = {
                     start,
                     name: optionAtIndexName,
@@ -120,17 +207,19 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                 };
             }
 
-            result[optionAtIndexName] = unindexedRightText + value;
+            argsResult[optionAtIndexName] = unindexedRightText + value;
+            argsResultPosition[optionAtIndexName] = [start - unindexedRightText.length, end];
+
             unindexedRightText = "";
 
-            actualOptionIdx++;
+            actualIterableOptionsIdx++;
 
             lastOptionNameAdded = optionAtIndexName;
 
             return lastOptionNameAdded;
         };
 
-        const aggregateLastestLongWord = (end: number = content.length, postText = "") => {
+        const aggregateLastestLongWord = (end = content.length, postText = "") => {
             if (!lastestLongWord) return;
 
             const { name, start, unindexedRightText } = lastestLongWord;
@@ -145,10 +234,15 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
             const slicedContent = content.slice(start, end);
 
-            result[name] = (
+            argsResult[name] = (
                 unindexedRightText +
                 (canUseAsLiterally ? slicedContent : sanitizeBackescapes(slicedContent, localEscapeModes.All, checkNextChar) + postText)
             ).trim();
+
+            argsResultPosition[name] = [start - unindexedRightText.length, end];
+
+            isAlreadyLatestLongWordAggregated = true;
+
             return;
         };
 
@@ -160,7 +254,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             enableRight = true,
             isRecentlyClosedAnyTag = false,
         ) => {
-            if (namedOptionInitialized) return;
+            if (namedOptionState) return;
 
             const backPosition = textPosition - (precedentText.length + 1);
             const nextPosition = textPosition + realText.length;
@@ -175,7 +269,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                 backChar &&
                 !spacesRegex.test(backChar) /* placeIsForLeft */
             ) {
-                result[lastOptionNameAdded] += text;
+                argsResult[lastOptionNameAdded] += text;
                 return;
             }
 
@@ -184,60 +278,95 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                 return;
             }
 
-            aggregateNextOption(text, textPosition);
+            aggregateNextOption(text, [textPosition, textPosition + text.length]);
         };
 
-        const aggregateTagLongText = (tag: string, start: number, end?: number) => {
-            const value = content.slice(start, end);
-            tagOpenWith = null;
-            tagOpenPosition = null;
+        const aggregateLongTextTag = (end = content.length) => {
+            if (!longTextTagsState) return;
+
+            const position: ArgPosition = [longTextTagsState.toStart, end];
+
+            const value = content.slice(longTextTagsState.toStart, end);
+
+            const reg = localEscapeModes[longTextTagsState.quote as keyof typeof localEscapeModes];
+
+            longTextTagsState = null;
             isRecentlyClosedAnyTag = true;
-            const reg = localEscapeModes[tag as keyof typeof localEscapeModes];
 
-            aggregateNextOption(reg ? sanitizeBackescapes(value, reg, checkNextChar) : value, null);
+            aggregateNextOption(reg ? sanitizeBackescapes(value, reg, checkNextChar) : value, position, true);
         };
 
-        const aggregateNextNamedOption = (end: number) => {
-            if (!namedOptionInitialized) return;
-            const { name, start, dotted } = namedOptionInitialized;
+        const aggregateNextNamedOption = (end = content.length) => {
+            if (!namedOptionState) return;
+            const { name, start, dotted, nameStart, optionData } = namedOptionState;
 
             const escapeModeType = dotted ? "forNamedDotted" : "forNamed";
             const escapeMode = localEscapeModes[escapeModeType];
 
-            const value = sanitizeBackescapes(content.slice(start, end).trimStart(), escapeMode, checkNextChar).trim();
+            let nextSymbolLeftValue = "";
 
-            namedOptionInitialized = null;
+            let contentSlice = content.slice(start, end);
 
-            if (result[name] === undefined) actualOptionIdx++;
+            if (dotted === false) {
+                contentSlice = contentSlice.replace(flagNextSymbolBackEscapesRegex, (_, backescapes, symbol) => {
+                    const strRepresentation = "\\".repeat(Math.floor(backescapes.length / 2));
 
-            result[name] = value;
+                    nextSymbolLeftValue = `${strRepresentation}${symbol}`;
+                    return "";
+                });
+            }
+
+            const value = nextSymbolLeftValue + sanitizeBackescapes(contentSlice, escapeMode, checkNextChar).trim();
+
+            namedOptionState = null;
+
+            incNamedOptionsCount(name);
+
+            const isVoidBooleanOption = dotted
+                ? false
+                : value.trimStart()
+                  ? false
+                  : optionData?.type === ApplicationCommandOptionType.Boolean;
+
+            if (isVoidBooleanOption) {
+                argsResult[name] = "true";
+                argsResultPosition[name] = [nameStart, start];
+            } else {
+                argsResult[name] = value;
+                argsResultPosition[name] = [start, end];
+            }
+
+            isRecentlyClosedAnyTag = true;
 
             lastOptionNameAdded = name;
             return name;
         };
 
         for (const match of matches) {
-            if (actualOptionIdx >= options.length && breakSearchOnConsumeAllOptions) break;
+            if (!match.groups) break;
+            if (actualIterableOptionsIdx + actualFlagOptionsIdx >= options.size && breakSearchOnConsumeAllOptions) break;
 
             const _isRecentlyCosedAnyTag = isRecentlyClosedAnyTag;
+
             isRecentlyClosedAnyTag = false;
 
             const { index = 0, groups } = match;
 
-            const { tag, value, backescape, named } = groups ?? {};
+            const { tag, value, backescape, named, lnb } = groups ?? {};
 
-            if (named && !tagOpenWith) {
+            if (named && longTextTagsState === null) {
                 const { hyphens, hyphensname, dots, dotsname } = groups ?? {};
 
                 const [, , backescapes] = match;
 
                 const tagName = hyphensname ?? dotsname;
+                const usedTag = (hyphens ?? dots) as ValidNamedOptionSyntax;
 
-                const zeroTagUsed = (hyphens ?? dots)[0] as "-" | ":";
+                const zeroTagUsed = usedTag[0] as "-" | ":";
 
-                const isValidTag = validNamedOptionSyntaxes[hyphens ?? dots] === true;
+                const isValidTag = validNamedOptionSyntaxes[usedTag] === true;
 
-                if (isValidTag && !namedOptionTagUsed && realConfig.useUniqueNamedSyntaxAtSameTime) {
+                if (isValidTag && !namedOptionTagUsed && config.useUniqueNamedSyntaxAtSameTime) {
                     namedOptionTagUsed = zeroTagUsed;
                     const tagToDisable = zeroTagUsed === "-" ? ":" : "\\-";
                     if (checkNextChar) checkNextChar = RemoveFromCheckNextChar(checkNextChar, tagToDisable);
@@ -269,19 +398,32 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
                 if (lastestLongWord) aggregateLastestLongWord(index, backescapesStrRepresentation);
 
-                namedOptionInitialized = {
+                namedOptionState = {
                     name: tagName,
                     start: index + named.length,
+                    nameStart: index + (backescape?.length ?? 0),
                     dotted: dotsname !== undefined,
+                    optionData: options.get(tagName),
                 };
 
                 continue;
             }
 
-            if (lastestLongWord || namedOptionInitialized) continue;
+            const isInNamedSingleValueMode =
+                namedOptionState &&
+                ((useNamedWithSingleValue && namedOptionState?.optionData?.useNamedWithSingleValue !== false) ||
+                    namedOptionState?.optionData?.useNamedWithSingleValue);
+
+            if (isInNamedSingleValueMode && lnb && longTextTagsState === null && !lastestLongWord) {
+                aggregateNextNamedOption(namedOptionState!.start);
+                continue;
+            }
+
+            if (lastestLongWord || (namedOptionState && !isInNamedSingleValueMode)) continue;
 
             if (backescape) {
-                const isDisabledLongTextTagsInLastOption = disableLongTextTagsInLastOption && actualOptionIdx >= options.length - 1;
+                const isDisabledLongTextTagsInLastOption =
+                    disableLongTextTagsInLastOption && namedOptionState === null && actualIterableOptionsIdx >= iterableOptions.length - 1;
 
                 const { length } = backescape;
 
@@ -301,53 +443,136 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             }
 
             if (tag) {
-                const isDisabledLongTextTagsInLastOption = disableLongTextTagsInLastOption && actualOptionIdx >= options.length - 1;
-                const isInvalidTag = InvalidTagsToBeLong.has(tag);
+                type DisableLongTextTagsInLastOptionObject = Exclude<
+                    YunaParserCreateOptions["disableLongTextTagsInLastOption"],
+                    boolean | undefined
+                >;
 
                 if (isEscapingNext) {
                     isEscapingNext = false;
-                    if (!tagOpenWith) {
+                    if (longTextTagsState === null) {
                         aggregateUnindexedText(index, tag, "/", undefined, undefined, _isRecentlyCosedAnyTag);
                     }
-                } else if (isInvalidTag || isDisabledLongTextTagsInLastOption) {
+                    // isDisabledLongTextTagsInLastOption
+                } else if (
+                    namedOptionState === null &&
+                    longTextTagsState === null &&
+                    disableLongTextTagsInLastOption &&
+                    actualIterableOptionsIdx >= iterableOptions.length - 1 &&
+                    ((disableLongTextTagsInLastOption as DisableLongTextTagsInLastOptionObject).excludeCodeBlocks
+                        ? !(tag === backtick && content[index + 1] === backtick && content[index + 2] === backtick)
+                        : true)
+                ) {
+                    aggregateNextOption(tag, [index, index + match[0].length]);
+                    continue;
+                } else if (InvalidTagsToBeLong.has(tag)) {
                     aggregateUnindexedText(index, tag, "", undefined, undefined, _isRecentlyCosedAnyTag);
                     continue;
-                } else if (!tagOpenWith) {
-                    tagOpenWith = tag as unknown as typeof tagOpenWith;
-                    tagOpenPosition = index + 1;
-                } else if (tagOpenWith === tag && tagOpenPosition) {
-                    aggregateTagLongText(tag, tagOpenPosition, index);
+                } else if (longTextTagsState === null) {
+                    longTextTagsState = {
+                        quote: tag as ValidLongTextTags,
+                        start: index + 1,
+                        toStart: index + 1,
+                    };
+                } else if (longTextTagsState.quote === tag && longTextTagsState.start !== undefined) {
+                    // end quote
+
+                    const isStartSequentially = longTextTagsState.toStart === index;
+
+                    if (isStartSequentially) {
+                        longTextTagsState.toStart++;
+                    } else {
+                        // end quote
+
+                        const nextChar = content[index + 1];
+
+                        const nextCharIsSameQuote = nextChar === tag;
+
+                        const isPossiblyEndSequentially = nextCharIsSameQuote && longTextTagsState.toEnd === undefined;
+
+                        if (isPossiblyEndSequentially) {
+                            longTextTagsState.toEnd = index;
+                            longTextTagsState.end = index;
+                            continue;
+                        }
+
+                        if (longTextTagsState.end !== undefined && longTextTagsState.end + 1 === index && nextCharIsSameQuote) {
+                            longTextTagsState.end++;
+                        } else {
+                            const isCodeBlock =
+                                longTextTagsState.quote === backtick && longTextTagsState.toStart - longTextTagsState.start === 2;
+
+                            const endPosition = longTextTagsState.toEnd ?? index;
+
+                            if (!isCodeBlock) {
+                                aggregateLongTextTag(endPosition);
+                            } else if (
+                                longTextTagsState.toEnd !== undefined &&
+                                longTextTagsState.end !== undefined &&
+                                index - longTextTagsState.toEnd >= 2
+                            ) {
+                                const codeBlockContent = content.slice(longTextTagsState.toStart, endPosition);
+
+                                const codeBlockLangMatch = codeBlockContent.match(codeBlockLangRegex);
+
+                                const canAddLangOption = useCodeBlockLangAsAnOption && !namedOptionState;
+
+                                if (codeBlockLangMatch) {
+                                    const codeBlockLength = codeBlockLangMatch[0].length;
+                                    canAddLangOption &&
+                                        aggregateNextOption(codeBlockLangMatch[1], [
+                                            longTextTagsState.toStart,
+                                            longTextTagsState.toStart + codeBlockLength,
+                                        ]);
+                                    longTextTagsState.toStart += codeBlockLength;
+                                } else {
+                                    canAddLangOption && actualIterableOptionsIdx++;
+                                }
+
+                                const startsWithLineBreak = content[longTextTagsState.toStart] === "\n";
+                                const endWithLineBreak = content[longTextTagsState.toEnd - 1] === "\n";
+
+                                if (startsWithLineBreak) longTextTagsState.toStart++;
+                                if (endWithLineBreak) longTextTagsState.toEnd--;
+
+                                aggregateLongTextTag(longTextTagsState.toEnd ?? index);
+                            }
+                        }
+                    }
                 }
 
                 continue;
             }
 
-            if (value && tagOpenWith === null) {
+            if (isInNamedSingleValueMode && (isAlreadyLatestLongWordAggregated || actualIterableOptionsIdx >= iterableOptions.length))
+                continue;
+
+            if (value && longTextTagsState === null) {
                 const placeIsForLeft = !(_isRecentlyCosedAnyTag || unindexedRightText || spacesRegex.test(content[index - 1]));
 
+                const endPosition = index + match[0].length;
+
                 if (placeIsForLeft && lastOptionNameAdded) {
-                    result[lastOptionNameAdded] += value;
+                    argsResult[lastOptionNameAdded] += value;
+                    const oldPosition = argsResultPosition[lastOptionNameAdded];
+                    if (oldPosition) oldPosition[1] = endPosition;
                     continue;
                 }
 
-                const aggregated = aggregateNextOption(value, index);
-
-                if (!aggregated) break;
+                aggregateNextOption(value, [index, endPosition]);
             }
         }
 
         aggregateLastestLongWord();
+        aggregateNextNamedOption();
+        aggregateLongTextTag();
 
-        if (namedOptionInitialized) {
-            aggregateNextNamedOption(content.length);
-        } else if (tagOpenPosition && tagOpenWith) aggregateTagLongText(tagOpenWith, tagOpenPosition);
-
-        if (choicesOptions?.names?.length && realConfig.resolveCommandOptionsChoices !== null) {
-            YunaParserOptionsChoicesResolver(command, choicesOptions.names, result, realConfig);
+        if (choices && config.resolveCommandOptionsChoices !== null) {
+            YunaParserOptionsChoicesResolver(commandMetadata, argsResult, config);
         }
 
-        realConfig.logResult && console.log(result);
+        endResult();
 
-        return result;
+        return argsResult;
     };
 };

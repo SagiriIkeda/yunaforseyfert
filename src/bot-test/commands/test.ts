@@ -1,11 +1,14 @@
 import { inspect } from "node:util";
 import { Command, type CommandContext, Declare, Embed, Options, createStringOption } from "seyfert";
+import { Yuna } from "../../package/index.js";
+import { Watch } from "../../package/utils/messageWatcher/watcherUtils.js";
 
 const options = {
     first: createStringOption({
         description: "Penguins are life",
         required: true,
     }),
+
     second: createStringOption({
         description: "Do you know i love penguins?",
         required: true,
@@ -18,6 +21,20 @@ const options = {
 })
 @Options(options)
 export default class TestCommand extends Command {
+    @Watch({
+        idle: 100_000,
+        onStop(reason) {
+            this.ctx?.editOrReply({ content: `watcher end '${reason}'`, embeds: [] });
+        },
+        beforeCreate(ctx) {
+            const userWatcher = Yuna.watchers.find(ctx.client, {
+                userId: ctx.author.id,
+                command: this,
+            });
+
+            userWatcher?.stop("AnotherInstanceCreated");
+        },
+    })
     async run(ctx: CommandContext<typeof options>) {
         const embed = new Embed({
             title: "Parsed!",
@@ -33,11 +50,10 @@ export default class TestCommand extends Command {
             ],
         });
 
-        await ctx.write({
+        await ctx.editOrReply({
             embeds: [embed],
         });
     }
-
     async onOptionsError(context: CommandContext<typeof options>) {
         await context.editOrReply({
             content: "You need to use two options",

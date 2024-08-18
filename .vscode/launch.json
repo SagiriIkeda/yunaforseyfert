@@ -1,23 +1,20 @@
 {
-    // Use IntelliSense para saber los atributos posibles.
-    // Mantenga el puntero para ver las descripciones de los existentes atributos.
-    // Para más información, visite: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
         {
             "type": "node",
             "request": "launch",
-            "name": "Iniciar el programa",
+            "name": "Start Bot",
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "preLaunchTask": "tsc",
+            "preLaunchTask": "esbuild",
             "program": "${workspaceFolder}/dist/bot-test/index.js",
             "envFile": "${workspaceFolder}/src/bot-test/.env",
             "cwd": "${workspaceFolder}/src/bot-test",
             "outFiles": [
                 "${workspaceFolder}/**/*.js"
-            ]
+            ],
         }
     ]
 }
