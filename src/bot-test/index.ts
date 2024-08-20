@@ -16,7 +16,7 @@ class YunaCommandHandle extends HandleCommand {
         afterPrepare: () => {
             this.client.logger.debug("prepared commands");
         },
-        logResult: true,
+        // logResult: true,
     });
 
     argsParser = Yuna.parser({

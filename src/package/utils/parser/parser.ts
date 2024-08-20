@@ -422,12 +422,14 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             if (lastestLongWord || (namedOptionState && !isInNamedSingleValueMode)) continue;
 
             if (backescape) {
-                const isDisabledLongTextTagsInLastOption =
-                    disableLongTextTagsInLastOption && namedOptionState === null && actualIterableOptionsIdx >= iterableOptions.length - 1;
-
                 const { length } = backescape;
 
                 const nextChar = content[index + length];
+
+                if (longTextTagsState && longTextTagsState.quote !== nextChar) continue;
+
+                const isDisabledLongTextTagsInLastOption =
+                    disableLongTextTagsInLastOption && namedOptionState === null && actualIterableOptionsIdx >= iterableOptions.length - 1;
 
                 const { isPossiblyEscapingNext, strRepresentation } = evaluateBackescapes(
                     backescape,
@@ -488,14 +490,16 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
                         const nextCharIsSameQuote = nextChar === tag;
 
-                        const isPossiblyEndSequentially = nextCharIsSameQuote && longTextTagsState.toEnd === undefined;
+                        const isPossiblyEndSequentially =
+                            nextCharIsSameQuote &&
+                            (longTextTagsState.toEnd === undefined ||
+                                (longTextTagsState.end !== undefined && longTextTagsState.end + 1 !== index));
 
                         if (isPossiblyEndSequentially) {
                             longTextTagsState.toEnd = index;
                             longTextTagsState.end = index;
                             continue;
                         }
-
                         if (longTextTagsState.end !== undefined && longTextTagsState.end + 1 === index && nextCharIsSameQuote) {
                             longTextTagsState.end++;
                         } else {

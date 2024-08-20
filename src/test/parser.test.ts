@@ -206,6 +206,20 @@ describe("CodeBlocks", () => {
         testParser("```json\nworld\n```", { code: "world" }, ParserRecommendedConfig.Eval, evalCommand);
         testParser("```world```", { code: "world" }, ParserRecommendedConfig.Eval, evalCommand);
     });
+
+    test("bug with \\ in quotes", () => {
+        const code = `"<:globito:1163924636262731866>"
+.match(/\\<(a?):\\w+:(\\d{18})\\>/g)`;
+
+        const bugcode = `\`\`\`js
+${code}
+\`\`\`testeo`;
+        testParser(bugcode, { code }, ParserRecommendedConfig.Eval, evalCommand);
+    });
+    test("nesting ` in codeblock bug", () => {
+        const code = "console.log(`` true ``)";
+        testParser(codeBlock("", code), { code }, ParserRecommendedConfig.Eval, evalCommand);
+    });
 });
 
 @Options({

@@ -14,7 +14,6 @@ const {
 
 await writeFile(".npm/package.json", JSON.stringify(newPackageJson, null, 4), "utf-8");
 
-
 const moveFiles = [".npmignore", "README.md", "build"];
 
 const move = (src: string) => cp(src, `.npm/${src}`, { recursive: true });

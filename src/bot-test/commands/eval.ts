@@ -19,6 +19,8 @@ const evalOptions = {
     }),
 };
 
+const devs = new Set(["388415190225518602", "838338447932391436", "391283181665517568"]);
+
 @Declare({
     name: "eval",
     description: "Evaluate a javascript code.",
@@ -30,7 +32,7 @@ export default class EvalCommand extends Command {
         idle: 1000 * 10,
     })
     async run(ctx: CommandContext<typeof evalOptions>) {
-        if (ctx.author.id !== "388415190225518602") return ctx.write({ content: "you can't use this." });
+        if (!devs.has(ctx.author.id)) return ctx.write({ content: "you can't use this." });
 
         const { options, client, guildId, channelId, member, author } = ctx;
         const { code } = options;
