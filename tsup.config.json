@@ -6,5 +6,6 @@
     "treeshake": true,
     "outDir": "build",
     "clean": true,
+    "skipNodeModulesBundle": true,
     "format": ["cjs"]
 }

@@ -7,10 +7,6 @@ settings:
 importers:
 
   .:
-    dependencies:
-      seyfert:
-        specifier: github:tiramisulabs/seyfert
-        version: https://codeload.github.com/tiramisulabs/seyfert/tar.gz/441b980f0a3d6ec6952b864fef89921e84a77a95
     devDependencies:
       '@biomejs/biome':
         specifier: 1.8.0
@@ -27,6 +23,9 @@ importers:
       lint-staged:
         specifier: ^15.2.7
         version: 15.2.7
+      seyfert:
+        specifier: ^2.0.0
+        version: 2.0.0
       tsup:
         specifier: ^8.1.0
         version: 8.2.3(postcss@8.4.40)(tsx@4.17.0)(typescript@5.5.4)(yaml@2.4.5)
@@ -1009,9 +1008,8 @@ packages:
   run-parallel@1.2.0:
     resolution: {integrity: sha512-5l4VyZR86LZ/lDxZTR6jqL8AFE2S0IFLMP26AbjsLVADxHdhB/c0GUsH+y39UfCi3dzz8OlQuPmnaJOMoDHQBA==}
 
-  seyfert@https://codeload.github.com/tiramisulabs/seyfert/tar.gz/441b980f0a3d6ec6952b864fef89921e84a77a95:
-    resolution: {tarball: https://codeload.github.com/tiramisulabs/seyfert/tar.gz/441b980f0a3d6ec6952b864fef89921e84a77a95}
-    version: 1.5.0
+  seyfert@2.0.0:
+    resolution: {integrity: sha512-cAMBhZWr+edrjDkTi2cS+hE74LuwIsML+zZOPOKVFQbXsnd8bbiM+/QHWyDfSjQ2PGWcRZEzCGt6IpsyL7quQQ==}
 
   shebang-command@2.0.0:
     resolution: {integrity: sha512-kHxr2zZpYtdmrN1qDjrrX/Z1rR1kG8Dx+gkpK1G4eXmvXswmcE1hTWBWYUzlraYw1/yZp6YuDY77YtvbN0dmDA==}
@@ -2055,7 +2053,7 @@ snapshots:
     dependencies:
       queue-microtask: 1.2.3
 
-  seyfert@https://codeload.github.com/tiramisulabs/seyfert/tar.gz/441b980f0a3d6ec6952b864fef89921e84a77a95: {}
+  seyfert@2.0.0: {}
 
   shebang-command@2.0.0:
     dependencies:

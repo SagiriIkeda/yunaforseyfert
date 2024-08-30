@@ -8,9 +8,18 @@ const {
     scripts: _s,
     "lint-staged": _l,
     private: _p,
-    devDependencies: _d,
-    ...newPackageJson
+    devDependencies: _dev,
+    ...newPackageJsonRaw
 } = packageJson as typeof packageJson & { private: boolean };
+
+const { seyfert } = _dev;
+
+const newPackageJson = {
+    ...newPackageJsonRaw,
+    devDependencies: {
+        seyfert,
+    }
+};
 
 await writeFile(".npm/package.json", JSON.stringify(newPackageJson, null, 4), "utf-8");
 

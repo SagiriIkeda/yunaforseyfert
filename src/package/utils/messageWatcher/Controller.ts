@@ -56,7 +56,7 @@ export type InferWatcherContext<C extends YunaUsable | undefined> = C extends Yu
         : never
     : never;
 
-export type InferWatcherFromCtx<C, Command extends YunaUsable> = MessageWatcherManager<
+export type InferWatcherManagerFromCtx<C, Command extends YunaUsable> = MessageWatcherManager<
     InferCommandOptionsFromCtx<C>,
     InferWatcherContext<Command>,
     Command
@@ -184,10 +184,10 @@ export class WatchersController {
         return watcher;
     }
 
-    getWatcherFromContext<const Ctx extends CommandContext, const Command extends YunaUsable>({ message }: Ctx, _command?: Command) {
+    getWatcherFromContext<const Ctx extends CommandContext, const Command extends YunaUsable>({ message }: Ctx, _commandType?: Command) {
         if (!message) return;
         const id = createId(message);
-        return this.managers.get(id) as InferWatcherFromCtx<Ctx, Command> | undefined;
+        return this.managers.get(id) as InferWatcherManagerFromCtx<Ctx, Command> | undefined;
     }
 
     #baseSearch(query: BaseFindWatcherQuery, watcher: MessageWatcherManager) {

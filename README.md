@@ -15,14 +15,14 @@ pnpm add yunaforseyfert
 
 # Features
 
-## YunaParser
+## ` Yuna.parser `
 > *An **args parser for text commands**, which adds various syntax for more convenient use.*  
 >
 > <img src="https://i.imgur.com/cRrLoG2.gif" width="100%" />
 >
 > [📖 See Parser docs](https://github.com/SagiriIkeda/yunaforseyfert/wiki/Parser)
 
-## YunaCommandsResolver  
+## ` Yuna.resolver `
 > *A resolver, which provides some extra functions.*  
 >[📖 See Resolver docs](https://github.com/SagiriIkeda/yunaforseyfert/wiki/CommandsResolver)
 

@@ -1,6 +1,6 @@
 import type { CommandContext } from "seyfert";
 import { type AvailableClients, Keys, type YunaUsable } from "../../things";
-import type { FindWatcherQuery, InferWatcherContext, InferWatcherFromCtx, InferWatcherFromQuery } from "./Controller";
+import type { FindWatcherQuery, InferWatcherContext, InferWatcherFromQuery, InferWatcherManagerFromCtx } from "./Controller";
 import { createController, createWatcher, getController } from "./controllerUtils";
 import type { DecoratorWatchOptions, InferCommandOptions } from "./types";
 
@@ -97,7 +97,7 @@ export interface WatchUtils {
     getFromContext<Ctx extends CommandContext, Command extends YunaUsable>(
         ctx: Ctx,
         command?: Command,
-    ): InferWatcherFromCtx<Ctx, Command> | undefined;
+    ): InferWatcherManagerFromCtx<Ctx, Command> | undefined;
     /**
      * Find an `MessageWatcherManager` from a query.
      */
