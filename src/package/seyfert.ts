@@ -51,7 +51,7 @@ type ExtendedAttachmentOption = Extended<SeyfertAttachmentOption>;
 
 declare module "seyfert" {
     export interface SubCommand {
-        /** This property is part of YunaCommandsResolver, without using it, it may not be available. */
+        /** This property is part of Yuna.resolver, without using it, it may not be available. */
         parent?: Command;
     }
     // hate this

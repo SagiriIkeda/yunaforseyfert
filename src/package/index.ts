@@ -10,27 +10,27 @@ import { YunaWatcherUtils } from "./utils/messageWatcher/watcherUtils.js";
 import type { YunaParserCreateOptions } from "./utils/parser/configTypes.js";
 import { mergeConfig } from "./utils/parser/createConfig.js";
 
+export { DeclareFallbackSubCommand, Shortcut } from "./utils/commandsResolver/decorators.js";
 export { Watch } from "./utils/messageWatcher/watcherUtils.js";
 export { DeclareParserConfig } from "./utils/parser/createConfig.js";
-export { Shortcut } from "./utils/commandsResolver/decorators.js";
 
 export { createWatcher } from "./utils/messageWatcher/controllerUtils.js";
 
 export type { MessageWatcherManager } from "./utils/messageWatcher/Manager.js";
 export type { MessageWatcher } from "./utils/messageWatcher/Watcher.js";
 
+export type { ArgPosition, ArgsResult, ArgsResultMetadata } from "./things.js";
 export type { InferWatcherContext } from "./utils/messageWatcher/Controller.js";
-export type { ArgsResult, ArgsResultMetadata, ArgPosition } from "./things.js";
 
 export type {
+    DecoratorWatchOptions,
+    InferWatcher,
+    InferWatcherManager,
     WatcherOnChangeEvent,
     WatcherOnOptionsErrorEvent,
     WatcherOnStopEvent,
     WatcherOnUsageErrorEvent,
     WatcherOptions,
-    DecoratorWatchOptions,
-    InferWatcher,
-    InferWatcherManager,
 } from "./utils/messageWatcher/types.js";
 
 export const ParserRecommendedConfig = {
@@ -94,7 +94,7 @@ class BaseYuna {
         resolve,
         /**
          * if it is a subcommand,
-         * it will need to have the `parent` property (using YunaCommandsResolver will be added)
+         * it will need to have the `parent` property (using Yuna.resolver will be added)
          */
         fullNameOf,
         getMetadata: getCommandsMetadata,

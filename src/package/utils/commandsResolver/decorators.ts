@@ -12,7 +12,7 @@ import { type Instantiable, Keys } from "../../things";
  *  // can now be accessed as
  *  play
  * ```
- * @requires YunaCommandsResolver to work.
+ * @requires Yuna.resolver to work.
  */
 export function Shortcut() {
     return <T extends Instantiable<SubCommand>>(target: T) => {
@@ -32,8 +32,8 @@ export const getFallbackCommandName = (command: Instantiable<SubCommand> | null 
 /**
  * Allows you to set a subcommand that will be used when one is not found.
  * if not set the first subcommand will be used.
- * @requires  YunaCommandsResolver setting `useFallbackSubCommand` be `true` (by default).
  * use `null` to disable this option for this command.
+ * @requires  Yuna.resolver to work.
  */
 export function DeclareFallbackSubCommand(command: Instantiable<SubCommand> | null | string) {
     return <T extends Instantiable<Command>>(target: T) => {

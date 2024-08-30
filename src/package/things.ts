@@ -70,7 +70,7 @@ export type YunaGroupType = {
      *  // can now be accessed as
      *  music play
      * ```
-     * @requires YunaCommandsResolver to work.
+     * @requires Yuna.resolver to work.
      */
     shortcut?: boolean;
     /**
@@ -78,7 +78,7 @@ export type YunaGroupType = {
      * if not set the first subcommand of this group will be used.
      *
      * use `null` to disable this option for this group.
-     * @requires  YunaCommandsResolver to work.
+     * @requires  Yuna.resolver to work.
      */
     fallbackSubCommand?: Instantiable<SubCommand> | string | null;
 };
