@@ -1,7 +1,7 @@
 import type { Command, SubCommand } from "seyfert";
 import { IgnoreCommand } from "seyfert";
 import { ApplicationCommandOptionType, ApplicationCommandType } from "seyfert/lib/types";
-import { type AvailableClients, Keys, type YunaUsable } from "../../things";
+import { type AvailableClients, Keys, type YunaCommandUsable } from "../../things";
 import { type GroupLink, ShortcutType, type UseYunaCommandsClient, type YunaGroup } from "./prepare";
 import type { YunaCommandsResolverConfig } from "./resolver";
 
@@ -56,7 +56,7 @@ export function baseResolver(
         metadata?.commands
             ? metadata.commands.find(searchFn)
             : client.commands.values.find((command) => command.type === ApplicationCommandType.ChatInput && searchFn(command))
-    ) as YunaUsable<Command> | undefined;
+    ) as YunaCommandUsable<Command> | undefined;
 
     const shortcut = parentCommand ? undefined : metadata?.shortcuts.find(searchFn);
     const isGroupShortcut = shortcut?.type === ShortcutType.Group;
@@ -70,7 +70,8 @@ export function baseResolver(
 
     const parentSubCommandsMetadata = parentCommand?.[Keys.resolverSubCommands];
 
-    const availableInMessage = (command: YunaUsable) => (config?.inMessage === true ? command.ignore !== IgnoreCommand.Message : true);
+    const availableInMessage = (command: YunaCommandUsable) =>
+        config?.inMessage === true ? command.ignore !== IgnoreCommand.Message : true;
 
     if (isGroupShortcut) {
         parentCommand = shortcut.parent;

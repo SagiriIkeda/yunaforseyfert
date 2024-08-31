@@ -41,7 +41,7 @@ export type CommandUsable = (Command | SubCommand) & {
     [Keys.watcherRawCommandRun]?: (Command | SubCommand)["run"];
 };
 
-export type YunaUsable<T extends CommandUsable = CommandUsable> = T & {
+export type YunaCommandUsable<T extends CommandUsable = CommandUsable> = T & {
     [Keys.watcherRawCommandRun]?: T["run"];
     [Keys.parserConfig]?: YunaParserCreateOptions;
     [Keys.resolverSubCommands]?: { fallback?: Instantiable<SubCommand> | null; fallbackName?: string } | null;

@@ -1,10 +1,10 @@
 import type { CommandContext } from "seyfert";
-import { type AvailableClients, Keys, type YunaUsable } from "../../things";
+import { type AvailableClients, Keys, type YunaCommandUsable } from "../../things";
 import type { FindWatcherQuery, InferWatcherContext, InferWatcherFromQuery, InferWatcherManagerFromCtx } from "./Controller";
 import { createController, createWatcher, getController } from "./controllerUtils";
 import type { DecoratorWatchOptions, InferCommandOptions } from "./types";
 
-function DecoratorWatcher<const C extends YunaUsable, O extends InferCommandOptions<C>, Context = InferWatcherContext<C>>(
+function DecoratorWatcher<const C extends YunaCommandUsable, O extends InferCommandOptions<C>, Context = InferWatcherContext<C>>(
     options: DecoratorWatchOptions<C, O, Context>,
 ) {
     return (_target: C, _propertyKey: "run", descriptor: PropertyDescriptor) => {
@@ -93,7 +93,7 @@ export interface WatchUtils {
     createController: typeof createController;
     getController: typeof getController;
     /**  Get `MessageWatcherManager` associated to a `CommandContext`. */
-    getFromContext<Ctx extends CommandContext, Command extends YunaUsable>(
+    getFromContext<Ctx extends CommandContext, Command extends YunaCommandUsable>(
         ctx: Ctx,
         command?: Command,
     ): InferWatcherManagerFromCtx<Ctx, Command> | undefined;
@@ -117,7 +117,7 @@ export const YunaWatcherUtils: WatchUtils = {
     create: createWatcher,
     createController,
     getController,
-    getFromContext<Ctx extends CommandContext, Command extends YunaUsable>(ctx: Ctx, _command?: Command) {
+    getFromContext<Ctx extends CommandContext, Command extends YunaCommandUsable>(ctx: Ctx, _command?: Command) {
         return getController(ctx.client)?.getWatcherFromContext<Ctx, Command>(ctx);
     },
     find<Query extends FindWatcherQuery>(client: AvailableClients, query: Query) {

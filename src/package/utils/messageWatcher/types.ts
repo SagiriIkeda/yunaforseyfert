@@ -1,7 +1,7 @@
 import type { Command, CommandContext, Message, OnOptionsReturnObject, OptionsRecord, SubCommand } from "seyfert";
 import type { Awaitable, MakeRequired } from "seyfert/lib/common";
 import type { GatewayMessageUpdateDispatchData } from "seyfert/lib/types";
-import type { YunaUsable } from "../../things";
+import type { YunaCommandUsable } from "../../things";
 import type { InferWatcherContext } from "./Controller";
 import type { MessageWatcherManager } from "./Manager";
 import type { MessageWatcher } from "./Watcher";
@@ -37,7 +37,7 @@ export type WatcherOnUsageErrorEvent<M extends MessageWatcher> = <E extends keyo
 ) => any;
 
 export interface DecoratorWatchOptions<
-    C extends YunaUsable,
+    C extends YunaCommandUsable,
     O extends OptionsRecord,
     Context,
     M extends MessageWatcher<O, Context, C> = MessageWatcher<O, Context, C>,
@@ -58,8 +58,10 @@ export interface DecoratorWatchOptions<
     onResponseDelete?: WatcherOnResponseDelete<M>;
 }
 
-export type InferCommandOptions<C extends YunaUsable> = Parameters<NonNullable<C["run"]>>[0] extends CommandContext<infer O> ? O : never;
+export type InferCommandOptions<C extends YunaCommandUsable> = Parameters<NonNullable<C["run"]>>[0] extends CommandContext<infer O>
+    ? O
+    : never;
 
-export type InferWatcher<C extends YunaUsable> = MessageWatcher<InferCommandOptions<C>, InferWatcherContext<C>, C>;
+export type InferWatcher<C extends YunaCommandUsable> = MessageWatcher<InferCommandOptions<C>, InferWatcherContext<C>, C>;
 
-export type InferWatcherManager<C extends YunaUsable> = MessageWatcherManager<InferCommandOptions<C>, InferWatcherContext<C>, C>;
+export type InferWatcherManager<C extends YunaCommandUsable> = MessageWatcherManager<InferCommandOptions<C>, InferWatcherContext<C>, C>;

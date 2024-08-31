@@ -8,7 +8,7 @@ import EvalCommand from "../bot-test/commands/eval";
 import PingCommand from "../bot-test/commands/ping";
 import TestCommand from "../bot-test/commands/test";
 import { Yuna } from "../package/index";
-import { type Instantiable, Keys, type YunaUsable } from "../package/things";
+import { type Instantiable, Keys, type YunaCommandUsable } from "../package/things";
 import { type YunaGroup, prepareCommands } from "../package/utils/commandsResolver/prepare";
 import type { YunaCommandsResolverConfig } from "../package/utils/commandsResolver/resolver";
 
@@ -18,10 +18,10 @@ const YunaResolver = Yuna.resolver({
     client,
 });
 
-const testInstance = new TestCommand() as YunaUsable<Command>;
-const accountInstance = new AccountCommand() as YunaUsable<Command>;
-const evalInstance = new EvalCommand() as YunaUsable<Command>;
-const pingInstance = new PingCommand() as YunaUsable<Command>;
+const testInstance = new TestCommand() as YunaCommandUsable<Command>;
+const accountInstance = new AccountCommand() as YunaCommandUsable<Command>;
+const evalInstance = new EvalCommand() as YunaCommandUsable<Command>;
+const pingInstance = new PingCommand() as YunaCommandUsable<Command>;
 
 client.commands?.values.push(testInstance, accountInstance, evalInstance, pingInstance);
 
@@ -39,7 +39,7 @@ const testResolver = (query: string, options: Omit<YunaCommandsResolverConfig, "
         log(...args: any[]) {
             client.logger.debug(resolved, ...args);
         },
-        is(command: Instantiable<YunaUsable> | undefined) {
+        is(command: Instantiable<YunaCommandUsable> | undefined) {
             if (!command) {
                 expect(resolved.command).toBeUndefined();
                 return { nameIs(_name: string) {} };
@@ -51,7 +51,7 @@ const testResolver = (query: string, options: Omit<YunaCommandsResolverConfig, "
                 },
             };
         },
-        argsContentToBe(args: string, command?: Instantiable<YunaUsable>) {
+        argsContentToBe(args: string, command?: Instantiable<YunaCommandUsable>) {
             if (command) return expect(resolved.command instanceof command && resolved.argsContent === args).toBe(true);
             return expect(resolved.argsContent).toBe(args);
         },

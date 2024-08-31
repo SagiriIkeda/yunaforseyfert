@@ -18,7 +18,7 @@ import EvalCommand, { codeBlock } from "../bot-test/commands/eval";
 import Eval2Command from "../bot-test/commands/eval2";
 import TestCommand from "../bot-test/commands/test";
 import { ParserRecommendedConfig, Yuna } from "../package/index";
-import type { YunaUsable } from "../package/things";
+import type { YunaCommandUsable } from "../package/things";
 import type { YunaParserCreateOptions } from "../package/utils/parser/configTypes";
 
 const testCommand = new TestCommand();
@@ -32,7 +32,7 @@ const testParser = (
     text: string,
     equalTo: Record<string, string | undefined>,
     config?: YunaParserCreateOptions,
-    command: YunaUsable = testCommand,
+    command: YunaCommandUsable = testCommand,
     message?: Message,
 ) => {
     return expect(Yuna.parser(config).call(client.handleCommand, text, command, message)).toEqual(equalTo);

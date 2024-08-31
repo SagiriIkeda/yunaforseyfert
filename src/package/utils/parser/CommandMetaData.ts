@@ -1,7 +1,7 @@
 import type { CommandOption, SeyfertNumberOption, SeyfertStringOption } from "seyfert";
 import { ApplicationCommandOptionType } from "seyfert/lib/types";
 import type { ExtendedOption } from "../../seyfert";
-import { Keys, type YunaUsable } from "../../things";
+import { Keys, type YunaCommandUsable } from "../../things";
 import type { CommandOptionWithType, ValidNamedOptionSyntax, YunaParserCreateOptions } from "./configTypes";
 import { createRegexes, mergeConfig } from "./createConfig";
 
@@ -15,7 +15,7 @@ type DecoredChoice = [rawName: string, name: string, value: string];
 
 type ValidNamedOptionSyntaxes = Partial<Record<ValidNamedOptionSyntax, true>>;
 export class YunaParserCommandMetaData {
-    readonly command: YunaUsable;
+    readonly command: YunaCommandUsable;
 
     readonly iterableOptions: CommandOption[] = [];
 
@@ -34,7 +34,7 @@ export class YunaParserCommandMetaData {
     /** ValidNamedOptionSyntaxes */
     vns?: ValidNamedOptionSyntaxes;
 
-    constructor(command: YunaUsable) {
+    constructor(command: YunaCommandUsable) {
         this.command = command;
 
         this.baseConfig = command[Keys.parserConfig];
@@ -83,7 +83,7 @@ export class YunaParserCommandMetaData {
         return resultConfig;
     }
 
-    static from(command: YunaUsable) {
+    static from(command: YunaCommandUsable) {
         const classPrototype = command.constructor.prototype;
 
         const InCommandMetadata = classPrototype[Keys.parserMetadata];

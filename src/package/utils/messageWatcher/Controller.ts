@@ -10,7 +10,7 @@ import {
     type WorkerClient,
 } from "seyfert";
 import { GatewayDispatchEvents } from "seyfert/lib/types/index.js";
-import type { YunaUsable } from "../../things.js";
+import type { YunaCommandUsable } from "../../things.js";
 import { MessageWatcherManager } from "./Manager.js";
 import type { WatcherOptions } from "./types.js";
 import type { WatcherContext } from "./watcherUtils.js";
@@ -39,7 +39,7 @@ type BaseFindWatcherQuery = {
 
 export type FindWatcherQuery = BaseFindWatcherQuery | ((watcher: MessageWatcherManager) => boolean);
 
-type InferCommandCtx<C extends YunaUsable> = C extends YunaUsable ? Parameters<NonNullable<C["run"]>>[0] : never;
+type InferCommandCtx<C extends YunaCommandUsable> = C extends YunaCommandUsable ? Parameters<NonNullable<C["run"]>>[0] : never;
 export type InferCommandOptionsFromCtx<C> = C extends CommandContext<infer R> ? R : never;
 
 export type InferWatcherFromQuery<
@@ -50,13 +50,13 @@ export type InferWatcherFromQuery<
 
 export type WatcherCreateData = Pick<CommandContext, "client" | "command" | "message" | "shardId">;
 
-export type InferWatcherContext<C extends YunaUsable | undefined> = C extends YunaUsable
+export type InferWatcherContext<C extends YunaCommandUsable | undefined> = C extends YunaCommandUsable
     ? Extract<Awaited<ReturnType<NonNullable<C["run"]>>>, WatcherContext<any>> extends WatcherContext<infer V>
         ? V
         : never
     : never;
 
-export type InferWatcherManagerFromCtx<C, Command extends YunaUsable> = MessageWatcherManager<
+export type InferWatcherManagerFromCtx<C, Command extends YunaCommandUsable> = MessageWatcherManager<
     InferCommandOptionsFromCtx<C>,
     InferWatcherContext<Command>,
     Command
@@ -184,7 +184,10 @@ export class WatchersController {
         return watcher;
     }
 
-    getWatcherFromContext<const Ctx extends CommandContext, const Command extends YunaUsable>({ message }: Ctx, _commandType?: Command) {
+    getWatcherFromContext<const Ctx extends CommandContext, const Command extends YunaCommandUsable>(
+        { message }: Ctx,
+        _commandType?: Command,
+    ) {
         if (!message) return;
         const id = createId(message);
         return this.managers.get(id) as InferWatcherManagerFromCtx<Ctx, Command> | undefined;

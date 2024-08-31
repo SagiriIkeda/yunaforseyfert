@@ -4,7 +4,9 @@ import { getCommandsMetadata, prepareCommands, resolve } from "./utils/commandsR
 import { YunaCommandsResolver } from "./utils/commandsResolver/resolver.js";
 import { YunaParser } from "./utils/parser/parser.js";
 
-import { CommandContext, type Message } from "seyfert";
+import { type Command, CommandContext, type Message, type SubCommand } from "seyfert";
+import type { CommandOptionWithType } from "seyfert/lib/commands/handle.js";
+import { ApplicationCommandOptionType } from "seyfert/lib/types/index.js";
 import { Keys } from "./things.js";
 import { YunaWatcherUtils } from "./utils/messageWatcher/watcherUtils.js";
 import type { YunaParserCreateOptions } from "./utils/parser/configTypes.js";
@@ -98,6 +100,14 @@ class BaseYuna {
          */
         fullNameOf,
         getMetadata: getCommandsMetadata,
+        isParentCommand(command: Command | SubCommand): command is Command & { options: SubCommand[] } {
+            if (!command.options?.length) return false;
+            const [firstOption] = command.options as CommandOptionWithType[];
+            return (
+                firstOption.type === ApplicationCommandOptionType.Subcommand ||
+                firstOption.type === ApplicationCommandOptionType.SubcommandGroup
+            );
+        },
     };
 
     getArgsResult(resolvable?: CommandContext | Message) {

@@ -18,6 +18,7 @@
         "format": "biome check --write ./src",
         "test": "vitest",
         "tsc:check": "tsc --noEmit",
+        "check": "pnpm tsc:check && vitest run test",
         "esbuild": "esbuild src/**/*.ts --outdir=dist --sourcemap=inline --platform=node --format=cjs --target=es2022"
     },
     "keywords": ["ArgsParser", "CommandsResolver", "MessageWatcher", "seyfert"],

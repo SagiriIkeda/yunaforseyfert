@@ -1,6 +1,6 @@
 import { type Command, SubCommand, type UsingClient } from "seyfert";
 import { ApplicationCommandType } from "seyfert/lib/types";
-import { type AvailableClients, type Instantiable, Keys, type YunaGroupType, type YunaUsable } from "../../things";
+import { type AvailableClients, type Instantiable, Keys, type YunaCommandUsable, type YunaGroupType } from "../../things";
 import { baseResolver } from "./base";
 import { getFallbackCommandName } from "./decorators";
 import type { YunaCommandsResolverConfig } from "./resolver";
@@ -103,10 +103,10 @@ export function prepareCommands(client: AvailableClients) {
             if (!(sub instanceof SubCommand)) continue;
             hasSubCommands = true;
             sub.parent = command;
-            if ((sub as YunaUsable)[Keys.resolverIsShortcut] === true) metadata.shortcuts.push(sub);
+            if ((sub as YunaCommandUsable)[Keys.resolverIsShortcut] === true) metadata.shortcuts.push(sub);
         }
 
-        if (!hasSubCommands) (command as YunaUsable)[Keys.resolverSubCommands] = null;
+        if (!hasSubCommands) (command as YunaCommandUsable)[Keys.resolverSubCommands] = null;
     }
 
     metadata.config?.afterPrepare?.call(client, metadata);
