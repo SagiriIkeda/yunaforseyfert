@@ -1,6 +1,6 @@
 {
     "name": "yunaforseyfert",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "description": "Yunathings for seyfert",
     "type": "commonjs",
     "main": "./build/index.js",
@@ -17,6 +17,7 @@
         "lint": "biome lint --write ./src",
         "format": "biome check --write ./src",
         "test": "vitest",
+        "tsc:check": "tsc --noEmit",
         "esbuild": "esbuild src/**/*.ts --outdir=dist --sourcemap=inline --platform=node --format=cjs --target=es2022"
     },
     "keywords": ["ArgsParser", "CommandsResolver", "MessageWatcher", "seyfert"],

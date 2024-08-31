@@ -5,7 +5,6 @@ import {
     type ContextOptionsResolved,
     type Message,
     type OnOptionsReturnObject,
-    OptionResolver,
     type OptionsRecord,
     type SubCommand,
     type UsingClient,
@@ -98,7 +97,10 @@ export class MessageWatcherManager<const O extends OptionsRecord = any, Context 
 
         this.prefixes ??= await client.options.commands?.prefix?.(newMessage);
 
-        const prefix = this.prefixes?.find((prefix) => content.startsWith(prefix));
+        const prefix = this.prefixes?.reduce(
+            (oldPrefix, prefix) => (content.startsWith(prefix) && prefix.length > (oldPrefix?.length ?? 0) ? prefix : oldPrefix),
+            undefined as undefined | string,
+        );
 
         if (!prefix) return this.emit("onUsageErrorEvent", "UnspecifiedPrefix");
 
@@ -143,7 +145,7 @@ export class MessageWatcherManager<const O extends OptionsRecord = any, Context 
             return;
         }
 
-        const optionsResolver = new OptionResolver(self, resolverOptions, parent as Command, this.message.guildId, resolved);
+        const optionsResolver = handleCommand.makeResolver(self, resolverOptions, parent as Command, this.message.guildId, resolved);
 
         const ctx = new CommandContext<O>(self, newMessage, optionsResolver, this.shardId, command);
         //@ts-expect-error

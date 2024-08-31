@@ -51,12 +51,11 @@ function DecoratorWatcher<const C extends YunaUsable, O extends InferCommandOpti
             watcher.onChange(async (ctx, msg) => {
                 if (options.filter?.(ctx, msg) === false) return;
 
-                const result = await run.call(this, ctx);
+                const result = await (options.onChange ? options.onChange.call(watcher, ctx, msg) : run.call(this, ctx));
+
                 assingMessageResponse(ctx);
 
                 handle(result);
-
-                options.onChange?.call(watcher, ctx, msg);
             });
 
             const decorate = <const C extends (...args: any[]) => any>(callback: C) => {

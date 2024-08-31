@@ -50,6 +50,8 @@ export interface DecoratorWatchOptions<
     /** filters the execution of the `onChange` event */
     filter?(...args: Parameters<WatcherOnChangeEvent<MessageWatcher<O>, O>>): boolean;
     onStop?: WatcherOnStopEvent<M>;
+    /** set this event will override the default onChange, and NOT execute command run if you not do it manually,
+     *  and Watcher.context or Watcher.stop not work if you not return it.  */
     onChange?: WatcherOnChangeEvent<M, O>;
     onUsageError?: WatcherOnUsageErrorEvent<M>;
     onOptionsError?: WatcherOnOptionsErrorEvent<M>;
