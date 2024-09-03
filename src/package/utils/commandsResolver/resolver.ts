@@ -1,8 +1,7 @@
-import type { Command } from "seyfert";
+import type { Command, SubCommand, UsingClient } from "seyfert";
 import type { CommandFromContent, HandleCommand } from "seyfert/lib/commands/handle";
 import type { MakeRequired } from "seyfert/lib/common";
 import { fullNameOf } from "../../lib/utils";
-import type { AvailableClients } from "../../things";
 import { baseResolver } from "./base";
 import { addCommandsEvents, getCommandsMetadata } from "./prepare";
 
@@ -13,7 +12,16 @@ export interface YunaCommandsResolverConfig {
      */
     useFallbackSubCommand?: boolean;
     logResult?: boolean;
-    afterPrepare?(this: AvailableClients, metadata: ReturnType<typeof getCommandsMetadata>): any;
+    afterPrepare?(this: UsingClient, metadata: ReturnType<typeof getCommandsMetadata>): any;
+
+    whilePreparing?(
+        this: UsingClient,
+        metadata: ReturnType<typeof getCommandsMetadata>,
+    ): {
+        onCommand?(command: Command): any;
+        onSubCommand?(subCommand: SubCommand): any;
+    };
+
     mapResult?(result: MakeRequired<CommandFromContent, "parent">): CommandFromContent;
 }
 
@@ -22,11 +30,13 @@ export function YunaCommandsResolver({
     useFallbackSubCommand = false,
     logResult = false,
     afterPrepare,
+    whilePreparing,
     mapResult,
-}: YunaCommandsResolverConfig & { client: AvailableClients }) {
+}: YunaCommandsResolverConfig & { client: UsingClient }) {
     const config = {
         useFallbackSubCommand,
         afterPrepare,
+        whilePreparing,
         logResult,
     };
 
