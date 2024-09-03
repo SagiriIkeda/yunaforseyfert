@@ -1,6 +1,7 @@
 import type { Command, SubCommand, UsingClient } from "seyfert";
 import type { CommandFromContent, HandleCommand } from "seyfert/lib/commands/handle";
 import type { MakeRequired } from "seyfert/lib/common";
+import type { Awaitable } from "vitest";
 import { fullNameOf } from "../../lib/utils";
 import { baseResolver } from "./base";
 import { addCommandsEvents, getCommandsMetadata } from "./prepare";
@@ -17,10 +18,10 @@ export interface YunaCommandsResolverConfig {
     whilePreparing?(
         this: UsingClient,
         metadata: ReturnType<typeof getCommandsMetadata>,
-    ): {
+    ): Awaitable<{
         onCommand?(command: Command): any;
         onSubCommand?(subCommand: SubCommand): any;
-    };
+    } | null>;
 
     mapResult?(result: MakeRequired<CommandFromContent, "parent">): CommandFromContent;
 }

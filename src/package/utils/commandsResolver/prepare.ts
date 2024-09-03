@@ -64,7 +64,7 @@ export const getCommandsMetadata = (client: AvailableClients) => {
     });
 };
 
-export function prepareCommands(client: UsingClient) {
+export async function prepareCommands(client: UsingClient) {
     const metadata = getCommandsMetadata(client);
 
     metadata.shortcuts = [];
@@ -73,7 +73,10 @@ export function prepareCommands(client: UsingClient) {
     if (!client.commands?.values.length)
         return client.logger.warn("[Yuna.commands.prepare] The commands have not been loaded yet or there are none at all.");
 
-    const whilePreparing = metadata.config?.whilePreparing?.call(client, metadata);
+    const whilePreparing = await metadata.config?.whilePreparing?.call(client, metadata);
+
+    const onCommand = whilePreparing?.onCommand;
+    const onSubCommand = whilePreparing?.onSubCommand;
 
     for (const command of client.commands.values) {
         if (command.type !== ApplicationCommandType.ChatInput) continue;
@@ -101,14 +104,14 @@ export function prepareCommands(client: UsingClient) {
 
         let hasSubCommands = false;
 
-        whilePreparing?.onCommand?.call(client, command);
+        onCommand?.call(client, command);
 
         for (const sub of command.options ?? []) {
             if (!(sub instanceof SubCommand)) continue;
             hasSubCommands = true;
             sub.parent = command;
             if ((sub as YunaCommandUsable)[Keys.resolverIsShortcut] === true) metadata.shortcuts.push(sub);
-            whilePreparing?.onSubCommand?.call(client, sub);
+            onSubCommand?.call(client, sub);
         }
 
         if (!hasSubCommands) (command as YunaCommandUsable)[Keys.resolverSubCommands] = null;
