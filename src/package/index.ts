@@ -100,7 +100,7 @@ class BaseYuna {
          */
         fullNameOf,
         getMetadata: getCommandsMetadata,
-        isParentCommand(command: Command | SubCommand): command is Command & { options: SubCommand[] } {
+        isParent(command: Command | SubCommand): command is Command & { options: SubCommand[] } {
             if (!command.options?.length) return false;
             const [firstOption] = command.options as CommandOptionWithType[];
             return (

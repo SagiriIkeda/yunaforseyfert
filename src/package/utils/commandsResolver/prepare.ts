@@ -1,7 +1,7 @@
 import { type Command, SubCommand, type UsingClient } from "seyfert";
 import { ApplicationCommandType } from "seyfert/lib/types";
 import { type AvailableClients, type Instantiable, Keys, type YunaCommandUsable, type YunaGroupType } from "../../things";
-import { baseResolver } from "./base";
+import { type YunaResolverResult, baseResolver } from "./base";
 import { getFallbackCommandName } from "./decorators";
 import type { YunaCommandsResolverConfig } from "./resolver";
 
@@ -120,11 +120,26 @@ export async function prepareCommands(client: UsingClient) {
     metadata.config?.afterPrepare?.call(client, metadata);
 }
 
-export const resolve = (
+export function resolve(
     client: UseYunaCommandsClient,
     query: string | string[],
-    config?: YunaCommandsResolverConfig,
-): Command | SubCommand | undefined => {
+    config: YunaCommandsResolverConfig | undefined,
+    raw: true,
+): YunaResolverResult | undefined;
+export function resolve(
+    client: UseYunaCommandsClient,
+    query: string | string[],
+    config: YunaCommandsResolverConfig | undefined,
+    raw: false | undefined,
+): Command | SubCommand | undefined;
+export function resolve(
+    client: UseYunaCommandsClient,
+    query: string | string[],
+    config: YunaCommandsResolverConfig | undefined = {},
+    raw: boolean | undefined = false,
+): Command | SubCommand | undefined | YunaResolverResult {
     const gConfig = getCommandsMetadata(client).config ?? {};
-    return baseResolver(client, query, { ...gConfig, ...config })?.command;
-};
+    const result = baseResolver(client, query, { ...gConfig, ...config });
+    if (raw) return result;
+    return result?.command;
+}

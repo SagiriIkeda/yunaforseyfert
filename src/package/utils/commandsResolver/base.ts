@@ -1,14 +1,15 @@
 import type { Command, SubCommand } from "seyfert";
 import { IgnoreCommand } from "seyfert";
 import { ApplicationCommandOptionType, ApplicationCommandType } from "seyfert/lib/types";
-import { type AvailableClients, Keys, type YunaCommandUsable } from "../../things";
+import { type AvailableClients, Keys, type YunaCommandUsable, type YunaGroupType } from "../../things";
 import { type GroupLink, ShortcutType, type UseYunaCommandsClient, type YunaGroup } from "./prepare";
 import type { YunaCommandsResolverConfig } from "./resolver";
 
 type UseableCommand = Command | SubCommand;
 
-interface YunaCommandsResolverData {
+export interface YunaResolverResult {
     parent?: Command;
+    group?: YunaGroupType;
     command: UseableCommand;
     endPad?: number;
 }
@@ -31,14 +32,14 @@ const getMatches = (query: string) => {
     return { result, values };
 };
 
-export function baseResolver(client: AvailableClients, query: string | string[], config: Config): YunaCommandsResolverData | undefined;
+export function baseResolver(client: AvailableClients, query: string | string[], config: Config): YunaResolverResult | undefined;
 export function baseResolver(client: AvailableClients, query: string | string[], config?: undefined): UseableCommand | undefined;
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: 🐧
 export function baseResolver(
     client: AvailableClients,
     query: string | string[],
     config?: Config,
-): UseableCommand | YunaCommandsResolverData | undefined {
+): UseableCommand | YunaResolverResult | undefined {
     const metadata = (client as UseYunaCommandsClient)[Keys.clientResolverMetadata];
 
     const matchsData = typeof query === "string" ? getMatches(query) : undefined;
@@ -76,15 +77,19 @@ export function baseResolver(
     if (isGroupShortcut) {
         parentCommand = shortcut.parent;
         [parent, group, sub] = [shortcut.parent.name, parent, group];
+        // when is shortcut or is known when command doesnt have sub commands
     } else if (shortcut || (parentCommand && parentSubCommandsMetadata === null)) {
         const Shortcut = shortcut as SubCommand | undefined;
         const useCommand = Shortcut || parentCommand;
+
+        const group = Shortcut?.group ? parentCommand?.groups?.[Shortcut.group] : undefined;
 
         if (parentCommand && !availableInMessage(parentCommand)) return;
         if (Shortcut && !availableInMessage(Shortcut)) return;
 
         return config
             ? useCommand && {
+                  group,
                   parent: (useCommand as SubCommand).parent,
                   command: useCommand,
                   endPad: getPadEnd(0),
@@ -145,6 +150,7 @@ export function baseResolver(
 
     return config && resultCommand
         ? {
+              group: groupData,
               parent: parentCommand,
               command: resultCommand,
               endPad: getPadEnd(padIdx),
