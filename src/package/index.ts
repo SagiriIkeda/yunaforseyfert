@@ -35,6 +35,9 @@ export type {
     WatcherOptions,
 } from "./utils/messageWatcher/types.js";
 
+export type { YunaGroupType as GroupType } from "./things.js";
+export type { YunaResolverResult } from "./utils/commandsResolver/base.js";
+
 export const ParserRecommendedConfig = {
     /** things that I consider necessary in an Eval command. */
     // biome-ignore lint/style/useNamingConvention: i want Eval :)
