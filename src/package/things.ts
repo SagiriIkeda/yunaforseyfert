@@ -54,7 +54,7 @@ export type YunaCommandUsable<T extends CommandUsable = CommandUsable> = T & {
     };
 };
 
-export type YunaGroupType = {
+export interface YunaGroupType {
     name?: [language: LocaleString, value: string][];
     description?: [language: LocaleString, value: string][];
     defaultDescription?: string;
@@ -81,4 +81,4 @@ export type YunaGroupType = {
      * @requires  Yuna.resolver to work.
      */
     fallbackSubCommand?: Instantiable<SubCommand> | string | null;
-};
+}
