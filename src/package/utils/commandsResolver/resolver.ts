@@ -1,7 +1,6 @@
 import type { Command, SubCommand, UsingClient } from "seyfert";
 import type { CommandFromContent, HandleCommand } from "seyfert/lib/commands/handle";
-import type { MakeRequired } from "seyfert/lib/common";
-import type { Awaitable } from "vitest";
+import type { Awaitable, MakeRequired } from "seyfert/lib/common";
 import { fullNameOf } from "../../lib/utils";
 import { baseResolver } from "./base";
 import { addCommandsEvents, getCommandsMetadata } from "./prepare";
