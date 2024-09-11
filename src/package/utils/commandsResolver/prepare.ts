@@ -123,23 +123,23 @@ export async function prepareCommands(client: UsingClient) {
 export function resolve(
     client: UseYunaCommandsClient,
     query: string | string[],
-    config: YunaCommandsResolverConfig | undefined,
-    raw: true,
+    config?: YunaCommandsResolverConfig | undefined,
+    raw?: true,
 ): YunaResolverResult | undefined;
 export function resolve(
     client: UseYunaCommandsClient,
     query: string | string[],
-    config: YunaCommandsResolverConfig | undefined,
-    raw: false | undefined,
+    config?: YunaCommandsResolverConfig | undefined,
+    raw?: false | undefined,
 ): Command | SubCommand | undefined;
 export function resolve(
     client: UseYunaCommandsClient,
     query: string | string[],
-    config: YunaCommandsResolverConfig | undefined = {},
-    raw: boolean | undefined = false,
+    config?: YunaCommandsResolverConfig | undefined,
+    raw?: boolean | undefined,
 ): Command | SubCommand | undefined | YunaResolverResult {
     const gConfig = getCommandsMetadata(client).config ?? {};
-    const result = baseResolver(client, query, { ...gConfig, ...config });
+    const result = baseResolver(client, query, config ? { ...gConfig, ...config } : gConfig);
     if (raw) return result;
     return result?.command;
 }
