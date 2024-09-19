@@ -18,7 +18,9 @@ export default class SayCommand extends Command {
         idle: 10_000, //10 seconds
         beforeCreate(ctx) {
             // end old watcher
-            const oldWatcher = Watch.find(ctx.client, { command: this, user: ctx.author.id });
+            const oldWatcher = Watch.find(ctx.client, {
+                command: this,
+            });
 
             return oldWatcher?.stop("New execution");
         },

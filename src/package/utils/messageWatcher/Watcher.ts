@@ -169,7 +169,7 @@ export class MessageWatcher<const O extends OptionsRecord = any, Context = any, 
         return this.manager.stopWatcher(this, "WatcherBreak", false);
     }
 
-    setContext<const C extends Context>(context: C) {
+    setContext<C extends Context>(context: C) {
         this.manager.context = context;
         return this as unknown as MessageWatcher<O, C, __Command>;
     }

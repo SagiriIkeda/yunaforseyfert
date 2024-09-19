@@ -44,9 +44,13 @@ export type InferCommandOptionsFromCtx<C> = C extends CommandContext<infer R> ? 
 
 export type InferWatcherFromQuery<
     Query extends FindWatcherQuery,
-    C = Query extends BaseFindWatcherQuery ? Query["command"] : never,
-    O = C extends Command ? InferCommandOptionsFromCtx<InferCommandCtx<C>> : never,
-> = O extends OptionsRecord ? (C extends Command ? MessageWatcherManager<O, InferWatcherContext<C>, C> : MessageWatcherManager<O>) : never;
+    C = Query extends BaseFindWatcherQuery ? Query["command"] : null,
+    O = C extends Command ? InferCommandOptionsFromCtx<InferCommandCtx<C>> : null,
+> = O extends OptionsRecord
+    ? C extends Command
+        ? MessageWatcherManager<O, InferWatcherContext<C>, C>
+        : MessageWatcherManager<O>
+    : MessageWatcherManager<any>;
 
 export type WatcherCreateData = Pick<CommandContext, "client" | "command" | "message" | "shardId">;
 
