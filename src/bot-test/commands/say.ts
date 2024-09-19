@@ -19,6 +19,7 @@ export default class SayCommand extends Command {
         beforeCreate(ctx) {
             // end old watcher
             const oldWatcher = Watch.find(ctx.client, { command: this, user: ctx.author.id });
+
             return oldWatcher?.stop("New execution");
         },
         onStop(reason) {
