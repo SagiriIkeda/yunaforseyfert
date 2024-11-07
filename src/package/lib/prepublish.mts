@@ -18,7 +18,7 @@ const newPackageJson = {
     ...newPackageJsonRaw,
     devDependencies: {
         seyfert,
-    }
+    },
 };
 
 await writeFile(".npm/package.json", JSON.stringify(newPackageJson, null, 4), "utf-8");

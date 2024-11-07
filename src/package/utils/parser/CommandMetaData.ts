@@ -41,7 +41,9 @@ export class YunaParserCommandMetaData {
 
         if (command.options?.length) {
             const choices: typeof this.choices = [];
-            type OptionType = (SeyfertStringOption | SeyfertNumberOption) & CommandOptionWithType & ExtendedOption;
+
+            type ChoiceableOption = SeyfertStringOption | SeyfertNumberOption;
+            type OptionType = ChoiceableOption & CommandOptionWithType & ExtendedOption;
 
             for (const option of command.options as OptionType[]) {
                 if (InvalidOptionType.has(option.type)) continue;
@@ -55,7 +57,11 @@ export class YunaParserCommandMetaData {
 
                 choices.push([
                     option.name,
-                    option.choices.map(({ name, value }) => [name, name.toLowerCase(), value.toString().toLowerCase()]),
+                    (<ChoiceableOption>option).choices!.map(({ name, value }) => [
+                        name,
+                        name.toLowerCase(),
+                        value.toString().toLowerCase(),
+                    ]),
                 ]);
             }
 

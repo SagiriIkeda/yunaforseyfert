@@ -1,15 +1,4 @@
-import type {
-    Command,
-    SeyfertAttachmentOption,
-    SeyfertBooleanOption,
-    SeyfertChannelOption,
-    SeyfertIntegerOption,
-    SeyfertMentionableOption,
-    SeyfertNumberOption,
-    SeyfertRoleOption,
-    SeyfertStringOption,
-    SeyfertUserOption,
-} from "seyfert";
+import type { ChoiceableTypes, ChoiceableValues, Command, ReturnOptionsTypes, SeyfertAttachmentOption, SeyfertChoice } from "seyfert";
 import type { CommandOptionWithType } from "seyfert/lib/commands/handle";
 import type { ApplicationCommandOptionType } from "seyfert/lib/types";
 import { type ArgsResultMetadata, type Instantiable, Keys, type YunaGroupType } from "./things";
@@ -36,66 +25,25 @@ interface BaseExtendedOption {
 
 export type ExtendedOption = BaseExtendedOption & CommandOptionWithType;
 
-type Extended<O> = O & BaseExtendedOption;
-
-// hate this
-type ExtendedStringOption = Extended<SeyfertStringOption>;
-type ExtendedIntegerOption = Extended<SeyfertIntegerOption>;
-type ExtendedBooleanOption = Extended<SeyfertBooleanOption>;
-type ExtendedUserOption = Extended<SeyfertUserOption>;
-type ExtendedChannelOption = Extended<SeyfertChannelOption>;
-type ExtendedRoleOption = Extended<SeyfertRoleOption>;
-type ExtendedMentionableOption = Extended<SeyfertMentionableOption>;
-type ExtendedNumberOption = Extended<SeyfertNumberOption>;
-type ExtendedAttachmentOption = Extended<SeyfertAttachmentOption>;
-
 declare module "seyfert" {
     export interface SubCommand {
         /** This property is part of Yuna.resolver, without using it, it may not be available. */
         parent?: Command;
     }
-    // hate this
-    export function createStringOption<T extends ExtendedStringOption = ExtendedStringOption>(
-        data: T,
-    ): T & {
-        readonly type: ApplicationCommandOptionType.String;
-    };
-    export function createIntegerOption<T extends ExtendedIntegerOption = ExtendedIntegerOption>(
-        data: T,
-    ): T & {
-        readonly type: ApplicationCommandOptionType.Integer;
-    };
-    export function createBooleanOption<T extends ExtendedBooleanOption = ExtendedBooleanOption>(
-        data: T,
-    ): T & {
-        readonly type: ApplicationCommandOptionType.Boolean;
-    };
-    export function createUserOption<T extends ExtendedUserOption = ExtendedUserOption>(
-        data: T,
-    ): T & {
-        readonly type: ApplicationCommandOptionType.User;
-    };
-    export function createChannelOption<T extends ExtendedChannelOption = ExtendedChannelOption>(
-        data: T,
-    ): T & {
-        readonly type: ApplicationCommandOptionType.Channel;
-    };
-    export function createRoleOption<T extends ExtendedRoleOption = ExtendedRoleOption>(
-        data: T,
-    ): T & {
-        readonly type: ApplicationCommandOptionType.Role;
-    };
-    export function createMentionableOption<T extends ExtendedMentionableOption = ExtendedMentionableOption>(
-        data: T,
-    ): T & {
-        readonly type: ApplicationCommandOptionType.Mentionable;
-    };
-    export function createNumberOption<T extends ExtendedNumberOption = ExtendedNumberOption>(
-        data: T,
-    ): T & {
-        readonly type: ApplicationCommandOptionType.Number;
-    };
-    export function createAttachmentOption<T extends ExtendedAttachmentOption = ExtendedAttachmentOption>(
+
+    interface SeyfertBasicOption<T extends keyof ReturnOptionsTypes, R = true | false> extends BaseExtendedOption {}
+
+    interface SeyfertBaseChoiceableOption<
+        T extends keyof ReturnOptionsTypes,
+        C = T extends ChoiceableTypes ? SeyfertChoice<ChoiceableValues[T]>[] : never,
+        R = true | false,
+        VC = never,
+    > extends BaseExtendedOption {}
+
+    function createAttachmentOption<
+        R extends boolean,
+        T extends Omit<SeyfertAttachmentOption<R>, keyof BaseExtendedOption> = Omit<SeyfertAttachmentOption<R>, keyof BaseExtendedOption>,
+    >(
         data: T,
     ): T & {
         readonly type: ApplicationCommandOptionType.Attachment;

@@ -24,7 +24,8 @@
                 "useBlockStatements": "off",
                 "useFilenamingConvention": "off",
                 "useNamingConvention": "warn",
-                "useSingleCaseStatement": "off"
+                "useSingleCaseStatement": "off",
+                "useEnumInitializers": "off"
             },
             "complexity": {
                 "noBannedTypes": "off",
@@ -74,5 +75,20 @@
             "bracketSameLine": true,
             "semicolons": "always"
         }
-    }
+    },
+    "overrides": [
+        {
+            "include": ["src/package/seyfert.ts"],
+            "linter": {
+                "rules": {
+                    "correctness": {
+                        "noUnusedVariables": "off"
+                    },
+                    "style": {
+                        "useNamingConvention": "off"
+                    }
+                }
+            }
+        }
+    ]
 }
