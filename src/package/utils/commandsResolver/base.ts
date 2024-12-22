@@ -3,7 +3,7 @@ import { IgnoreCommand } from "seyfert";
 import { ApplicationCommandOptionType, ApplicationCommandType } from "seyfert/lib/types";
 import { type AvailableClients, Keys, type YunaCommandUsable, type YunaGroupType } from "../../things";
 import { type GroupLink, ShortcutType, type UseYunaCommandsClient, type YunaGroup } from "./prepare";
-import type { YunaCommandsResolverConfig } from "./resolver";
+import type { SearchPlugin, YunaCommandsResolverConfig } from "./resolver";
 
 type UseableCommand = Command | SubCommand;
 
@@ -32,13 +32,24 @@ const getMatches = (query: string) => {
     return { result, values };
 };
 
-export function baseResolver(client: AvailableClients, query: string | string[], config: Config): YunaResolverResult | undefined;
-export function baseResolver(client: AvailableClients, query: string | string[], config?: undefined): UseableCommand | undefined;
+export function baseResolver(
+    client: AvailableClients,
+    query: string | string[],
+    config: Config,
+    plugin?: SearchPlugin,
+): YunaResolverResult | undefined;
+export function baseResolver(
+    client: AvailableClients,
+    query: string | string[],
+    config?: undefined,
+    plugin?: SearchPlugin,
+): UseableCommand | undefined;
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: 🐧
 export function baseResolver(
     client: AvailableClients,
     query: string | string[],
     config?: Config,
+    plugin?: SearchPlugin,
 ): UseableCommand | YunaResolverResult | undefined {
     const metadata = (client as UseYunaCommandsClient)[Keys.clientResolverMetadata];
 
@@ -53,13 +64,13 @@ export function baseResolver(
 
     const searchFn = (command: Command | SubCommand | GroupLink) => command.name === parent || command.aliases?.includes(parent);
 
-    let parentCommand = (
-        metadata?.commands
-            ? metadata.commands.find(searchFn)
-            : client.commands.values.find((command) => command.type === ApplicationCommandType.ChatInput && searchFn(command))
-    ) as YunaCommandUsable<Command> | undefined;
+    let parentCommand = ((metadata?.commands
+        ? metadata.commands.find(searchFn)
+        : client.commands.values.find((command) => command.type === ApplicationCommandType.ChatInput && searchFn(command))) ??
+        plugin?.findCommand?.(parent)) as YunaCommandUsable<Command> | undefined;
 
-    const shortcut = parentCommand ? undefined : metadata?.shortcuts.find(searchFn);
+    const shortcut =
+        (parentCommand ? undefined : metadata?.shortcuts.find(searchFn)) ?? plugin?.findShortcut?.(parent, metadata?.shortcuts);
     const isGroupShortcut = shortcut?.type === ShortcutType.Group;
 
     if (!(parentCommand || shortcut)) return;
@@ -101,7 +112,9 @@ export function baseResolver(
 
     let padIdx = 0;
 
-    const groupName = parentCommand.groupsAliases?.[group] || (group in (parentCommand.groups ?? {}) ? group : undefined);
+    const groupName =
+        parentCommand.groupsAliases?.[group] ||
+        (group in (parentCommand.groups ?? {}) ? group : plugin?.findGroupName?.(group, parentCommand));
 
     if (!isGroupShortcut && groupName) padIdx++;
 
@@ -116,7 +129,7 @@ export function baseResolver(
     let virtualSubCommand: SubCommand | undefined;
     let firstGroupSubCommand: SubCommand | undefined;
 
-    const subCommand = parentCommand.options?.find((s) => {
+    const subCommand = (parentCommand.options?.find((s) => {
         const sub = s as SubCommand;
 
         if (!(sub.type === ApplicationCommandOptionType.Subcommand && sub.group === groupName)) return false;
@@ -128,7 +141,7 @@ export function baseResolver(
         }
 
         return sub.name === subName || sub.aliases?.includes(subName);
-    }) as SubCommand | undefined;
+    }) ?? plugin?.findSubCommand?.(subName, parentCommand, groupName)) as SubCommand | undefined;
 
     if (!(subCommand || virtualSubCommand)) {
         const fallbackData = groupData ? groupData.fallbackSubCommand : parentSubCommandsMetadata?.fallback;

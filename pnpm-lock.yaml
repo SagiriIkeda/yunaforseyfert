@@ -14,6 +14,9 @@ importers:
       '@types/node':
         specifier: ^20.14.2
         version: 20.14.12
+      didyoumean2:
+        specifier: ^7.0.4
+        version: 7.0.4
       esbuild:
         specifier: ^0.23.0
         version: 0.23.0
@@ -25,7 +28,7 @@ importers:
         version: 15.2.7
       seyfert:
         specifier: github:tiramisulabs/seyfert
-        version: https://codeload.github.com/tiramisulabs/seyfert/tar.gz/136262f989e6f334fd2f543c398a9574c46d43cd
+        version: https://codeload.github.com/tiramisulabs/seyfert/tar.gz/7450d5d72fbfe68ffe6fd3234a4a10a47e3c428b
       tsup:
         specifier: ^8.1.0
         version: 8.2.3(postcss@8.4.40)(tsx@4.17.0)(typescript@5.5.4)(yaml@2.4.5)
@@ -44,6 +47,10 @@ packages:
   '@ampproject/remapping@2.3.0':
     resolution: {integrity: sha512-30iZtAPgz+LTIYoeivqYo853f02jBYSd5uGnGpkFV0M3xOt9aN73erkgYAmZU43x4VfqcnLxW9Kpg3R5LC4YYw==}
     engines: {node: '>=6.0.0'}
+
+  '@babel/runtime@7.26.0':
+    resolution: {integrity: sha512-FDSOghenHTiToteC/QRlv2q3DhPZ/oOXTBoirfWNx1Cx3TMVcGWQtMMmQcSvb/JjpNeGzx8Pq/b4fKEJuWm1sw==}
+    engines: {node: '>=6.9.0'}
 
   '@biomejs/biome@1.8.0':
     resolution: {integrity: sha512-34xcE2z8GWrIz1sCFEmlHT/+4d+SN7YOqqvzlAKXKvaWPRJ2/NUwxPbRsP01P9QODkQ5bvGvc9rpBihmP+7RJQ==}
@@ -644,6 +651,10 @@ packages:
     resolution: {integrity: sha512-h5k/5U50IJJFpzfL6nO9jaaumfjO/f2NjK/oYB2Djzm4p9L+3T9qWpZqZ2hAbLPuuYq9wrU08WQyBTL5GbPk5Q==}
     engines: {node: '>=6'}
 
+  didyoumean2@7.0.4:
+    resolution: {integrity: sha512-+yW4SNY7W2DOWe2Jx5H4c2qMTFbLGM6wIyoDPkAPy66X+sD1KfYjBPAIWPVsYqMxelflaMQCloZDudELIPhLqA==}
+    engines: {node: ^18.12.0 || >=20.9.0}
+
   dir-glob@3.0.1:
     resolution: {integrity: sha512-WkrWp9GR4KXfKGYzOLmTuGVi1UWFfws377n9cc55/tb6DuqyF6pcQ5AbiHEshaDpY9v6oaSr2XCDidGmMwdzIA==}
     engines: {node: '>=8'}
@@ -691,6 +702,10 @@ packages:
   fast-glob@3.3.2:
     resolution: {integrity: sha512-oX2ruAFQwf/Orj8m737Y5adxDQO0LAB7/S5MnxCdTNDd4p6BsyIVsv9JQsATbTSq8KHRpLwIHbVlUNatxd+1Ow==}
     engines: {node: '>=8.6.0'}
+
+  fastest-levenshtein@1.0.16:
+    resolution: {integrity: sha512-eRnCtTTtGZFpQCwhJiUOuxPQWRXVKYDn0b2PeHfXL6/Zi53SLAzAHfVhVWK2AryC/WH05kGfxhFIPvTF0SXQzg==}
+    engines: {node: '>= 4.9.1'}
 
   fastq@1.17.1:
     resolution: {integrity: sha512-sRVD3lWVIXWg6By68ZN7vho9a1pQcN/WBFaAAsDDFzlJjvoGx0P8z7V1t72grFJfJhu3YPZBuu25f7Kaw2jN1w==}
@@ -820,6 +835,9 @@ packages:
   load-tsconfig@0.2.5:
     resolution: {integrity: sha512-IXO6OCs9yg8tMKzfPZ1YmheJbZCiEsnBdcB03l0OcfK9prKnJb96siuHCr5Fl37/yo9DnKU+TLpxzTUspw9shg==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
+
+  lodash.deburr@4.1.0:
+    resolution: {integrity: sha512-m/M1U1f3ddMCs6Hq2tAsYThTBDaAKFDX3dwDo97GEYzamXi9SqUpjWi/Rrj/gf3X2n8ktwgZrlP1z6E3v/IExQ==}
 
   lodash.sortby@4.7.0:
     resolution: {integrity: sha512-HDWXG8isMntAyRF5vZ7xKuEvOhT4AhlRt/3czTSjvGUxjYCBVRQY48ViDHyfYz9VIoBkW4TMGQNapx+l3RUwdA==}
@@ -982,6 +1000,9 @@ packages:
     resolution: {integrity: sha512-hOS089on8RduqdbhvQ5Z37A0ESjsqz6qnRcffsMU3495FuTdqSm+7bhJ29JvIOsBDEEnan5DPu9t3To9VRlMzA==}
     engines: {node: '>=8.10.0'}
 
+  regenerator-runtime@0.14.1:
+    resolution: {integrity: sha512-dYnhHh0nJoMfnkZs6GmmhFknAGRrLznOu5nc9ML+EJxGvrx6H7teuevqVqCuPcPK//3eDrrjQhehXVx9cnkGdw==}
+
   resolve-from@5.0.0:
     resolution: {integrity: sha512-qYg9KP24dD5qka9J47d0aVky0N+b4fTU89LN9iDnjB5waksiC49rvMB0PrUJQGoTmH50XPiqOvAjDfaijGxYZw==}
     engines: {node: '>=8'}
@@ -1008,8 +1029,8 @@ packages:
   run-parallel@1.2.0:
     resolution: {integrity: sha512-5l4VyZR86LZ/lDxZTR6jqL8AFE2S0IFLMP26AbjsLVADxHdhB/c0GUsH+y39UfCi3dzz8OlQuPmnaJOMoDHQBA==}
 
-  seyfert@https://codeload.github.com/tiramisulabs/seyfert/tar.gz/136262f989e6f334fd2f543c398a9574c46d43cd:
-    resolution: {tarball: https://codeload.github.com/tiramisulabs/seyfert/tar.gz/136262f989e6f334fd2f543c398a9574c46d43cd}
+  seyfert@https://codeload.github.com/tiramisulabs/seyfert/tar.gz/7450d5d72fbfe68ffe6fd3234a4a10a47e3c428b:
+    resolution: {tarball: https://codeload.github.com/tiramisulabs/seyfert/tar.gz/7450d5d72fbfe68ffe6fd3234a4a10a47e3c428b}
     version: 2.1.0
 
   shebang-command@2.0.0:
@@ -1258,6 +1279,10 @@ snapshots:
     dependencies:
       '@jridgewell/gen-mapping': 0.3.5
       '@jridgewell/trace-mapping': 0.3.25
+
+  '@babel/runtime@7.26.0':
+    dependencies:
+      regenerator-runtime: 0.14.1
 
   '@biomejs/biome@1.8.0':
     optionalDependencies:
@@ -1666,6 +1691,12 @@ snapshots:
 
   deep-eql@5.0.2: {}
 
+  didyoumean2@7.0.4:
+    dependencies:
+      '@babel/runtime': 7.26.0
+      fastest-levenshtein: 1.0.16
+      lodash.deburr: 4.1.0
+
   dir-glob@3.0.1:
     dependencies:
       path-type: 4.0.0
@@ -1770,6 +1801,8 @@ snapshots:
       glob-parent: 5.1.2
       merge2: 1.4.1
       micromatch: 4.0.7
+
+  fastest-levenshtein@1.0.16: {}
 
   fastq@1.17.1:
     dependencies:
@@ -1893,6 +1926,8 @@ snapshots:
 
   load-tsconfig@0.2.5: {}
 
+  lodash.deburr@4.1.0: {}
+
   lodash.sortby@4.7.0: {}
 
   log-update@6.1.0:
@@ -2015,6 +2050,8 @@ snapshots:
     dependencies:
       picomatch: 2.3.1
 
+  regenerator-runtime@0.14.1: {}
+
   resolve-from@5.0.0: {}
 
   resolve-pkg-maps@1.0.0: {}
@@ -2054,7 +2091,7 @@ snapshots:
     dependencies:
       queue-microtask: 1.2.3
 
-  seyfert@https://codeload.github.com/tiramisulabs/seyfert/tar.gz/136262f989e6f334fd2f543c398a9574c46d43cd: {}
+  seyfert@https://codeload.github.com/tiramisulabs/seyfert/tar.gz/7450d5d72fbfe68ffe6fd3234a4a10a47e3c428b: {}
 
   shebang-command@2.0.0:
     dependencies:

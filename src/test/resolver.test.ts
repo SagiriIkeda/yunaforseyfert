@@ -1,4 +1,5 @@
-import { Client, type Command, type UsingClient } from "seyfert";
+import didyoumean from "didyoumean2";
+import { Client, type Command, type SubCommand, type UsingClient } from "seyfert";
 import { HandleCommand } from "seyfert/lib/commands/handle";
 import { describe, expect, test } from "vitest";
 import AccountCommand from "../bot-test/commands/account/account";
@@ -61,6 +62,39 @@ const testResolver = (query: string, options: Omit<YunaCommandsResolverConfig, "
 describe("seyfert", () => {
     test("assignation", () => {
         expect(client.handleCommand.resolveCommandFromContent).toBe(YunaResolver);
+    });
+});
+
+describe("'Plugin' DidYouMean", () => {
+    test("pong => ping", () => {
+        testResolver("pong", {
+            extendSearch() {
+                return {
+                    findCommand(commandName: string) {
+                        //@ts-ignore i dont want to spend time on this :)
+                        const command = didyoumean(commandName, client.commands!.values, {
+                            matchPath: ["name"],
+                        });
+                        return command as unknown as Command | undefined;
+                    },
+                };
+            },
+        }).is(PingCommand);
+    });
+
+    test("account ceate => account create", () => {
+        testResolver("account ceate", {
+            extendSearch() {
+                return {
+                    findSubCommand(query, command) {
+                        //@ts-ignore
+                        return didyoumean(query, command.options, {
+                            matchPath: ["name"],
+                        }) as SubCommand | undefined; // this will skip group check, but this is only a test.
+                    },
+                };
+            },
+        }).is(CreateCommand);
     });
 });
 

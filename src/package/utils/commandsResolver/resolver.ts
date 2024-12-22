@@ -3,7 +3,14 @@ import type { CommandFromContent, HandleCommand } from "seyfert/lib/commands/han
 import type { Awaitable, MakeRequired } from "seyfert/lib/common";
 import { fullNameOf } from "../../lib/utils";
 import { baseResolver } from "./base";
-import { addCommandsEvents, getCommandsMetadata } from "./prepare";
+import { type GroupLink, addCommandsEvents, getCommandsMetadata } from "./prepare";
+
+export interface SearchPlugin {
+    findShortcut?(shortcutName: string, shortcuts?: (SubCommand | GroupLink)[]): (SubCommand | GroupLink) | undefined;
+    findCommand?(commandName: string): Command | undefined;
+    findGroupName?(possiblyGroup: string, command: Command): string | undefined;
+    findSubCommand?(query: string, command: Command, groupName?: string): SubCommand | undefined;
+}
 
 export interface YunaCommandsResolverConfig {
     /**
@@ -23,6 +30,10 @@ export interface YunaCommandsResolverConfig {
     } | null>;
 
     mapResult?(result: MakeRequired<CommandFromContent, "parent">): CommandFromContent;
+    /** @experimental
+     * extend search functions if not found
+     */
+    extendSearch?(): SearchPlugin;
 }
 
 export function YunaCommandsResolver({
@@ -32,6 +43,7 @@ export function YunaCommandsResolver({
     afterPrepare,
     whilePreparing,
     mapResult,
+    extendSearch,
 }: YunaCommandsResolverConfig & { client: UsingClient }) {
     const config = {
         useFallbackSubCommand,
@@ -45,8 +57,10 @@ export function YunaCommandsResolver({
 
     const baseResolverConfig = { ...config, inMessage: true };
 
+    const plugin = extendSearch?.();
+
     return function (this: HandleCommand, content: string) {
-        const { endPad = 0, command, parent } = baseResolver(client, content, baseResolverConfig) ?? {};
+        const { endPad = 0, command, parent } = baseResolver(client, content, baseResolverConfig, plugin) ?? {};
 
         const argsContent = content.slice(endPad).trimStart();
 
