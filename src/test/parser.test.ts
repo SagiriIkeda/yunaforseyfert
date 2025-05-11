@@ -245,6 +245,23 @@ describe("boolean: --option", () => {
 });
 
 @Options({
+    "option-test": createUserOption({
+        description: "pengu",
+        required: true,
+    }),
+})
+class BaseHyphenCommand extends Command {}
+const HyphenCommand = new BaseHyphenCommand();
+
+describe("hyphens-options", () => {
+    test("common", () => {
+        testParser("--option-test pengu", { "option-test": "pengu" }, undefined, HyphenCommand);
+        testParser("-option-test pengu", { "option-test": "pengu" }, undefined, HyphenCommand);
+        testParser("option-test: pengu", { "option-test": "pengu" }, undefined, HyphenCommand);
+    });
+});
+
+@Options({
     user: createUserOption({
         description: "pengu",
         required: true,

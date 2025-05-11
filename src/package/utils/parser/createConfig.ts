@@ -85,14 +85,14 @@ export const createRegexes = ({ syntax }: YunaParserCreateOptions) => {
             has1HaphenSyntax && HaphenLength.push(1);
             has2HaphenSyntax && HaphenLength.push(2);
 
-            namedSyntaxes.push(`(?<hyphens>-{${HaphenLength.join(",")}})(?<hyphensname>[a-zA-Z][a-zA-Z-\\d]*)[\\=\\:]?`);
+            namedSyntaxes.push(`(?<hyphens>-{${HaphenLength.join(",")}})(?<hyphensname>[a-zA-Z][a-zA-Z\\-\\_\\d]*)[\\=\\:]?`);
             escapeModes.forNamed = /(\\+)([\:\s\-]|$)/g;
         } else {
             RemoveNamedEscapeMode(escapeModes, "\\-");
         }
 
         if (hasDottedSyntax) {
-            namedSyntaxes.push("(?<dotsname>[a-zA-Z_\\d]+)(?<dots>:)(?!\\/\\/[^\\s\\x7F])");
+            namedSyntaxes.push("(?<dotsname>[a-zA-Z][a-zA-Z\\-\\_\\d]*)(?<dots>:)(?!\\/\\/[^\\s\\x7F])");
             escapeModes.forNamedDotted = /(\\+)([\:\s\-\/]|$)/g;
         } else {
             RemoveNamedEscapeMode(escapeModes, ":");
