@@ -72,6 +72,8 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
         };
 
         const aggregateUserFromMessageReference = (() => {
+            if (config.useRepliedUserAsAnOption === null) return;
+
             const reference = message?.referencedMessage;
             if (
                 !reference ||
