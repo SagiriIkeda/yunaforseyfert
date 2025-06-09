@@ -212,3 +212,5 @@ export const mergeConfig = <T extends YunaParserCreateOptions, A extends YunaPar
 
     return result;
 };
+
+export type YunaParserOptionsSortFn = (orderOptions: string[]) => string[];

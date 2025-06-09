@@ -31,6 +31,8 @@ export class YunaParserCommandMetaData {
 
     readonly baseConfig?: YunaParserCreateOptions;
 
+    optionsByTypes = new Map<number, string[]>();
+
     /** ValidNamedOptionSyntaxes */
     vns?: ValidNamedOptionSyntaxes;
 
@@ -47,6 +49,14 @@ export class YunaParserCommandMetaData {
 
             for (const option of command.options as OptionType[]) {
                 if (InvalidOptionType.has(option.type)) continue;
+
+                const alreadySet = this.optionsByTypes.get(option.type);
+
+                if (alreadySet) {
+                    alreadySet.push(option.name);
+                } else {
+                    this.optionsByTypes.set(option.type, [option.name]);
+                }
 
                 if (option.flag) this.flagOptions.set(option.name, option);
                 else this.iterableOptions.push(option);

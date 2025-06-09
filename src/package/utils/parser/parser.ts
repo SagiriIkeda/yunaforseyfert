@@ -149,6 +149,10 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
         const hasBackescapes = backescapesRegex.test(content);
 
+        const isEnabledIntelligentOptionsSort = options.size > 1;
+
+        const sequentialOptionsNames: string[] = [];
+
         const sanitizeBackescapes = (text: string, regx: RegExp | undefined, regexToCheckNextChar: RegExp | undefined) =>
             hasBackescapes && regx
                 ? text.replace(regx, (_, backescapes, next) => {
@@ -209,6 +213,8 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
             argsResult[optionAtIndexName] = unindexedRightText + value;
             argsResultPosition[optionAtIndexName] = [start - unindexedRightText.length, end];
+
+            sequentialOptionsNames.push(optionAtIndexName);
 
             unindexedRightText = "";
 
@@ -334,6 +340,14 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             } else {
                 argsResult[name] = value;
                 argsResultPosition[name] = [start, end];
+            }
+
+            // is options is replaced with a named, remove it from sequential order
+            if (isEnabledIntelligentOptionsSort) {
+                const inSequentialOrderListIndex = sequentialOptionsNames.indexOf(name);
+                if (inSequentialOrderListIndex !== -1) {
+                    sequentialOptionsNames.splice(inSequentialOrderListIndex, 1);
+                }
             }
 
             isRecentlyClosedAnyTag = true;
@@ -575,8 +589,70 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             YunaParserOptionsChoicesResolver(commandMetadata, argsResult, config);
         }
 
+        if (isEnabledIntelligentOptionsSort) {
+            YunaParserIntelligentOptionsSort(argsResult, sequentialOptionsNames, commandMetadata, YunaParserIntelligentOptionsSortHelpers);
+        }
+
         endResult();
 
         return argsResult;
     };
 };
+
+const YunaParserIntelligentOptionsSortHelpers = {
+    isMember(text: string) {
+        return /^\<@\d+\>$/.test(text);
+    },
+    isChannel(text: string) {
+        return /^\<#\d+\>$/.test(text);
+    },
+    isRole(text: string) {
+        return /^\<@!\d+\>$/.test(text);
+    },
+    isInteger(text: string) {
+        return /^\d+$/.test(text);
+    },
+    isNumber(text: string) {
+        return /^\d+([\.\,]\d+)?$/.test(text);
+    },
+    isBoolean(text: string) {
+        return ["true", "yes", "y", "n", "no", "false"].includes(text);
+    },
+    isMentionable(text: string) {
+        return /^\<(#|@\!?)\d+\>$/.test(text);
+    },
+};
+
+function YunaParserIntelligentOptionsSort(
+    argsResult: ArgsResult,
+    sequentialOptionsNames: string[],
+    meta: YunaParserCommandMetaData,
+    helpers: typeof YunaParserIntelligentOptionsSortHelpers,
+) {
+    const optionsCount: number[] = [];
+
+    for (const option of sequentialOptionsNames) {
+        const value = argsResult[option];
+
+        const type = helpers.isMember(value)
+            ? ApplicationCommandOptionType.User
+            : helpers.isRole(value)
+              ? ApplicationCommandOptionType.Role
+              : helpers.isChannel(value)
+                ? ApplicationCommandOptionType.Channel
+                : // helpers.isMentionable(value) ? ApplicationCommandOptionType.Mentionable :
+                  helpers.isInteger(value)
+                  ? ApplicationCommandOptionType.Integer
+                  : helpers.isNumber(value)
+                    ? ApplicationCommandOptionType.Number
+                    : helpers.isBoolean(value)
+                      ? ApplicationCommandOptionType.Boolean
+                      : ApplicationCommandOptionType.String;
+
+        const optionsCategory = meta.optionsByTypes.get(type);
+        // biome-ignore lint/suspicious/noAssignInExpressions: <explanation>;
+        const nextOption = optionsCategory?.[(optionsCount[type] = (optionsCount[type] ?? -1) + 1)];
+
+        console.debug({ nextOption, option });
+    }
+}
