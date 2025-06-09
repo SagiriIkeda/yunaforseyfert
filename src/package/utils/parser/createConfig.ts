@@ -170,12 +170,11 @@ export const createConfig = (config: YunaParserCreateOptions, isFull = true) => 
                       canUseDirectlyValue: !(config.resolveCommandOptionsChoices?.canUseDirectlyValue === false),
                   };
     if (isFull || "useRepliedUserAsAnOption" in config)
-        newConfig.useRepliedUserAsAnOption =
-            config.useRepliedUserAsAnOption === null
-                ? null
-                : {
-                      requirePing: config.useRepliedUserAsAnOption?.requirePing === true,
-                  };
+        newConfig.useRepliedUserAsAnOption = config.useRepliedUserAsAnOption
+            ? {
+                  requirePing: config.useRepliedUserAsAnOption?.requirePing === true,
+              }
+            : null;
 
     return newConfig;
 };

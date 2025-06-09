@@ -72,18 +72,23 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
         };
 
         const aggregateUserFromMessageReference = (() => {
-            if (config.useRepliedUserAsAnOption === null) return;
+            const option = iterableOptions[actualIterableOptionsIdx] as CommandOptionWithType | undefined;
+            if (option?.type !== ApplicationCommandOptionType.User) return;
+
+            if (!config.useRepliedUserAsAnOption) return;
 
             const reference = message?.referencedMessage;
+
             if (
                 !reference ||
+                //? First, check if the reply is not from the author.
+                //? When @PING is enabled, the first mention should be the replied user.
+                //? If it is not, and @PING is required, return.
                 (reference.author.id !== message.author.id &&
                     config.useRepliedUserAsAnOption?.requirePing &&
                     message?.mentions.users[0]?.id !== reference.author.id)
             )
                 return;
-            const option = iterableOptions[actualIterableOptionsIdx] as CommandOptionWithType | undefined;
-            if (option?.type !== ApplicationCommandOptionType.User) return;
 
             argsResult[option.name] = reference.author.id;
             actualIterableOptionsIdx++;
