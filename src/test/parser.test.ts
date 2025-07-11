@@ -340,6 +340,15 @@ describe("aggregateUserFromMessageReference", () => {
             new Message(client, { author: NoboAndJusto, embeds: [] } as unknown as MessageData),
         );
     });
+    test("when disabled (implicit null)", () => {
+        testParser(
+            "happy day",
+            { user: "happy", message: "day" },
+            {},
+            UserCommand,
+            new Message(client, { author: NoboAndJusto, embeds: [] } as unknown as MessageData),
+        );
+    });
 });
 
 @Options({
