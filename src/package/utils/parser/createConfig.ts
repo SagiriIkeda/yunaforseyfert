@@ -2,7 +2,7 @@ import { Keys } from "../../things";
 import type { YunaParserCreateOptions } from "./configTypes";
 
 export const OptionsDiscernRegex =
-    /^((?<User>\<@\d+\>)|(?<Role>\<@&\d+\>)|(?<Channel>\<#\d+\>)|(?<Float>\d+(\.\d+))|(?<Integer>\d+)|(?<Boolean>true|yes|y|n|no|false))$/;
+    /^((?<Snowflake>\d{17,20})|(?<User>\<@\d+\>)|(?<Role>\<@&\d+\>)|(?<Channel>\<#\d+\>)|(?<Float>\d+(\.\d+))|(?<Integer>\d+)|(?<Boolean>true|yes|y|n|no|false))$/;
 
 type EscapeModeType = Record<string, RegExp | undefined>;
 
@@ -180,13 +180,7 @@ export const createConfig = (config: YunaParserCreateOptions, isFull = true) => 
             : null;
 
     if (isFull || "unstable_intelligent_options_sort" in config)
-        newConfig.unstable_intelligent_options_sort = config.unstable_intelligent_options_sort
-            ? {
-                  priorities: {
-                      mentionableOverRespective: config.unstable_intelligent_options_sort?.priorities?.mentionableOverRespective === true,
-                  },
-              }
-            : null;
+        newConfig.unstable_intelligent_options_sort = config.unstable_intelligent_options_sort === true;
 
     return newConfig;
 };

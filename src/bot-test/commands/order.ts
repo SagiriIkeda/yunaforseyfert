@@ -1,18 +1,9 @@
-import {
-    Command,
-    type CommandContext,
-    Declare,
-    Embed,
-    Options,
-    createBooleanOption,
-    createNumberOption,
-    createStringOption,
-} from "seyfert";
+import { Command, type CommandContext, Declare, Embed, Options, createIntegerOption, createStringOption, createUserOption } from "seyfert";
 import { Yuna } from "#package";
 import { codeBlock } from "./eval";
 
 const options = {
-    time: createNumberOption({
+    int: createIntegerOption({
         description: "What time",
         required: true,
     }),
@@ -20,10 +11,14 @@ const options = {
         description: "What to say",
         required: true,
     }),
-    boolean: createBooleanOption({
-        description: "What boolean",
+    user: createUserOption({
+        description: "What user",
         required: true,
     }),
+    // boolean: createBooleanOption({
+    // description: "What boolean",
+    // required: true,
+    // }),
 };
 
 @Declare({
@@ -37,12 +32,12 @@ export default class OrderCommand extends Command {
             embeds: [
                 new Embed().setColor("Purple").setFields([
                     {
-                        name: "resolved",
-                        value: codeBlock(JSON.stringify(Yuna.getArgsResult(ctx.message)?.result), "json"),
+                        name: "resolved order",
+                        value: codeBlock("json", JSON.stringify(Yuna.getArgsResult(ctx.message)?.result)),
                     },
                     {
-                        name: "raw order",
-                        value: codeBlock(JSON.stringify(this.options?.map((option) => option.name)), "json"),
+                        name: "original order",
+                        value: codeBlock("json", JSON.stringify(this.options?.map((option) => option.name))),
                     },
                 ]),
             ],

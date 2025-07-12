@@ -114,12 +114,7 @@ export interface YunaParserCreateOptions {
     useNamedWithSingleValue?: boolean;
 
     /** @experimental
-     * @default {null}
+     * @default {false}
      */
-    unstable_intelligent_options_sort?: {
-        priorities?: {
-            /** @default {false} */
-            mentionableOverRespective?: boolean;
-        };
-    } | null;
+    unstable_intelligent_options_sort?: boolean;
 }

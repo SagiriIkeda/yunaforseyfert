@@ -52,7 +52,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
     return function (this: HandleCommand, content: string, command: Command | SubCommand, message?: Message): Record<string, string> {
         const commandMetadata = YunaParserCommandMetaData.from(command);
 
-        const { iterableOptions, flagOptions, options, choices, optionsByTypes } = commandMetadata;
+        const { iterableOptions, flagOptions, options, choices } = commandMetadata;
 
         if (!options.size) return {};
 
@@ -74,8 +74,6 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                 };
 
                 (message as any).pengu = Keys.messageArgsResult;
-
-                // console.log(Yuna.getArgsResult(message));
             }
 
             config.logResult &&
@@ -187,18 +185,19 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             }
         };
 
-        const optionsTypesScopesCount = isIntelligentOptionsSortEnabled ? new Map<number, number>() : undefined;
+        const isortOptions = isIntelligentOptionsSortEnabled ? commandMetadata.getIsortOptions() : undefined;
+        const optionsTypesScopesCount = isIntelligentOptionsSortEnabled ? new Map<number | symbol, number>() : undefined;
 
-        function findNextOptionInScope(scope: ApplicationCommandOptionType) {
+        function findNextOptionInScope(scope: ApplicationCommandOptionType | symbol) {
             let count = optionsTypesScopesCount?.get(scope) ?? 0;
-            const optionsScope = optionsByTypes.get(scope);
+            const optionsScope = isortOptions?.optionsByTypes?.get(scope);
 
             if (!optionsScope) return { count, name: undefined };
 
             let name: string | undefined;
 
             while (count < optionsScope.length) {
-                const possiblyName = optionsScope[count];
+                const possiblyName = optionsScope[count]?.name;
                 if (!possiblyName) break;
 
                 count++;
@@ -214,26 +213,24 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
 
         // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: 🐧
         const getNextOptionName = (value?: string, isLongTextTag = false) => {
-            if (isIntelligentOptionsSortEnabled && value && optionsTypesScopesCount) {
-                const discern = isLongTextTag ? undefined : OptionsDiscernRegex.exec(value)?.groups;
+            if (!isIntelligentOptionsSortEnabled) {
+                const optionAtIndexName = iterableOptions[actualIterableOptionsIdx]?.name;
 
-                const optionType = discern
-                    ? discern.User
-                        ? ApplicationCommandOptionType.User
-                        : discern.Role
-                          ? ApplicationCommandOptionType.Role
-                          : discern.Channel
-                            ? ApplicationCommandOptionType.Channel
-                            : discern.Boolean
-                              ? ApplicationCommandOptionType.Boolean
-                              : ApplicationCommandOptionType.String
-                    : ApplicationCommandOptionType.String;
+                if (optionAtIndexName) {
+                    actualIterableOptionsIdx++;
+                }
+
+                return optionAtIndexName;
+            }
+
+            if (value) {
+                const discern = isLongTextTag ? undefined : OptionsDiscernRegex.exec(value)?.groups;
 
                 let findResult: ReturnType<typeof findNextOptionInScope> | undefined = undefined;
 
-                const tryFindScope = (scope: ApplicationCommandOptionType) => {
+                const tryFindScope = (scope: ApplicationCommandOptionType | symbol) => {
                     const localFindResult = findNextOptionInScope(scope);
-                    optionsTypesScopesCount.set(scope, localFindResult.count);
+                    optionsTypesScopesCount!.set(scope, localFindResult.count);
 
                     if (localFindResult.name) {
                         findResult = localFindResult;
@@ -243,20 +240,25 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                     return;
                 };
 
-                if (discern?.Integer) {
-                    if (!tryFindScope(ApplicationCommandOptionType.Number)) tryFindScope(ApplicationCommandOptionType.Integer);
-                } else if (discern?.Float) {
-                    tryFindScope(ApplicationCommandOptionType.Number);
-                } else if (
-                    (optionType === ApplicationCommandOptionType.User ||
-                        optionType === ApplicationCommandOptionType.Role ||
-                        optionType === ApplicationCommandOptionType.Channel) &&
-                    config.unstable_intelligent_options_sort?.priorities?.mentionableOverRespective
-                ) {
-                    tryFindScope(ApplicationCommandOptionType.Mentionable);
+                if (discern) {
+                    if (discern.Integer) {
+                        tryFindScope(YunaParserCommandMetaData.optionTypes.integerAndNumber);
+                    } else if (discern.Float) {
+                        tryFindScope(ApplicationCommandOptionType.Number);
+                    } else if (discern.User) {
+                        tryFindScope(YunaParserCommandMetaData.optionTypes.userAndMentionable);
+                    } else if (discern.Role) {
+                        tryFindScope(YunaParserCommandMetaData.optionTypes.roleAndMentionable);
+                    } else if (discern.Channel) {
+                        tryFindScope(YunaParserCommandMetaData.optionTypes.channelAndMentionable);
+                    } else if (discern.Boolean) {
+                        tryFindScope(ApplicationCommandOptionType.Boolean);
+                    } else if (discern.Snowflake) {
+                        tryFindScope(YunaParserCommandMetaData.optionTypes.userRoleChannelMentionable);
+                    }
                 }
 
-                findResult ??= tryFindScope(optionType);
+                findResult ??= tryFindScope(ApplicationCommandOptionType.String);
 
                 if (findResult?.name) {
                     actualIntelligentOptionsUsedCount++;
@@ -264,13 +266,16 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                 }
             }
 
-            const optionAtIndexName = iterableOptions[actualIterableOptionsIdx]?.name;
-
-            if (optionAtIndexName) {
+            while (actualIterableOptionsIdx < iterableOptions.length) {
+                const possiblyName = iterableOptions[actualIterableOptionsIdx]?.name;
+                if (!possiblyName) break;
                 actualIterableOptionsIdx++;
+                if (argsResult[possiblyName] === undefined) {
+                    return possiblyName;
+                }
             }
 
-            return optionAtIndexName;
+            return;
         };
 
         const aggregateNextOption = (value: string, position: ArgPosition, isLongTextTag = false) => {

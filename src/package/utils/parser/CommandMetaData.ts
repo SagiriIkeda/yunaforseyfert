@@ -1,5 +1,6 @@
 import type { CommandOption, SeyfertNumberOption, SeyfertStringOption } from "seyfert";
 import { ApplicationCommandOptionType } from "seyfert/lib/types";
+import { MemoizeMethod } from "../../lib/utils";
 import type { ExtendedOption } from "../../seyfert";
 import { Keys, type YunaCommandUsable } from "../../things";
 import type { CommandOptionWithType, ValidNamedOptionSyntax, YunaParserCreateOptions } from "./configTypes";
@@ -31,8 +32,6 @@ export class YunaParserCommandMetaData {
 
     readonly baseConfig?: YunaParserCreateOptions;
 
-    optionsByTypes = new Map<number, string[]>();
-
     /** ValidNamedOptionSyntaxes */
     vns?: ValidNamedOptionSyntaxes;
 
@@ -49,14 +48,6 @@ export class YunaParserCommandMetaData {
 
             for (const option of command.options as OptionType[]) {
                 if (InvalidOptionType.has(option.type)) continue;
-
-                const alreadySet = this.optionsByTypes.get(option.type);
-
-                if (alreadySet) {
-                    alreadySet.push(option.name);
-                } else {
-                    this.optionsByTypes.set(option.type, [option.name]);
-                }
 
                 if (option.flag) this.flagOptions.set(option.name, option);
                 else this.iterableOptions.push(option);
@@ -77,6 +68,51 @@ export class YunaParserCommandMetaData {
 
             if (choices.length) this.choices = choices;
         }
+    }
+
+    static optionTypes = {
+        integerAndNumber: Symbol("Numeric"),
+        userAndMentionable: Symbol("userAndMentionable"),
+        roleAndMentionable: Symbol("roleAndMentionable"),
+        channelAndMentionable: Symbol("channelAndMentionable"),
+        userRoleChannelMentionable: Symbol("userRoleChannelMentionable"),
+    };
+
+    @MemoizeMethod
+    getIsortOptions() {
+        const optionsByTypes = new Map<number | symbol, CommandOption[]>();
+
+        const pushToType = (type: number | symbol, option: CommandOption) => {
+            const array = optionsByTypes.get(type) ?? [];
+            array.push(option);
+            optionsByTypes.set(type, array);
+        };
+
+        for (const option of this.iterableOptions as CommandOptionWithType[]) {
+            pushToType(option.type, option);
+
+            if (option.type === ApplicationCommandOptionType.Integer || option.type === ApplicationCommandOptionType.Number) {
+                pushToType(YunaParserCommandMetaData.optionTypes.integerAndNumber, option);
+            } else if (option.type === ApplicationCommandOptionType.User) {
+                pushToType(YunaParserCommandMetaData.optionTypes.userAndMentionable, option);
+                pushToType(YunaParserCommandMetaData.optionTypes.userRoleChannelMentionable, option);
+            } else if (option.type === ApplicationCommandOptionType.Role) {
+                pushToType(YunaParserCommandMetaData.optionTypes.roleAndMentionable, option);
+                pushToType(YunaParserCommandMetaData.optionTypes.userRoleChannelMentionable, option);
+            } else if (option.type === ApplicationCommandOptionType.Channel) {
+                pushToType(YunaParserCommandMetaData.optionTypes.channelAndMentionable, option);
+                pushToType(YunaParserCommandMetaData.optionTypes.userRoleChannelMentionable, option);
+            } else if (option.type === ApplicationCommandOptionType.Mentionable) {
+                pushToType(YunaParserCommandMetaData.optionTypes.userRoleChannelMentionable, option);
+                pushToType(YunaParserCommandMetaData.optionTypes.userAndMentionable, option);
+                pushToType(YunaParserCommandMetaData.optionTypes.roleAndMentionable, option);
+                pushToType(YunaParserCommandMetaData.optionTypes.channelAndMentionable, option);
+            }
+        }
+
+        return {
+            optionsByTypes,
+        };
     }
 
     #config?: YunaParserCreateOptions;
