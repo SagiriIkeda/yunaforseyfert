@@ -1,5 +1,15 @@
-import { Command, type CommandContext, Declare, Options, createBooleanOption, createNumberOption, createStringOption } from "seyfert";
+import {
+    Command,
+    type CommandContext,
+    Declare,
+    Embed,
+    Options,
+    createBooleanOption,
+    createNumberOption,
+    createStringOption,
+} from "seyfert";
 import { Yuna } from "#package";
+import { codeBlock } from "./eval";
 
 const options = {
     time: createNumberOption({
@@ -22,25 +32,20 @@ const options = {
 })
 @Options(options)
 export default class OrderCommand extends Command {
-    run(ctx: CommandContext<typeof options>) {
-        const test = Yuna.getArgsResult(ctx.message);
-
-        console.debug({ test });
-
-        // await ctx.editOrReply({
-        //     embeds: [
-        //         new Embed().setColor("Purple").setFields([
-        //             {
-        //                 name: "resolved",
-        //                 value: (JSON.stringify(Yuna.getArgsResult(ctx.message)), ""),
-        //             },
-        //             {
-        //                 name: "raw order",
-        //                 value: (JSON.stringify(this.options?.map(option => option.name)), ""),
-        //             }
-        //         ]),
-
-        //     ]
-        // });
+    async run(ctx: CommandContext<typeof options>) {
+        await ctx.editOrReply({
+            embeds: [
+                new Embed().setColor("Purple").setFields([
+                    {
+                        name: "resolved",
+                        value: codeBlock(JSON.stringify(Yuna.getArgsResult(ctx.message)?.result), "json"),
+                    },
+                    {
+                        name: "raw order",
+                        value: codeBlock(JSON.stringify(this.options?.map((option) => option.name)), "json"),
+                    },
+                ]),
+            ],
+        });
     }
 }
