@@ -1,5 +1,5 @@
 import { Command, type CommandContext, Declare, Embed, Options, createStringOption } from "seyfert";
-import { Watch } from "../../package";
+import { Watch, Yuna } from "#package";
 
 const options = {
     text: createStringOption({
@@ -41,6 +41,8 @@ export default class SayCommand extends Command {
         },
     })
     async run(ctx: CommandContext<typeof options>) {
+        console.debug(Yuna.getArgsResult(ctx.message), "sd");
+
         const { text } = ctx.options;
 
         await ctx.editOrReply({ embeds: [this.embed(text)] });

@@ -1,6 +1,6 @@
 import { Client } from "seyfert";
 import { HandleCommand } from "seyfert/lib/commands/handle";
-import { Yuna } from "../package/index";
+import { Yuna } from "#package";
 
 const client = new Client({
     commands: {
@@ -23,6 +23,11 @@ class YunaCommandHandle extends HandleCommand {
         logResult: true,
         useRepliedUserAsAnOption: {
             requirePing: false,
+        },
+        unstable_intelligent_options_sort: {
+            priorities: {
+                mentionableOverRespective: false,
+            },
         },
         // useNamedWithSingleValue: true,
         // useCodeBlockLangAsAnOption: true,

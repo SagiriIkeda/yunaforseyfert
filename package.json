@@ -49,11 +49,14 @@
         "esbuild": "^0.23.0",
         "husky": "^9.0.11",
         "lint-staged": "^15.2.7",
-        "seyfert": "3.0.1-dev-14564036360.0",
+        "seyfert": "3.2.5-dev-16223996111.0",
         "tsup": "^8.1.0",
-        "tsx": "^4.17.0",
+        "tsx": "^4.20.3",
         "typescript": "^5.0.0",
         "vitest": "^2.0.4"
+    },
+    "imports": {
+        "#package": "./src/package/index.js"
     },
     "pnpm": {
         "onlyBuiltDependencies": [

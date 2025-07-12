@@ -13,11 +13,11 @@ import {
 import { HandleCommand } from "seyfert/lib/commands/handle";
 import type { APIUser } from "seyfert/lib/types";
 import { describe, expect, test } from "vitest";
+import { ParserRecommendedConfig, Yuna } from "#package";
 import ChoicesNumberTestCommand, { ChoicesTestCommand } from "../bot-test/commands/choicesTest";
 import EvalCommand, { codeBlock } from "../bot-test/commands/eval";
 import Eval2Command from "../bot-test/commands/eval2";
 import TestCommand from "../bot-test/commands/test";
-import { ParserRecommendedConfig, Yuna } from "../package/index";
 import type { YunaCommandUsable } from "../package/things";
 import type { YunaParserCreateOptions } from "../package/utils/parser/configTypes";
 

@@ -1,5 +1,5 @@
 import { Command, type CommandContext, Declare, Embed, Options, createBooleanOption, createStringOption } from "seyfert";
-import { DeclareParserConfig, ParserRecommendedConfig, Yuna } from "../../package";
+import { DeclareParserConfig, ParserRecommendedConfig, Yuna } from "#package";
 import { codeBlock } from "./eval";
 
 const options = {

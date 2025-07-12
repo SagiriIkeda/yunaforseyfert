@@ -1,7 +1,7 @@
 {
     "compilerOptions": {
         "module": "CommonJS",
-        "target": "ES6",
+        "target": "es2020",
         "strict": true,
         "moduleResolution": "Node10",
         "esModuleInterop": true,
@@ -21,6 +21,11 @@
         "outDir": "./dist",
         "rootDir": "./src",
         "stripInternal": true,
+        "paths": {
+            "#package": [
+                "./src/package/index.ts"
+            ],
+        }
     },
     "exclude": [
         "node_modules",
@@ -28,5 +33,5 @@
     ],
     "include": [
         "src/**/*"
-    ],
+    ]
 }

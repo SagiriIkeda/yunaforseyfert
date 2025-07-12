@@ -1,6 +1,9 @@
 import { Keys } from "../../things";
 import type { YunaParserCreateOptions } from "./configTypes";
 
+export const OptionsDiscernRegex =
+    /^((?<User>\<@\d+\>)|(?<Role>\<@&\d+\>)|(?<Channel>\<#\d+\>)|(?<Float>\d+(\.\d+))|(?<Integer>\d+)|(?<Boolean>true|yes|y|n|no|false))$/;
+
 type EscapeModeType = Record<string, RegExp | undefined>;
 
 const RemoveNamedEscapeModeKeys = ["All", "forNamed", "forNamedDotted"];
@@ -173,6 +176,15 @@ export const createConfig = (config: YunaParserCreateOptions, isFull = true) => 
         newConfig.useRepliedUserAsAnOption = config.useRepliedUserAsAnOption
             ? {
                   requirePing: config.useRepliedUserAsAnOption?.requirePing === true,
+              }
+            : null;
+
+    if (isFull || "unstable_intelligent_options_sort" in config)
+        newConfig.unstable_intelligent_options_sort = config.unstable_intelligent_options_sort
+            ? {
+                  priorities: {
+                      mentionableOverRespective: config.unstable_intelligent_options_sort?.priorities?.mentionableOverRespective === true,
+                  },
               }
             : null;
 

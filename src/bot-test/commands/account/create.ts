@@ -1,5 +1,5 @@
 import { type CommandContext, Declare, Group, LimitedCollection, Options, SubCommand, createStringOption } from "seyfert";
-import { Shortcut } from "../../../package/utils/commandsResolver/decorators";
+import { Shortcut } from "#package";
 
 const options = {
     pengu: createStringOption({

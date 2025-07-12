@@ -1,5 +1,5 @@
 import { Command, Declare, Groups, Options } from "seyfert";
-import { DeclareFallbackSubCommand } from "../../../package/utils/commandsResolver/decorators";
+import { DeclareFallbackSubCommand } from "#package";
 import CreateCommand from "./create";
 import OtherCommand from "./other";
 

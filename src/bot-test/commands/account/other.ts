@@ -1,5 +1,5 @@
 import { type CommandContext, Declare, SubCommand } from "seyfert";
-import { Shortcut } from "../../../package/utils/commandsResolver/decorators";
+import { Shortcut } from "#package";
 
 @Declare({
     name: "others",
