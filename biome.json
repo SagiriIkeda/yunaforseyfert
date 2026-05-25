@@ -1,19 +1,19 @@
 {
-    "$schema": "https://biomejs.dev/schemas/1.8.0/schema.json",
-    "organizeImports": {
-        "enabled": true
-    },
+    "$schema": "https://biomejs.dev/schemas/2.4.15/schema.json",
+    "assist": { "actions": { "source": { "organizeImports": "on" } } },
     "linter": {
         "enabled": true,
         "rules": {
-            "all": true,
             "suspicious": {
                 "noExplicitAny": "off",
                 "noConfusingVoidType": "off",
                 "noGlobalIsFinite": "off",
                 "noGlobalIsNan": "off",
                 "noEmptyBlockStatements": "off",
-                "noConsoleLog": "error"
+                "noConsole": {
+                    "level": "error",
+                    "options": { "allow": ["log"] }
+                }
             },
             "style": {
                 "noNonNullAssertion": "off",
@@ -24,7 +24,6 @@
                 "useBlockStatements": "off",
                 "useFilenamingConvention": "off",
                 "useNamingConvention": "warn",
-                "useSingleCaseStatement": "off",
                 "useEnumInitializers": "off"
             },
             "complexity": {
@@ -39,7 +38,8 @@
             },
             "correctness": {
                 "noNodejsModules": "off",
-                "noVoidTypeReturn": "off"
+                "noVoidTypeReturn": "off",
+                "noSwitchDeclarations": "off"
             },
             "security": {
                 "noGlobalEval": "off"
@@ -51,7 +51,13 @@
     },
     "files": {
         "ignoreUnknown": true,
-        "ignore": [".vscode", "node_modules", "dist", "build"]
+        "includes": [
+            "**",
+            "!**/.vscode",
+            "!**/node_modules",
+            "!**/dist",
+            "!**/build"
+        ]
     },
     "json": {
         "formatter": {
@@ -75,20 +81,5 @@
             "bracketSameLine": true,
             "semicolons": "always"
         }
-    },
-    "overrides": [
-        {
-            "include": ["src/package/seyfert.ts"],
-            "linter": {
-                "rules": {
-                    "correctness": {
-                        "noUnusedVariables": "off"
-                    },
-                    "style": {
-                        "useNamingConvention": "off"
-                    }
-                }
-            }
-        }
-    ]
+    }
 }

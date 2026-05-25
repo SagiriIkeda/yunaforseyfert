@@ -1,32 +1,38 @@
 {
+    /* from https://github.com/total-typescript/tsconfig - bundler/no-dom/app */
     "compilerOptions": {
-        "module": "CommonJS",
-        "target": "ES6",
-        "strict": true,
-        "moduleResolution": "Node10",
+        "outDir": "build",
+
+        /* Base Options: */
         "esModuleInterop": true,
-        "experimentalDecorators": true,
-        "declaration": true,
-        "declarationDir": "types",
-        "emitDecoratorMetadata": true,
-        "resolveJsonModule": true,
-        "noImplicitAny": true,
-        "strictNullChecks": true,
-        "strictFunctionTypes": true,
-        "noImplicitThis": true,
-        "noImplicitReturns": true,
         "skipLibCheck": true,
-        "sourceMap": true,
-        "noErrorTruncation": true,
-        "outDir": "./dist",
-        "rootDir": "./src",
+        "skipDefaultLibCheck": true,
+        "target": "es2022",
+        "allowJs": true,
+        "resolveJsonModule": true,
+        "moduleDetection": "force",
+        "moduleResolution": "node16",
+        "types": ["node"],
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+
+        /* Strictness */
+        "strict": true,
+        "noUncheckedIndexedAccess": false,
+        "noImplicitOverride": true,
+
+        "noUnusedParameters": true,
+        "noUnusedLocals": true,
+        "noFallthroughCasesInSwitch": true,
+
+        /* If NOT transpiling with TypeScript: */
+        "module": "node16",
+        "noEmit": true,
         "stripInternal": true,
+
+        /* If your code doesn't run in the DOM: */
+        "lib": ["es2022"]
     },
-    "exclude": [
-        "node_modules",
-        "src/package/lib/prepublish.mts",
-    ],
-    "include": [
-        "src/**/*"
-    ],
+    "include": ["src", "bot", "test"],
+    "exclude": ["node_modules", "build"]
 }

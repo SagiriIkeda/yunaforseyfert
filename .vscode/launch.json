@@ -9,9 +9,9 @@
                 "<node_internals>/**"
             ],
             "preLaunchTask": "esbuild",
-            "program": "${workspaceFolder}/dist/bot-test/index.js",
-            "envFile": "${workspaceFolder}/src/bot-test/.env",
-            "cwd": "${workspaceFolder}/src/bot-test",
+            "program": "${workspaceFolder}/bot/index.js",
+            "envFile": "${workspaceFolder}/bot/.env",
+            "cwd": "${workspaceFolder}/bot",
             "outFiles": [
                 "${workspaceFolder}/**/*.js"
             ],
