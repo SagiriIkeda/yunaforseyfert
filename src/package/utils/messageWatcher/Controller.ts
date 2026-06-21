@@ -1,15 +1,14 @@
-import type { Client } from "seyfert";
 import {
     type BaseMessage,
+    Collectors,
     type Command,
     CommandContext,
     type LimitedCollection,
     type OptionsRecord,
     type SubCommand,
     type UsingClient,
-    type WorkerClient,
 } from "seyfert";
-import { GatewayDispatchEvents } from "seyfert/lib/types/index.js";
+import { GatewayDispatchEvents, type GatewayDispatchPayload } from "seyfert/lib/types/index.js";
 import type { YunaCommandUsable } from "../../things.js";
 import { MessageWatcherManager } from "./Manager.js";
 import type { WatcherOptions } from "./types.js";
@@ -37,7 +36,8 @@ type BaseFindWatcherQuery = {
     command?: Command | SubCommand;
 };
 
-export type FindWatcherQuery = BaseFindWatcherQuery | ((watcher: MessageWatcherManager) => boolean);
+type WatcherSearchFn = (watcher: MessageWatcherManager) => boolean;
+export type FindWatcherQuery = BaseFindWatcherQuery | WatcherSearchFn;
 
 type InferCommandCtx<C extends YunaCommandUsable> = C extends YunaCommandUsable ? Parameters<NonNullable<C["run"]>>[0] : never;
 export type InferCommandOptionsFromCtx<C> = C extends CommandContext<infer R> ? R : never;
@@ -76,18 +76,20 @@ export class WatchersController {
 
     client: UsingClient;
 
+    #usesPluginEvents = false;
+
     constructor({ cache = new Map(), client }: YunaMessageWatcherControllerConfig) {
         this.client = client;
         this.managers = cache;
     }
 
-    init() {
-        if (this.watching) return;
+    usePluginEvents(enabled = true) {
+        this.#usesPluginEvents = enabled;
+        return this;
+    }
 
-        const { client } = this;
-
-        this.watching = true;
-
+    handleRawEvent({ t: event, d: data }: GatewayDispatchPayload) {
+        if (this.managers.size === 0) return;
         const cache = this.managers;
 
         const deleteBy = (data: { channelId: string } | { guildId: string }) => {
@@ -97,9 +99,7 @@ export class WatchersController {
             const key = isChannel ? "channelId" : "guildId";
             const errorName = isChannel ? "channelDelete" : "guildDelete";
 
-            for (const instancesData of cache.values()) {
-                const watcher = (instancesData as Exclude<typeof instancesData, MessageWatcherManager>).value ?? instancesData;
-
+            for (const watcher of cache.values()) {
                 if (watcher.message[key] !== id) continue;
                 watcher.stop(errorName);
             }
@@ -121,36 +121,47 @@ export class WatchersController {
             watcher?.stop(reason);
         };
 
-        const self = this;
+        switch (event) {
+            case GatewayDispatchEvents.GuildDelete:
+                deleteBy({ guildId: data.id });
+                break;
+            case GatewayDispatchEvents.ThreadDelete:
+                deleteBy({ channelId: data.id });
+                break;
+            case GatewayDispatchEvents.ChannelDelete:
+                deleteBy({ channelId: data.id });
+                break;
+            case GatewayDispatchEvents.MessageDeleteBulk:
+                for (const id of data.ids) deleteByMessage(id, data.channel_id, "MessageBulkDelete");
+                break;
+            case GatewayDispatchEvents.MessageDelete:
+                deleteByMessage(data.id, data.channel_id, "MessageDelete");
+                break;
+            case GatewayDispatchEvents.MessageUpdate: {
+                get(data.id, data.channel_id)?.__handleUpdate(data);
+                break;
+            }
+        }
+    }
 
-        client.collectors.create({
-            event: "RAW",
+    init() {
+        if (this.watching) return;
+
+        this.watching = true;
+
+        if (this.#usesPluginEvents) return;
+
+        const { client } = this;
+        const collectors = "collectors" in client ? client.collectors : undefined;
+
+        if (!(collectors instanceof Collectors)) {
+            throw new Error("[Yuna.watchers] Message watchers require a gateway client with collectors or Yuna.plugin().");
+        }
+
+        collectors.create({
+            event: "raw",
             filter: () => true,
-            run({ t: event, d: data }) {
-                if (self.managers.size === 0) return;
-
-                switch (event) {
-                    case GatewayDispatchEvents.GuildDelete:
-                        deleteBy({ guildId: data.id });
-                        break;
-                    case GatewayDispatchEvents.ThreadDelete:
-                        deleteBy({ channelId: data.id });
-                        break;
-                    case GatewayDispatchEvents.ChannelDelete:
-                        deleteBy({ channelId: data.id });
-                        break;
-                    case GatewayDispatchEvents.MessageDeleteBulk:
-                        for (const id of data.ids) deleteByMessage(id, data.channel_id, "MessageBulkDelete");
-                        break;
-                    case GatewayDispatchEvents.MessageDelete:
-                        deleteByMessage(data.id, data.channel_id, "MessageDelete");
-                        break;
-                    case GatewayDispatchEvents.MessageUpdate: {
-                        get(data.id, data.channel_id)?.__handleUpdate(data);
-                        break;
-                    }
-                }
-            },
+            run: (packet: GatewayDispatchPayload) => this.handleRawEvent(packet),
         });
     }
 
@@ -175,7 +186,7 @@ export class WatchersController {
                 id,
                 new MessageWatcherManager<OptionsType>(
                     this,
-                    client as Client | WorkerClient,
+                    client,
                     message,
                     command,
                     ctx.shardId,
@@ -207,14 +218,12 @@ export class WatchersController {
     }
 
     *#findWatchers<const Query extends FindWatcherQuery>(query: Query) {
-        const searchFn = typeof query === "function" ? (query as Extract<FindWatcherQuery, Function>) : this.#baseSearch.bind(this, query);
+        const searchFn: WatcherSearchFn = typeof query === "function" ? query : this.#baseSearch.bind(this, query);
 
         for (const value of this.managers.values()) {
-            const watcher = (value as Exclude<typeof value, MessageWatcherManager<any>>).value ?? value;
+            if (searchFn(value) === false) continue;
 
-            if (!watcher || searchFn(watcher) === false) continue;
-
-            yield watcher as InferWatcherFromQuery<Query>;
+            yield value as InferWatcherFromQuery<Query>;
         }
 
         return;

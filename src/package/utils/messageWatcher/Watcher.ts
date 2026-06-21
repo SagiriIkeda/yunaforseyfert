@@ -1,4 +1,4 @@
-import type { Client, Message, OptionsRecord, WorkerClient } from "seyfert";
+import type { Message, OptionsRecord, UsingClient } from "seyfert";
 import type { CommandUsable } from "../../things";
 import type { WatchersController } from "./Controller";
 import type { MessageWatcherManager } from "./Manager";
@@ -23,7 +23,7 @@ export class MessageWatcher<const O extends OptionsRecord = any, Context = any, 
     message: Message;
     controller: WatchersController;
     manager: MessageWatcherManager<O, Context, __Command>;
-    client: Client | WorkerClient;
+    client: UsingClient;
     command: __Command;
     shardId: number;
 

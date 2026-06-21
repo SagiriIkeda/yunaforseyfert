@@ -10,7 +10,27 @@
 You can do it using `npm` or another packager manager, i prefer use  `pnpm`
 
 ```
-pnpm add yunaforseyfert
+pnpm add yunaforseyfert seyfert@dev
+```
+
+## Usage with Seyfert v5
+
+```ts
+import { Client, definePlugins } from "seyfert";
+import { Yuna } from "yunaforseyfert";
+
+const client = new Client({
+    plugins: definePlugins(
+        Yuna.plugin({
+            parser: {
+                // parser options
+            },
+            resolver: {
+                // resolver options
+            },
+        }),
+    ),
+});
 ```
 
 # Features
@@ -25,6 +45,9 @@ pnpm add yunaforseyfert
 ## ` Yuna.resolver `
 > *A resolver, which provides some extra functions.*  
 >[📖 See Resolver docs](https://github.com/SagiriIkeda/yunaforseyfert/wiki/CommandsResolver)
+
+## ` Yuna.plugin `
+> *A Seyfert v5 plugin that installs `Yuna.parser` and `Yuna.resolver` as the message command service.*
 
 ## MessageWatcher
 > *A simple solution to be able to manage when a message is edited and update the command options.*  

@@ -7,7 +7,7 @@ import { Command, type CommandContext, Declare } from "seyfert";
 export default class PingCommand extends Command {
     async run(ctx: CommandContext) {
         // average latency between shards
-        const ping = ctx.client.gateway.latency;
+        const ping = ctx.client.latency;
 
         await ctx.write({
             content: `The ping is \`${ping}\``,

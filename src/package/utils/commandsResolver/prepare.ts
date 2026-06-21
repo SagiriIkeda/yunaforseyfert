@@ -84,13 +84,12 @@ export async function prepareCommands(client: UsingClient) {
         metadata.commands.push(command);
 
         if (command.groups)
-            for (const [name, group] of Object.entries(command.groups)) {
+            for (const [name, group] of Object.entries(command.groups) as [string, YunaGroup][]) {
                 if (!group.shortcut) continue;
-                const gr = group as YunaGroup;
 
                 const fallbackSubName = group.fallbackSubCommand ? getFallbackCommandName(group.fallbackSubCommand) : undefined;
 
-                gr[Keys.resolverFallbackSubCommand] = fallbackSubName;
+                group[Keys.resolverFallbackSubCommand] = fallbackSubName;
 
                 metadata.shortcuts.push({
                     name,

@@ -1,5 +1,4 @@
 import {
-    type Client,
     type Command,
     CommandContext,
     type ContextOptionsResolved,
@@ -8,7 +7,6 @@ import {
     type OptionsRecord,
     type SubCommand,
     type UsingClient,
-    type WorkerClient,
 } from "seyfert";
 import { Transformers } from "seyfert/lib/client/transformers";
 import type { MakeRequired } from "seyfert/lib/common";
@@ -18,10 +16,9 @@ import { type WatchersController, createId } from "./Controller";
 import { MessageWatcher } from "./Watcher";
 import type { WatcherOptions } from "./types";
 
-type RawMessageUpdated = MakeRequired<GatewayMessageUpdateDispatchData, "content">;
-
 type EventKeys<O extends OptionsRecord> = Extract<keyof MessageWatcher<O>, `on${string}Event`>;
 type EventParams<O extends OptionsRecord, E extends EventKeys<O>> = Parameters<OmitThisParameter<NonNullable<MessageWatcher<O>[E]>>>;
+type ArgsOptionParserError = Awaited<ReturnType<UsingClient["handleCommand"]["argsOptionsParser"]>>["errors"][number];
 
 type MessageResolvable = Pick<Message, "id" | "channelId"> | Pick<APIMessage, "id" | "channel_id"> | string;
 
@@ -34,7 +31,7 @@ export class MessageWatcherManager<const O extends OptionsRecord = any, Context 
 
     controller: WatchersController;
 
-    client: Client | WorkerClient;
+    client: UsingClient;
     command: __Command;
     shardId: number;
 
@@ -47,7 +44,7 @@ export class MessageWatcherManager<const O extends OptionsRecord = any, Context 
 
     constructor(
         controller: WatchersController,
-        client: Client | WorkerClient,
+        client: UsingClient,
         message: Message,
         command: Command | SubCommand,
         shardId?: number,
@@ -89,17 +86,22 @@ export class MessageWatcherManager<const O extends OptionsRecord = any, Context 
 
         const { client } = this;
 
-        const self = client as UsingClient;
+        const self = client;
 
         const newMessage = Transformers.Message(self, apiMessage);
 
         const { handleCommand } = client;
 
-        this.prefixes ??= await client.options.commands?.prefix?.(newMessage);
+        const commandsOptions = client.options.commands;
+        const prefixProvider =
+            commandsOptions && "prefix" in commandsOptions && typeof commandsOptions.prefix === "function"
+                ? commandsOptions.prefix
+                : undefined;
+        this.prefixes ??= prefixProvider ? await prefixProvider(newMessage) : undefined;
 
-        const prefix = this.prefixes?.reduce(
+        const prefix = this.prefixes?.reduce<string | undefined>(
             (oldPrefix, prefix) => (content.startsWith(prefix) && prefix.length > (oldPrefix?.length ?? 0) ? prefix : oldPrefix),
-            undefined as undefined | string,
+            undefined,
         );
 
         if (!prefix) return this.emit("onUsageErrorEvent", "UnspecifiedPrefix");
@@ -130,7 +132,7 @@ export class MessageWatcherManager<const O extends OptionsRecord = any, Context 
 
         if (errors.length) {
             const errorsObject: OnOptionsReturnObject = Object.fromEntries(
-                errors.map((x) => {
+                errors.map((x: ArgsOptionParserError) => {
                     return [
                         x.name,
                         {
@@ -145,10 +147,11 @@ export class MessageWatcherManager<const O extends OptionsRecord = any, Context 
             return;
         }
 
-        const optionsResolver = handleCommand.makeResolver(self, resolverOptions, parent as Command, this.message.guildId, resolved);
+        const optionsResolver = handleCommand.makeResolver(self, resolverOptions, parent, this.message.guildId, resolved);
 
         const ctx = new CommandContext<O>(self, newMessage, optionsResolver, this.shardId, command);
-        //@ts-expect-error
+        if (!("__runOptions" in command) || typeof command.__runOptions !== "function") return;
+
         const [erroredOptions] = await command.__runOptions(ctx, optionsResolver);
 
         if (erroredOptions) return this.emit("onOptionsErrorEvent", erroredOptions);
@@ -162,7 +165,7 @@ export class MessageWatcherManager<const O extends OptionsRecord = any, Context 
 
         for (const watcher of this.watchers) {
             watcher.refreshTimers();
-            watcher.onChangeEvent?.(ctx, apiMessage as RawMessageUpdated);
+            watcher.onChangeEvent?.(ctx, apiMessage);
         }
     }
 
@@ -201,7 +204,7 @@ export class MessageWatcherManager<const O extends OptionsRecord = any, Context 
         const isString = typeof message === "string";
 
         const id = isString ? message : message.id;
-        const channelId = isString ? this.message.channelId : (message as APIMessage).channel_id ?? (message as Message).channelId;
+        const channelId = isString ? this.message.channelId : "channel_id" in message ? message.channel_id : message.channelId;
 
         if (id === this.message.id && channelId === this.message.channelId) return;
 

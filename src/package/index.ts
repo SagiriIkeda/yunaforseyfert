@@ -1,11 +1,11 @@
 import { fullNameOf } from "./lib/utils.js";
 import "./seyfert.js";
 import { getCommandsMetadata, prepareCommands, resolve } from "./utils/commandsResolver/prepare.js";
-import { YunaCommandsResolver } from "./utils/commandsResolver/resolver.js";
+import { YunaCommandsResolver, type YunaCommandsResolverConfig } from "./utils/commandsResolver/resolver.js";
 import { YunaParser } from "./utils/parser/parser.js";
 
-import { type Command, CommandContext, type Message, type SubCommand } from "seyfert";
-import type { CommandOptionWithType } from "seyfert/lib/commands/handle.js";
+import { type Command, CommandContext, type Message, type SubCommand, createPlugin } from "seyfert";
+import { type CommandOptionWithType, HandleCommand } from "seyfert/lib/commands/handle.js";
 import { ApplicationCommandOptionType } from "seyfert/lib/types/index.js";
 import { Keys } from "./things.js";
 import { YunaWatcherUtils } from "./utils/messageWatcher/watcherUtils.js";
@@ -49,7 +49,74 @@ export const ParserRecommendedConfig = {
     },
 } satisfies Record<string, YunaParserCreateOptions>;
 
+const yunaCommands = {
+    prepare: prepareCommands,
+    resolve,
+    /**
+     * if it is a subcommand,
+     * it will need to have the `parent` property (using Yuna.resolver will be added)
+     */
+    fullNameOf,
+    getMetadata: getCommandsMetadata,
+    isParent(command: Command | SubCommand): command is Command & { options: SubCommand[] } {
+        if (!command.options?.length) return false;
+        const [firstOption] = command.options as CommandOptionWithType[];
+        return (
+            firstOption.type === ApplicationCommandOptionType.Subcommand ||
+            firstOption.type === ApplicationCommandOptionType.SubcommandGroup
+        );
+    },
+};
+
+const yunaGetArgsResult = (resolvable?: CommandContext | Message) => {
+    const message = resolvable instanceof CommandContext ? resolvable.message : resolvable;
+    return message?.[Keys.messageArgsResult];
+};
+
+export interface YunaPluginOptions {
+    parser?: YunaParserCreateOptions;
+    resolver?: Omit<YunaCommandsResolverConfig, "client">;
+}
+
+export const createYunaPlugin = ({ parser, resolver }: YunaPluginOptions = {}) => {
+    class YunaHandleCommand extends HandleCommand {
+        argsParser = YunaParser(parser);
+        resolveCommandFromContent = YunaCommandsResolver({
+            client: this.client,
+            ...resolver,
+        });
+    }
+
+    return createPlugin({
+        name: "yunaforseyfert",
+        parser: YunaParser,
+        resolver: YunaCommandsResolver,
+        mergeParserConfig: mergeConfig,
+        commands: yunaCommands,
+        getArgsResult: yunaGetArgsResult,
+        watchers: YunaWatcherUtils,
+        client: {
+            yuna: () => Yuna,
+        },
+        ctx: {
+            yuna: () => Yuna,
+        },
+        setup(client, api) {
+            client.setServices({ handleCommand: YunaHandleCommand });
+            const watcherController = YunaWatcherUtils.createController({ client }).usePluginEvents();
+            api?.events.on("RAW", (packet) => {
+                watcherController.handleRawEvent(packet);
+            });
+        },
+        teardown(client) {
+            YunaWatcherUtils.getController(client)?.usePluginEvents(false);
+        },
+    });
+};
+
 class BaseYuna {
+    plugin = createYunaPlugin;
+
     /**
      * 🐧
      * @example
@@ -94,29 +161,9 @@ class BaseYuna {
 
     mergeParserConfig = mergeConfig;
 
-    commands = {
-        prepare: prepareCommands,
-        resolve,
-        /**
-         * if it is a subcommand,
-         * it will need to have the `parent` property (using Yuna.resolver will be added)
-         */
-        fullNameOf,
-        getMetadata: getCommandsMetadata,
-        isParent(command: Command | SubCommand): command is Command & { options: SubCommand[] } {
-            if (!command.options?.length) return false;
-            const [firstOption] = command.options as CommandOptionWithType[];
-            return (
-                firstOption.type === ApplicationCommandOptionType.Subcommand ||
-                firstOption.type === ApplicationCommandOptionType.SubcommandGroup
-            );
-        },
-    };
+    commands = yunaCommands;
 
-    getArgsResult(resolvable?: CommandContext | Message) {
-        const message = resolvable instanceof CommandContext ? resolvable.message : resolvable;
-        return message?.[Keys.messageArgsResult];
-    }
+    getArgsResult = yunaGetArgsResult;
 
     watchers = YunaWatcherUtils;
 }

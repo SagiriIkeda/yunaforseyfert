@@ -42,6 +42,9 @@
             "biome format --write"
         ]
     },
+    "peerDependencies": {
+        "seyfert": "5.0.1-dev-27866487194.0"
+    },
     "devDependencies": {
         "@biomejs/biome": "1.8.0",
         "@types/node": "^20.14.2",
@@ -49,7 +52,7 @@
         "esbuild": "^0.23.0",
         "husky": "^9.0.11",
         "lint-staged": "^15.2.7",
-        "seyfert": "3.0.1-dev-14564036360.0",
+        "seyfert": "5.0.1-dev-27866487194.0",
         "tsup": "^8.1.0",
         "tsx": "^4.17.0",
         "typescript": "^5.0.0",
