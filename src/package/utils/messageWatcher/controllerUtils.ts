@@ -1,9 +1,10 @@
-import type { OptionsRecord, UsingClient } from "seyfert";
+import type { OptionsRecord } from "seyfert";
+import type { BaseClient } from "seyfert/lib/client/base";
 import { type AvailableClients, Keys } from "../../things";
 import { type WatcherCreateData, WatchersController, type YunaMessageWatcherControllerConfig } from "./Controller";
 import type { WatcherOptions } from "./types";
 
-type WatchersClientWithController = UsingClient & {
+type WatchersClientWithController = BaseClient & {
     [Keys.clientWatcherController]?: WatchersController;
 };
 

@@ -35,7 +35,7 @@ declare module "seyfert" {
 
     interface SeyfertBaseChoiceableOption<
         T extends keyof ReturnOptionsTypes,
-        C = T extends ChoiceableTypes ? SeyfertChoice<ChoiceableValues[T]>[] : never,
+        C = T extends ChoiceableTypes ? readonly SeyfertChoice<ChoiceableValues[T]>[] : never,
         R = true | false,
         VC = never,
     > extends BaseExtendedOption {}

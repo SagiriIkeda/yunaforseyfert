@@ -10,7 +10,7 @@
 You can do it using `npm` or another packager manager, i prefer use  `pnpm`
 
 ```
-pnpm add yunaforseyfert seyfert@dev
+pnpm add yunaforseyfert seyfert@^5
 ```
 
 ## Usage with Seyfert v5

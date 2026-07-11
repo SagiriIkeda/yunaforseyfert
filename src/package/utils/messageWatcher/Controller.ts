@@ -6,8 +6,8 @@ import {
     type LimitedCollection,
     type OptionsRecord,
     type SubCommand,
-    type UsingClient,
 } from "seyfert";
+import type { BaseClient } from "seyfert/lib/client/base";
 import { GatewayDispatchEvents, type GatewayDispatchPayload } from "seyfert/lib/types/index.js";
 import type { YunaCommandUsable } from "../../things.js";
 import { MessageWatcherManager } from "./Manager.js";
@@ -24,7 +24,7 @@ export function createId(message: BaseMessage | string, channelId?: string): str
 type WatchersManagersCacheAdapter = Map<string, MessageWatcherManager> | LimitedCollection<string, MessageWatcherManager>;
 
 export interface YunaMessageWatcherControllerConfig {
-    client: UsingClient;
+    client: BaseClient;
     cache?: WatchersManagersCacheAdapter;
 }
 
@@ -74,7 +74,7 @@ export class WatchersController {
 
     watching = false;
 
-    client: UsingClient;
+    client: BaseClient;
 
     #usesPluginEvents = false;
 
