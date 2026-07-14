@@ -1,16 +1,19 @@
-import { type Command, SubCommand, type UsingClient } from "seyfert";
+import { type Command, SubCommand } from "seyfert";
+import type { BaseClient } from "seyfert/lib/client/base";
 import { ApplicationCommandType } from "seyfert/lib/types";
 import { type AvailableClients, type Instantiable, Keys, type YunaCommandUsable, type YunaGroupType } from "../../things";
 import { type YunaResolverResult, baseResolver } from "./base";
 import { getFallbackCommandName } from "./decorators";
 import type { YunaCommandsResolverConfig } from "./resolver";
 
-export type UseYunaCommandsClient = UsingClient & {
-    [Keys.clientResolverMetadata]?: {
-        shortcuts: (SubCommand | GroupLink)[];
-        commands: Command[];
-        config?: YunaCommandsResolverConfig;
-    };
+export interface YunaCommandsMetadata<ClientType extends BaseClient = BaseClient> {
+    shortcuts: (SubCommand | GroupLink)[];
+    commands: Command[];
+    config?: YunaCommandsResolverConfig<ClientType>;
+}
+
+export type UseYunaCommandsClient<ClientType extends BaseClient = BaseClient> = ClientType & {
+    [Keys.clientResolverMetadata]?: YunaCommandsMetadata<ClientType>;
 };
 
 export const ShortcutType = {
@@ -31,7 +34,7 @@ export interface GroupLink {
     type: typeof ShortcutType.Group;
 }
 
-export const addCommandsEvents = (client: UsingClient) => {
+export const addCommandsEvents = <ClientType extends BaseClient>(client: ClientType) => {
     const self = client as AvailableClients & {
         commands: AvailableClients["commands"] & { [Keys.clientResolverAlreadyModdedEvents]?: true };
     };
@@ -54,8 +57,8 @@ export const addCommandsEvents = (client: UsingClient) => {
     self.commands[Keys.clientResolverAlreadyModdedEvents] = true;
 };
 
-export const getCommandsMetadata = (client: AvailableClients) => {
-    const self = client as UseYunaCommandsClient;
+export const getCommandsMetadata = <ClientType extends BaseClient>(client: ClientType): YunaCommandsMetadata<ClientType> => {
+    const self = client as UseYunaCommandsClient<ClientType>;
 
     // biome-ignore lint/suspicious/noAssignInExpressions: penguin
     return (self[Keys.clientResolverMetadata] ??= {
@@ -64,7 +67,7 @@ export const getCommandsMetadata = (client: AvailableClients) => {
     });
 };
 
-export async function prepareCommands(client: UsingClient) {
+export async function prepareCommands<ClientType extends BaseClient>(client: ClientType) {
     const metadata = getCommandsMetadata(client);
 
     metadata.shortcuts = [];
@@ -119,22 +122,22 @@ export async function prepareCommands(client: UsingClient) {
     metadata.config?.afterPrepare?.call(client, metadata);
 }
 
-export function resolve(
-    client: UseYunaCommandsClient,
+export function resolve<ClientType extends BaseClient>(
+    client: UseYunaCommandsClient<ClientType>,
     query: string | string[],
-    config?: YunaCommandsResolverConfig | undefined,
+    config?: YunaCommandsResolverConfig<ClientType> | undefined,
     raw?: true,
 ): YunaResolverResult | undefined;
-export function resolve(
-    client: UseYunaCommandsClient,
+export function resolve<ClientType extends BaseClient>(
+    client: UseYunaCommandsClient<ClientType>,
     query: string | string[],
-    config?: YunaCommandsResolverConfig | undefined,
+    config?: YunaCommandsResolverConfig<ClientType> | undefined,
     raw?: false | undefined,
 ): Command | SubCommand | undefined;
-export function resolve(
-    client: UseYunaCommandsClient,
+export function resolve<ClientType extends BaseClient>(
+    client: UseYunaCommandsClient<ClientType>,
     query: string | string[],
-    config?: YunaCommandsResolverConfig | undefined,
+    config?: YunaCommandsResolverConfig<ClientType> | undefined,
     raw?: boolean | undefined,
 ): Command | SubCommand | undefined | YunaResolverResult {
     const gConfig = getCommandsMetadata(client).config ?? {};

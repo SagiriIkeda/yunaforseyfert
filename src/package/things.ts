@@ -1,4 +1,4 @@
-import type { Client, Command, SubCommand, UsingClient, WorkerClient } from "seyfert";
+import type { Command, SubCommand } from "seyfert";
 import type { BaseClient } from "seyfert/lib/client/base";
 import type { LocaleString } from "seyfert/lib/types";
 import type { YunaParserCommandMetaData } from "./utils/parser/CommandMetaData";
@@ -26,7 +26,7 @@ export class Keys {
 }
 
 export type Instantiable<C> = { new (...args: any[]): C };
-export type AvailableClients = BaseClient | UsingClient | Client | WorkerClient;
+export type AvailableClients = BaseClient;
 
 export type ArgPosition = [number, number];
 export type ArgsResultPositions = Record<string, ArgPosition>;
