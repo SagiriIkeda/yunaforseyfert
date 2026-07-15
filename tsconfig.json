@@ -1,29 +1,39 @@
 {
+    /* from https://github.com/total-typescript/tsconfig - bundler/no-dom/app */
     "compilerOptions": {
-        "module": "CommonJS",
-        "target": "ES6",
-        "strict": true,
-        "moduleResolution": "Node10",
-        "esModuleInterop": true,
-        "experimentalDecorators": true,
-        "declaration": true,
-        "declarationDir": "types",
-        "emitDecoratorMetadata": true,
-        "resolveJsonModule": true,
-        "noImplicitAny": true,
-        "strictNullChecks": true,
-        "strictFunctionTypes": true,
-        "noImplicitThis": true,
-        "noImplicitReturns": true,
+        "outDir": "build",
+        /* Base Options: */
         "skipLibCheck": true,
-        "sourceMap": true,
-        "noErrorTruncation": true,
-        "outDir": "./dist",
-        "rootDir": "./src",
+        "skipDefaultLibCheck": true,
+        "target": "es2022",
+        "allowJs": true,
+        "resolveJsonModule": true,
+        "moduleDetection": "force",
+        "moduleResolution": "nodenext",
+        "types": [
+            "node"
+        ],
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        /* Strictness */
+        "strict": true,
+        "noUncheckedIndexedAccess": false,
+        "noImplicitOverride": true,
+        "noUnusedParameters": true,
+        "noUnusedLocals": true,
+        "noFallthroughCasesInSwitch": true,
+        /* If NOT transpiling with TypeScript: */
+        "module": "nodenext", // without this, when importing "didyoumean2" typescript will show an error
+        "noEmit": true,
         "stripInternal": true,
+        /* If your code doesn't run in the DOM: */
+        "lib": [
+            "es2022"
+        ]
     },
     "exclude": [
         "node_modules",
+        "build",
         "src/package/lib/prepublish.mts",
     ],
     "include": [

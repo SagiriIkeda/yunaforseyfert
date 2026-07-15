@@ -1,8 +1,12 @@
 import type { CommandContext } from "seyfert";
+import type { MakeRequired } from "seyfert/lib/common";
+import type { GatewayMessageUpdateDispatchData } from "seyfert/lib/types";
 import { type AvailableClients, Keys, type YunaCommandUsable } from "../../things";
 import type { FindWatcherQuery, InferWatcherContext, InferWatcherFromQuery, InferWatcherManagerFromCtx } from "./Controller";
 import { createController, createWatcher, getController } from "./controllerUtils";
 import type { DecoratorWatchOptions, InferCommandOptions } from "./types";
+
+type RawMessageUpdated = MakeRequired<GatewayMessageUpdateDispatchData, "content">;
 
 function DecoratorWatcher<const C extends YunaCommandUsable, O extends InferCommandOptions<C>, Context = InferWatcherContext<C>>(
     options: DecoratorWatchOptions<C, O, Context>,
@@ -48,7 +52,7 @@ function DecoratorWatcher<const C extends YunaCommandUsable, O extends InferComm
 
             addContext(firstRun);
 
-            watcher.onChange(async (ctx, msg) => {
+            watcher.onChange(async (ctx: CommandContext<O>, msg: RawMessageUpdated) => {
                 if (options.filter?.(ctx, msg) === false) return;
 
                 const result = await (options.onChange ? options.onChange.call(watcher, ctx, msg) : run.call(this, ctx));

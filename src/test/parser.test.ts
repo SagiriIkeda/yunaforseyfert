@@ -7,6 +7,7 @@ import {
     User,
     type UsingClient,
     createBooleanOption,
+    createNumberOption,
     createStringOption,
     createUserOption,
 } from "seyfert";
@@ -40,7 +41,7 @@ const testParser = (
 
 const YunaParser = Yuna.parser();
 class YunaHandleCommand extends HandleCommand {
-    argsParser = YunaParser;
+    override argsParser = YunaParser;
 }
 
 client.setServices({ handleCommand: YunaHandleCommand });
@@ -86,6 +87,41 @@ describe("long text tags", () => {
                 },
             },
         ));
+});
+
+describe("Stelle Eval Command (useNonValueLongTextTagStart)", () => {
+    @Options({
+        code: createStringOption({
+            description: "Enter some code.",
+            required: true,
+        }),
+        depth: createNumberOption({
+            description: "Enter the depth of the result code.",
+            required: false,
+        }),
+    })
+    class StelleEvalCommand extends Command {}
+
+    test('console.log("yes") with useNonValueLongTextTagStart', () => {
+        testParser('console.log("yes")', { code: 'console.log("yes")' }, ParserRecommendedConfig.Eval, new StelleEvalCommand());
+    });
+
+    test('console.log("yes") without useNonValueLongTextTagStart BUT with disableLongTextTagsInLastOption', () => {
+        testParser(
+            'console.log("yes")',
+            { code: "console.log(", depth: '"yes")' },
+            { disableLongTextTagsInLastOption: true },
+            new StelleEvalCommand(),
+        );
+    });
+
+    test('console.log("yes") without useNonValueLongTextTagStart', () => {
+        testParser('console.log("yes")', { code: "console.log(", depth: "yes" }, {}, new StelleEvalCommand());
+    });
+
+    test("Bot Eval, longTextTags in the middle in last option", () => {
+        testParser('console.log("yes")', { code: 'console.log("yes")' }, {}, evalCommand);
+    });
 });
 
 describe("named options", () => {

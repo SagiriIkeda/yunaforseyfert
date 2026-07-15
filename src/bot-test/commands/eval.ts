@@ -31,7 +31,7 @@ export default class EvalCommand extends Command {
     @Watch({
         idle: 1000 * 10,
     })
-    async run(ctx: CommandContext<typeof evalOptions>) {
+    override async run(ctx: CommandContext<typeof evalOptions>) {
         if (!devs.has(ctx.author.id)) return ctx.write({ content: "you can't use this." });
 
         const { options, client, guildId, channelId, member, author } = ctx;

@@ -29,7 +29,7 @@ client.commands?.values.push(testInstance, accountInstance, evalInstance, pingIn
 prepareCommands(client);
 
 class YunaHandleCommand extends HandleCommand {
-    resolveCommandFromContent = YunaResolver;
+    override resolveCommandFromContent = YunaResolver;
 }
 client.setServices({ handleCommand: YunaHandleCommand });
 

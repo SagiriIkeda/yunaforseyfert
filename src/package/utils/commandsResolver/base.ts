@@ -1,4 +1,4 @@
-import type { Command, SubCommand } from "seyfert";
+import type { Command, ContextMenuCommand, SubCommand } from "seyfert";
 import { IgnoreCommand } from "seyfert";
 import { ApplicationCommandOptionType, ApplicationCommandType } from "seyfert/lib/types";
 import { type AvailableClients, Keys, type YunaCommandUsable, type YunaGroupType } from "../../things";
@@ -23,8 +23,8 @@ const getMatches = (query: string) => {
     const matches = query.matchAll(/[^\s\x7F\n]+/g);
 
     for (let i = 0; i < 3; i++) {
-        const match = matches.next().value as RegExpMatchArray | undefined;
-        if (!match) continue;
+        const { done, value: match } = matches.next();
+        if (done) continue;
         result.push(match);
         values.push(match[0].toLowerCase());
     }
@@ -62,12 +62,13 @@ export function baseResolver(
 
     let [parent, group, sub] = queryArray;
 
-    const searchFn = (command: Command | SubCommand | GroupLink) => command.name === parent || command.aliases?.includes(parent);
+    const searchFn = (command: Command | SubCommand | GroupLink) => command.name === parent || !!command.aliases?.includes(parent);
 
     let parentCommand = ((metadata?.commands
         ? metadata.commands.find(searchFn)
-        : client.commands.values.find((command) => command.type === ApplicationCommandType.ChatInput && searchFn(command))) ??
-        plugin?.findCommand?.(parent)) as YunaCommandUsable<Command> | undefined;
+        : client.commands.values.find(
+              (command: Command | ContextMenuCommand) => command.type === ApplicationCommandType.ChatInput && searchFn(command),
+          )) ?? plugin?.findCommand?.(parent)) as YunaCommandUsable<Command> | undefined;
 
     const shortcut =
         (parentCommand ? undefined : metadata?.shortcuts.find(searchFn)) ?? plugin?.findShortcut?.(parent, metadata?.shortcuts);
@@ -118,7 +119,7 @@ export function baseResolver(
 
     if (!isGroupShortcut && groupName) padIdx++;
 
-    const groupData = groupName !== undefined ? (parentCommand as Command).groups?.[groupName] : undefined;
+    const groupData = groupName !== undefined ? parentCommand.groups?.[groupName] : undefined;
 
     const subName = groupName ? sub : group;
 

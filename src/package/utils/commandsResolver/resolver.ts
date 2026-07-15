@@ -1,9 +1,10 @@
-import type { Command, SubCommand, UsingClient } from "seyfert";
+import type { Command, SubCommand } from "seyfert";
+import type { BaseClient } from "seyfert/lib/client/base";
 import type { CommandFromContent, HandleCommand } from "seyfert/lib/commands/handle";
 import type { Awaitable, MakeRequired } from "seyfert/lib/common";
 import { fullNameOf } from "../../lib/utils";
 import { baseResolver } from "./base";
-import { type GroupLink, addCommandsEvents, getCommandsMetadata } from "./prepare";
+import { type GroupLink, type YunaCommandsMetadata, addCommandsEvents, getCommandsMetadata } from "./prepare";
 
 export interface SearchPlugin {
     findShortcut?(shortcutName: string, shortcuts?: (SubCommand | GroupLink)[]): (SubCommand | GroupLink) | undefined;
@@ -12,18 +13,18 @@ export interface SearchPlugin {
     findSubCommand?(query: string, command: Command, groupName?: string): SubCommand | undefined;
 }
 
-export interface YunaCommandsResolverConfig {
+export interface YunaCommandsResolverConfig<ClientType extends BaseClient = BaseClient> {
     /**
      * It will allow that in case an unrecognized subcommand is used,
      * use a specified default one or the first one you have.
      */
     useFallbackSubCommand?: boolean;
     logResult?: boolean;
-    afterPrepare?(this: UsingClient, metadata: ReturnType<typeof getCommandsMetadata>): any;
+    afterPrepare?(this: ClientType, metadata: YunaCommandsMetadata<ClientType>): any;
 
     whilePreparing?(
-        this: UsingClient,
-        metadata: ReturnType<typeof getCommandsMetadata>,
+        this: ClientType,
+        metadata: YunaCommandsMetadata<ClientType>,
     ): Awaitable<{
         onCommand?(command: Command): any;
         onSubCommand?(subCommand: SubCommand): any;
@@ -36,7 +37,7 @@ export interface YunaCommandsResolverConfig {
     extendSearch?(): SearchPlugin;
 }
 
-export function YunaCommandsResolver({
+export function YunaCommandsResolver<ClientType extends BaseClient>({
     client,
     useFallbackSubCommand = false,
     logResult = false,
@@ -44,7 +45,7 @@ export function YunaCommandsResolver({
     whilePreparing,
     mapResult,
     extendSearch,
-}: YunaCommandsResolverConfig & { client: UsingClient }) {
+}: YunaCommandsResolverConfig<ClientType> & { client: ClientType }) {
     const config = {
         useFallbackSubCommand,
         afterPrepare,

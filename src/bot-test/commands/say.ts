@@ -40,7 +40,7 @@ export default class SayCommand extends Command {
             this.watchResponseDelete(this.ctx.messageResponse!);
         },
     })
-    async run(ctx: CommandContext<typeof options>) {
+    override async run(ctx: CommandContext<typeof options>) {
         const { text } = ctx.options;
 
         await ctx.editOrReply({ embeds: [this.embed(text)] });

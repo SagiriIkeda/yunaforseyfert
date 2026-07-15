@@ -12,19 +12,8 @@ const {
     ...newPackageJsonRaw
 } = packageJson as typeof packageJson & { private: boolean };
 
-const { seyfert } = _dev;
-
-const newPackageJson = {
-    ...newPackageJsonRaw,
-    devDependencies: {
-        seyfert,
-    },
-};
-
-await writeFile(".npm/package.json", JSON.stringify(newPackageJson, null, 4), "utf-8");
+await writeFile(".npm/package.json", JSON.stringify(newPackageJsonRaw, null, 4), "utf-8");
 
 const moveFiles = [".npmignore", "README.md", "build"];
 
-const move = (src: string) => cp(src, `.npm/${src}`, { recursive: true });
-
-for (const file of moveFiles) await move(file);
+for (const file of moveFiles) await cp(file, `.npm/${file}`, { recursive: true });

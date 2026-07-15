@@ -15,15 +15,15 @@ pnpm add yunaforseyfert
 
 # Features
 
-## ` Yuna.parser `
+## YunaParser
 > *An **args parser for text commands**, which adds various syntax for more convenient use.*  
 >
 > <img src="https://i.imgur.com/cRrLoG2.gif" width="100%" />
 >
 > [📖 See Parser docs](https://github.com/SagiriIkeda/yunaforseyfert/wiki/Parser)
 
-## ` Yuna.resolver `
-> *A resolver, which provides some extra functions.*  
+## YunaCommandsResolver  
+> *A text command resolver, which provides some extra functions.*  
 >[📖 See Resolver docs](https://github.com/SagiriIkeda/yunaforseyfert/wiki/CommandsResolver)
 
 ## MessageWatcher
@@ -38,55 +38,44 @@ And more **features** coming soon! ***(not so soon)*** 🐧
 
 # FAQ
 
-<details>
+<details open>
+    <summary>
+        <h2 style="display: inline">Migrate to seyfert v5</h2>
+    </summary>
 
-  <summary>
-  <h2 style="display: inline">Migrate from &lt;v0.10 to v1.0 (and Seyfert v1 to v2)</h2>
-  </summary>
+Previous versions of **Seyfert** integrated **Yuna** as part of the `HandleCommand` in `client.setServices`.
+But now **Seyfert v5** has switched to a new plugin based system, as follows:
 
-The way to set the `argsParser` has changed in `seyfert v2`, it has also changed its name
-now it should be done as follows:
+```ts
+import { Client, definePlugins } from "seyfert";
+import { Yuna } from "yunaforseyfert";
 
-  ```diff
-- import { YunaParser } from "yunaforseyfert";
-- 
-- // your bot's client
-- new Client({ 
--     commands: {
--         argsParser: YunaParser() // Here are the settings
--     }
-- });
-+ import { HandleCommand } from "seyfert/lib/commands/handle";
-+ import { Yuna } from "yunaforseyfert";
-+ 
-+ const client = new Client();
-+ 
-+ class YourHandleCommand extends HandleCommand {
-+     argsParser = Yuna.parser(); // Here are the settings
-+ }
-+ 
-+ client.setServices({
-+     handleCommand: YourHandleCommand,
-+ });
-  ```
+const client = new Client({
+    plugins: definePlugins(
+        Yuna.plugin({
+            parser: {
+              // parser options
+            }, // or simply parser: true, to enable it with default settings,
+            
+            resolver: {
+              // resolver options
+            }, // or simply resolver: true, to enable it with default settings,
+            
+            // also the settings for `Yuna.watchers.createController` should be placed here
+            watcher: { // example (optional)
+              cache: new LimitedCollection( /** your settings */)
+            }
 
-Also the `enabled` configuration of the `Yuna.parser` has been renamed to `syntax`.
-```diff
-- YunaParser({
--   enabled: {
--     // ...
--   }
-- })
-+ Yuna.parser({
-+   syntax: {
-+     // ...
-+   }
-+ })
+        }),
+    ),
+});
 ```
 
+Thanks to *[@socram03](https://github.com/socram03)* for updating yunaforseyfert to Seyfert v5. 🐧❤️
+
+> NOTE: The previous method of adding yunaforseyfert may still work, but you might want to consider migrating to the new method.
 </details>
 <br/>
-
 
 ```
     Thanks for read and using yunaforseyfert!

@@ -35,7 +35,7 @@ export default class TestCommand extends Command {
             userWatcher?.stop("AnotherInstanceCreated");
         },
     })
-    async run(ctx: CommandContext<typeof options>) {
+    override async run(ctx: CommandContext<typeof options>) {
         const embed = new Embed({
             title: "Parsed!",
             fields: [
@@ -54,7 +54,7 @@ export default class TestCommand extends Command {
             embeds: [embed],
         });
     }
-    async onOptionsError(context: CommandContext<typeof options>) {
+    override async onOptionsError(context: CommandContext<typeof options>) {
         await context.editOrReply({
             content: "You need to use two options",
         });

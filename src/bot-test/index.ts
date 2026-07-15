@@ -1,8 +1,19 @@
-import { Client } from "seyfert";
-import { HandleCommand } from "seyfert/lib/commands/handle";
+import { Client, type ParseClient, definePlugins } from "seyfert";
 import { Yuna } from "../package/index";
 
 const client = new Client({
+    plugins: definePlugins(
+        Yuna.plugin({
+            parser: {
+                logResult: true,
+                useRepliedUserAsAnOption: {
+                    requirePing: false,
+                },
+                // useNamedWithSingleValue: true,
+                // useCodeBlockLangAsAnOption: true,
+            },
+        }),
+    ),
     commands: {
         prefix(message) {
             return ["yuna", "y", `<@${message.client.botId}>`];
@@ -10,27 +21,10 @@ const client = new Client({
     },
 });
 
-class YunaCommandHandle extends HandleCommand {
-    resolveCommandFromContent = Yuna.resolver({
-        client: this.client,
-        afterPrepare: () => {
-            this.client.logger.debug("prepared commands");
-        },
-        // logResult: true,
-    });
-
-    argsParser = Yuna.parser({
-        logResult: true,
-        useRepliedUserAsAnOption: {
-            requirePing: false,
-        },
-        // useNamedWithSingleValue: true,
-        // useCodeBlockLangAsAnOption: true,
-    });
-}
-
-client.setServices({
-    handleCommand: YunaCommandHandle,
-});
-
 client.start();
+
+declare module "seyfert" {
+    interface SeyfertRegistry {
+        client: ParseClient<Client<true>>;
+    }
+}
