@@ -4,10 +4,11 @@ import { getCommandsMetadata, prepareCommands, resolve } from "./utils/commandsR
 import { YunaCommandsResolver, type YunaCommandsResolverConfig } from "./utils/commandsResolver/resolver.js";
 import { YunaParser } from "./utils/parser/parser.js";
 
-import { type Command, CommandContext, type Message, type SubCommand, createPlugin } from "seyfert";
+import { type Command, CommandContext, type Message, type SubCommand, type UsingClient, createPlugin } from "seyfert";
 import { type CommandOptionWithType, HandleCommand } from "seyfert/lib/commands/handle.js";
 import { ApplicationCommandOptionType } from "seyfert/lib/types/index.js";
 import { Keys } from "./things.js";
+import type { YunaMessageWatcherControllerConfig } from "./utils/messageWatcher/Controller.js";
 import { YunaWatcherUtils } from "./utils/messageWatcher/watcherUtils.js";
 import type { YunaParserCreateOptions } from "./utils/parser/configTypes.js";
 import { mergeConfig } from "./utils/parser/createConfig.js";
@@ -46,6 +47,7 @@ export const ParserRecommendedConfig = {
         disableLongTextTagsInLastOption: {
             excludeCodeBlocks: true,
         },
+        useNonValueLongTextTagStart: true,
     },
 } satisfies Record<string, YunaParserCreateOptions>;
 
@@ -74,17 +76,27 @@ const yunaGetArgsResult = (resolvable?: CommandContext | Message) => {
 };
 
 export interface YunaPluginOptions {
-    parser?: YunaParserCreateOptions;
-    resolver?: Omit<YunaCommandsResolverConfig, "client">;
+    parser?: YunaParserCreateOptions | true;
+    resolver?: Omit<YunaCommandsResolverConfig, "client"> | true;
+    watcher?: Omit<YunaMessageWatcherControllerConfig, "client">;
 }
 
-export const createYunaPlugin = ({ parser, resolver }: YunaPluginOptions = {}) => {
+export const createYunaPlugin = ({ parser, resolver, watcher }: YunaPluginOptions = {}) => {
     class YunaHandleCommand extends HandleCommand {
-        argsParser = YunaParser(parser);
-        resolveCommandFromContent = YunaCommandsResolver({
-            client: this.client,
-            ...resolver,
-        });
+        constructor(client: UsingClient) {
+            super(client);
+
+            if (parser) this.argsParser = YunaParser(parser === true ? undefined : parser);
+            if (resolver)
+                this.resolveCommandFromContent = YunaCommandsResolver(
+                    resolver === true
+                        ? { client }
+                        : {
+                              client,
+                              ...resolver,
+                          },
+                );
+        }
     }
 
     return createPlugin({
@@ -103,7 +115,7 @@ export const createYunaPlugin = ({ parser, resolver }: YunaPluginOptions = {}) =
         },
         setup(client, api) {
             client.setServices({ handleCommand: YunaHandleCommand });
-            const watcherController = YunaWatcherUtils.createController({ client }).usePluginEvents();
+            const watcherController = YunaWatcherUtils.createController({ client, ...watcher }).usePluginEvents();
             api?.events.on("RAW", (packet) => {
                 watcherController.handleRawEvent(packet);
             });
@@ -115,6 +127,34 @@ export const createYunaPlugin = ({ parser, resolver }: YunaPluginOptions = {}) =
 };
 
 class BaseYuna {
+    /**
+     * 🐧
+     * @example
+     *
+     * ```ts
+     * import { Client, definePlugins } from "seyfert";
+     * import { Yuna } from "yunaforseyfert";
+     *
+     * const client = new Client({
+     *     plugins: definePlugins(
+     *          Yuna.plugin({
+     *              parser: {
+     *              // parser options
+     *              }, // or simply parser: true, to enable it with default settings,
+     *
+     *              resolver: {
+     *              // resolver options
+     *              }, // or simply resolver: true, to enable it with default settings,
+     *
+     *              // also the settings for `Yuna.watchers.createController` should be placed here
+     *              watcher: { // example (optional)
+     *                  cache: new LimitedCollection(your settings)
+     *              }
+     *          }),
+     *      ),
+     *  });
+     * ```
+     */
     plugin = createYunaPlugin;
 
     /**

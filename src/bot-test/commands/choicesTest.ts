@@ -20,7 +20,7 @@ const options = {
 })
 @Options(options)
 export class ChoicesTestCommand extends Command {
-    async run(ctx: CommandContext<typeof options>) {
+    override async run(ctx: CommandContext<typeof options>) {
         await ctx.write({
             content: inspect(ctx.options),
         });
@@ -45,7 +45,7 @@ const optionsNumber = {
 })
 @Options(optionsNumber)
 export default class ChoicesNumberTestCommand extends Command {
-    async run(ctx: CommandContext<typeof optionsNumber>) {
+    override async run(ctx: CommandContext<typeof optionsNumber>) {
         await ctx.write({
             content: inspect(ctx.options),
         });

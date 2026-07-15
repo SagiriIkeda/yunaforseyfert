@@ -15,7 +15,7 @@ const options = {
 })
 @Options(options)
 export default class RunCommand extends Command {
-    async run(ctx: CommandContext<typeof options>) {
+    override async run(ctx: CommandContext<typeof options>) {
         const { lang, code } = ctx.options;
 
         await ctx.write({

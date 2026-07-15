@@ -112,4 +112,26 @@ export interface YunaParserCreateOptions {
      * @default {false}
      */
     useNamedWithSingleValue?: boolean;
+
+    /**
+     * This will cause a longTextTag (`, ", ') to only be initialized if it is NOT preceded by a value.
+     *
+     * For example:
+     *
+     * ```ts
+     * console.log("yes")
+     * ```
+     *
+     * The above will be parsed only as `console.log("yes")` in a single option.
+     *
+     * Otherwise, `console.log(` will be one option and `yes` will be the next. Since the `"` will start a new option.
+     *
+     * In other words, with this configuration, to initialize a longTextTag
+     * it must be preceded by a space, line break, another longTextTag, or the beginning of the text.
+     *
+     * This configuration is enabled by default in `ParserRecommendedConfig.Eval`.
+     *
+     * @default {false}
+     */
+    useNonValueLongTextTagStart?: boolean;
 }

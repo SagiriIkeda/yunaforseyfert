@@ -1,4 +1,4 @@
-import { Command, type CommandContext, Declare, createAttachmentOption, createStringOption } from "seyfert";
+import { Command, type CommandContext, Declare, Options, createAttachmentOption, createStringOption } from "seyfert";
 
 const options = {
     engine: createStringOption({
@@ -30,11 +30,12 @@ const options = {
 };
 
 @Declare({
-    name: "ping",
+    name: "justotruco",
     description: "Show the ping with discord",
 })
+@Options(options)
 export default class JustotrucoCommand extends Command {
-    async run(ctx: CommandContext<typeof options>) {
+    override async run(ctx: CommandContext<typeof options>) {
         const { engine, attch } = ctx.options;
 
         await ctx.write({

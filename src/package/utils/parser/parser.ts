@@ -35,6 +35,8 @@ const spacesRegex = /[\s\x7F\n]/;
 
 const backtick = "`";
 
+const useNonValueLongTextTagStart = /[\s\x7F\n\"\'\`]/;
+
 export const YunaParser = (config: YunaParserCreateOptions = {}) => {
     const globalConfig = createConfig(config);
     const globalRegexes = createRegexes(globalConfig);
@@ -452,6 +454,14 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
             }
 
             if (tag) {
+                const previousChar = content[index - 1];
+
+                const isValidLongTextTagStartPosition =
+                    longTextTagsState === null &&
+                    (config.useNonValueLongTextTagStart
+                        ? previousChar === undefined || useNonValueLongTextTagStart.test(previousChar)
+                        : true);
+
                 type DisableLongTextTagsInLastOptionObject = Exclude<
                     YunaParserCreateOptions["disableLongTextTagsInLastOption"],
                     boolean | undefined
@@ -465,7 +475,7 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                     // isDisabledLongTextTagsInLastOption
                 } else if (
                     namedOptionState === null &&
-                    longTextTagsState === null &&
+                    isValidLongTextTagStartPosition &&
                     disableLongTextTagsInLastOption &&
                     actualIterableOptionsIdx >= iterableOptions.length - 1 &&
                     ((disableLongTextTagsInLastOption as DisableLongTextTagsInLastOptionObject).excludeCodeBlocks
@@ -478,11 +488,15 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
                     aggregateUnindexedText(index, tag, "", undefined, undefined, _isRecentlyCosedAnyTag);
                     continue;
                 } else if (longTextTagsState === null) {
-                    longTextTagsState = {
-                        quote: tag as ValidLongTextTags,
-                        start: index + 1,
-                        toStart: index + 1,
-                    };
+                    if (isValidLongTextTagStartPosition) {
+                        longTextTagsState = {
+                            quote: tag as ValidLongTextTags,
+                            start: index + 1,
+                            toStart: index + 1,
+                        };
+                    } else {
+                        aggregateUnindexedText(index, tag, "", undefined, undefined, _isRecentlyCosedAnyTag);
+                    }
                 } else if (longTextTagsState.quote === tag && longTextTagsState.start !== undefined) {
                     // end quote
 

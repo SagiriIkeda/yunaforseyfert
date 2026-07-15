@@ -153,14 +153,13 @@ export const createConfig = (config: YunaParserCreateOptions, isFull = true) => 
     if (isFull || "logResult" in config) newConfig.logResult = config.logResult === true;
 
     if (isFull || "disableLongTextTagsInLastOption" in config)
-        newConfig.disableLongTextTagsInLastOption =
-            config.disableLongTextTagsInLastOption === undefined
-                ? false
-                : typeof config.disableLongTextTagsInLastOption === "boolean"
-                  ? config.disableLongTextTagsInLastOption
-                  : {
-                        excludeCodeBlocks: config.disableLongTextTagsInLastOption?.excludeCodeBlocks === true,
-                    };
+        newConfig.disableLongTextTagsInLastOption = config.disableLongTextTagsInLastOption
+            ? typeof config.disableLongTextTagsInLastOption === "boolean"
+                ? true
+                : {
+                      excludeCodeBlocks: config.disableLongTextTagsInLastOption?.excludeCodeBlocks === true,
+                  }
+            : false;
 
     if (isFull || "resolveCommandOptionsChoices" in config)
         newConfig.resolveCommandOptionsChoices =
@@ -175,6 +174,9 @@ export const createConfig = (config: YunaParserCreateOptions, isFull = true) => 
                   requirePing: config.useRepliedUserAsAnOption?.requirePing === true,
               }
             : null;
+
+    if (isFull || "useNonValueLongTextTagStart" in config)
+        newConfig.useNonValueLongTextTagStart = config.useNonValueLongTextTagStart === true;
 
     return newConfig;
 };

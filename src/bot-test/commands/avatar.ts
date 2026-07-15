@@ -14,7 +14,7 @@ const options = {
 })
 @Options(options)
 export default class AvatarCommand extends Command {
-    async run(ctx: CommandContext<typeof options>) {
+    override async run(ctx: CommandContext<typeof options>) {
         const { user = ctx.member, message = "penguin day" } = ctx.options;
 
         await ctx.write({

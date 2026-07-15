@@ -25,7 +25,7 @@ const config = Yuna.mergeParserConfig(ParserRecommendedConfig.Eval, {
 @Options(options)
 @DeclareParserConfig(config)
 export default class Eval2Command extends Command {
-    async run(ctx: CommandContext<typeof options>) {
+    override async run(ctx: CommandContext<typeof options>) {
         const { code } = ctx.options;
 
         await ctx.write({
