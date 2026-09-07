@@ -1,3 +1,5 @@
 allowBuilds:
   '@biomejs/biome': true
   esbuild: true
+minimumReleaseAgeExclude:
+  - seyfert@5.1.0

@@ -83,7 +83,7 @@ export function YunaCommandsResolver<ClientType extends BaseClient>({
                 logResult.mappedResult = mappedResult;
             }
 
-            client.logger.debug("[Yuna.resolver]");
+            client.logger.debug("[Yuna.resolver]", logResult);
         }
 
         return mappedResult;

@@ -27,8 +27,8 @@ importers:
         specifier: ^17.0.5
         version: 17.0.8
       seyfert:
-        specifier: 5.0.0
-        version: 5.0.0
+        specifier: 5.1.0
+        version: 5.1.0
       tsdown:
         specifier: ^0.22.0
         version: 0.22.7(tsx@4.23.1)(typescript@7.0.2)
@@ -971,8 +971,8 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
-  seyfert@5.0.0:
-    resolution: {integrity: sha512-73tb7/RiToy7+IO1in84zzn736XMXtf2Td0I26bSL2+09wcyEdZG1J4vj5M6twesMACFqv498ELImx6CpddCCQ==}
+  seyfert@5.1.0:
+    resolution: {integrity: sha512-FeNWUioMHeQwDnO3An+1xiV0qRcf+8INKfct8b/45OatXHEbqdAAdkbeoL+v0104MdtZPBJoUq6+QRSlM7cJsw==}
 
   siginfo@2.0.0:
     resolution: {integrity: sha512-ybx0WO1/8bSBLEWXZvEd7gMW3Sn3JFlW3TvX1nREbDLRNQNaeNN8WK0meBwPdAaOI7TtRRRJn/Es1zhrrCHu7g==}
@@ -1845,7 +1845,7 @@ snapshots:
 
   semver@7.8.5: {}
 
-  seyfert@5.0.0: {}
+  seyfert@5.1.0: {}
 
   siginfo@2.0.0: {}
 
