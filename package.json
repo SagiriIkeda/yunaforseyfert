@@ -1,6 +1,6 @@
 {
     "name": "yunaforseyfert",
-    "version": "1.2.3",
+    "version": "1.2.4",
     "description": "Yunathings for seyfert",
     "private": true,
     "main": "./build/index.cjs",

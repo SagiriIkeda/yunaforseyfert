@@ -23,6 +23,7 @@ export class Keys {
     static readonly watcherStop = Symbol("WatcherStop");
 
     static readonly messageArgsResult = Symbol();
+    static readonly handleCommandModifiedByYunaPlugin = Symbol("HandleCommandModifiedByYunaPlugin");
 }
 
 export type Instantiable<C> = { new (...args: any[]): C };

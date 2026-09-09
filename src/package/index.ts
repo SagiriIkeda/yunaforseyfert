@@ -4,8 +4,8 @@ import { getCommandsMetadata, prepareCommands, resolve } from "./utils/commandsR
 import { YunaCommandsResolver, type YunaCommandsResolverConfig } from "./utils/commandsResolver/resolver.js";
 import { YunaParser } from "./utils/parser/parser.js";
 
-import { type Command, CommandContext, type Message, type SubCommand, type UsingClient, createPlugin } from "seyfert";
-import { type CommandOptionWithType, HandleCommand } from "seyfert/lib/commands/handle.js";
+import { type Command, CommandContext, type Message, type SubCommand, createPlugin } from "seyfert";
+import type { CommandOptionWithType } from "seyfert/lib/commands/handle.js";
 import { ApplicationCommandOptionType } from "seyfert/lib/types/index.js";
 import { Keys } from "./things.js";
 import type { YunaMessageWatcherControllerConfig } from "./utils/messageWatcher/Controller.js";
@@ -82,23 +82,6 @@ export interface YunaPluginOptions {
 }
 
 export const createYunaPlugin = ({ parser, resolver, watcher }: YunaPluginOptions = {}) => {
-    class YunaHandleCommand extends HandleCommand {
-        constructor(client: UsingClient) {
-            super(client);
-
-            if (parser) this.argsParser = YunaParser(parser === true ? undefined : parser);
-            if (resolver)
-                this.resolveCommandFromContent = YunaCommandsResolver(
-                    resolver === true
-                        ? { client }
-                        : {
-                              client,
-                              ...resolver,
-                          },
-                );
-        }
-    }
-
     return createPlugin({
         name: "yunaforseyfert",
         parser: YunaParser,
@@ -114,7 +97,26 @@ export const createYunaPlugin = ({ parser, resolver, watcher }: YunaPluginOption
             yuna: () => Yuna,
         },
         setup(client, api) {
-            client.setServices({ handleCommand: YunaHandleCommand });
+            const handleCommand = client.handleCommand;
+
+            if (parser || resolver) {
+                if (parser) handleCommand.argsParser = YunaParser(parser === true ? undefined : parser);
+                if (resolver)
+                    handleCommand.resolveCommandFromContent = YunaCommandsResolver(
+                        resolver === true
+                            ? { client }
+                            : {
+                                  client,
+                                  ...resolver,
+                              },
+                    );
+
+                const handleCommandWithYunaMarker = handleCommand as typeof handleCommand & {
+                    [Keys.handleCommandModifiedByYunaPlugin]: true;
+                };
+                handleCommandWithYunaMarker[Keys.handleCommandModifiedByYunaPlugin] = true;
+            }
+
             const watcherController = YunaWatcherUtils.createController({ client, ...watcher }).usePluginEvents();
             api?.events.on("RAW", (packet) => {
                 watcherController.handleRawEvent(packet);

@@ -60,7 +60,7 @@ export function YunaCommandsResolver<ClientType extends BaseClient>({
 
     const plugin = extendSearch?.();
 
-    return function (this: HandleCommand, content: string) {
+    return function YunaCommandsResolverInstance(this: HandleCommand, content: string) {
         const { endPad = 0, command, parent } = baseResolver(client, content, baseResolverConfig, plugin) ?? {};
 
         const argsContent = content.slice(endPad).trimStart();

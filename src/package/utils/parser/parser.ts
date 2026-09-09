@@ -44,7 +44,12 @@ export const YunaParser = (config: YunaParserCreateOptions = {}) => {
     const globalVns = YunaParserCommandMetaData.getValidNamedOptionSyntaxes(globalConfig);
 
     // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: omitting this rule the life is better
-    return function (this: HandleCommand, content: string, command: Command | SubCommand, message?: Message): Record<string, string> {
+    return function YunaParserInstance(
+        this: HandleCommand,
+        content: string,
+        command: Command | SubCommand,
+        message?: Message,
+    ): Record<string, string> {
         const commandMetadata = YunaParserCommandMetaData.from(command);
 
         const { iterableOptions, flagOptions, options, choices } = commandMetadata;
